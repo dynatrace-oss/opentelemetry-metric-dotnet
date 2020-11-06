@@ -43,7 +43,7 @@ namespace OpenTelemetry.Exporter.Dynatrace.Metrics.Tests
             });
 
             string serialized = new DynatraceMetricSerializer().SerializeMetric(m1);
-            string expected = "namespace1.metric1,dim1=value1,dim2=value2 count,delta=100 1604660628881";
+            string expected = "namespace1.metric1,dim1=value1,dim2=value2 count,delta=100 1604660628881\r\n";
             Assert.Equal(expected, serialized);
         }
 
@@ -61,7 +61,7 @@ namespace OpenTelemetry.Exporter.Dynatrace.Metrics.Tests
             });
 
             string serialized = new DynatraceMetricSerializer().SerializeMetric(m1);
-            string expected = "namespace1.metric1 count,delta=100 1604660628881";
+            string expected = "namespace1.metric1 count,delta=100 1604660628881\r\n";
             Assert.Equal(expected, serialized);
         }
 
@@ -80,7 +80,7 @@ namespace OpenTelemetry.Exporter.Dynatrace.Metrics.Tests
             });
 
             string serialized = new DynatraceMetricSerializer(prefix: "prefix1").SerializeMetric(m1);
-            string expected = "prefix1.namespace1.metric1 count,delta=100 1604660628881";
+            string expected = "prefix1.namespace1.metric1 count,delta=100 1604660628881\r\n";
             Assert.Equal(expected, serialized);
         }
 
@@ -105,7 +105,41 @@ namespace OpenTelemetry.Exporter.Dynatrace.Metrics.Tests
                 { new KeyValuePair<string, string>("tag2", "value2") },
                 { new KeyValuePair<string, string>("tag3", "value3") },
             }).SerializeMetric(m1);
-            string expected = "namespace1.metric1,dim1=value1,dim2=value2,tag1=value1,tag2=value2,tag3=value3 count,delta=100 1604660628881";
+            string expected = "namespace1.metric1,dim1=value1,dim2=value2,tag1=value1,tag2=value2,tag3=value3 count,delta=100 1604660628881\r\n";
+            Assert.Equal(expected, serialized);
+        }
+
+        [Fact]
+        public void SerializeLongSumBatch()
+        {
+            var labels1 = new List<KeyValuePair<string, string>>();
+            labels1.Add(new KeyValuePair<string, string>("dim1", "value1"));
+            labels1.Add(new KeyValuePair<string, string>("dim2", "value2"));
+            var m1 = new Metric("namespace1", "metric1", "Description", AggregationType.LongSum);
+            m1.Data.Add(new Int64SumData
+            {
+                Labels = labels1,
+                Sum = 100,
+                Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1604660628881).UtcDateTime
+            });
+            m1.Data.Add(new Int64SumData
+            {
+                Labels = labels1,
+                Sum = 130,
+                Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1604660628882).UtcDateTime
+            });
+            m1.Data.Add(new Int64SumData
+            {
+                Labels = labels1,
+                Sum = 150,
+                Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1604660628883).UtcDateTime
+            });
+
+            string serialized = new DynatraceMetricSerializer().SerializeMetric(m1);
+            string expected =
+                "namespace1.metric1,dim1=value1,dim2=value2 count,delta=100 1604660628881\r\n" +
+                "namespace1.metric1,dim1=value1,dim2=value2 count,delta=30 1604660628882\r\n" +
+                "namespace1.metric1,dim1=value1,dim2=value2 count,delta=20 1604660628883\r\n";
             Assert.Equal(expected, serialized);
         }
     }
