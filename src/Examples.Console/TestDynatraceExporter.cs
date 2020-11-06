@@ -84,7 +84,7 @@ namespace Examples.Console
                 var remaining = (totalDurationInMins * 60) - sw.Elapsed.TotalSeconds;
                 System.Console.WriteLine("Running and emitting metrics. Remaining time:" + (int)remaining + " seconds");
             }
-
+            
             System.Console.WriteLine("Metrics server shutdown.");
             System.Console.WriteLine("Press Enter key to exit.");
             return 1;
