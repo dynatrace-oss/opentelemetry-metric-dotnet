@@ -17,7 +17,9 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using OpenTelemetry;
 using OpenTelemetry.Exporter.Dynatrace;
 using OpenTelemetry.Metrics;
@@ -30,12 +32,17 @@ namespace Examples.Console
     {
         internal static async Task<int> RunAsync(string url, string apiToken, int pushIntervalInSecs, int totalDurationInMins)
         {
+            ILoggerFactory loggerFactory = LoggerFactory.Create(builder => {
+                builder.SetMinimumLevel(LogLevel.Debug)
+                       .AddConsole();
+                });
+            var logger = loggerFactory.CreateLogger<TestDynatraceExporter>();
             var options = new DynatraceExporterOptions
             {
                 Url = url,
                 ApiToken = apiToken,
             };
-            var dtExporter = new DynatraceMetricsExporter(options);
+            var dtExporter = new DynatraceMetricsExporter(options, loggerFactory.CreateLogger<DynatraceMetricsExporter>());
 
             // Create Processor (called Batcher in Metric spec, this is still not decided)
             var processor = new UngroupedBatcher();
@@ -82,11 +89,11 @@ namespace Examples.Console
 
                 await Task.Delay(1000);
                 var remaining = (totalDurationInMins * 60) - sw.Elapsed.TotalSeconds;
-                System.Console.WriteLine("Running and emitting metrics. Remaining time:" + (int)remaining + " seconds");
+                logger.LogInformation("Running and emitting metrics. Remaining time: {Remaining} seconds", (int)remaining);
             }
-            
-            System.Console.WriteLine("Metrics server shutdown.");
-            System.Console.WriteLine("Press Enter key to exit.");
+
+            logger.LogInformation("Metrics server shutdown.");
+            logger.LogInformation("Press Enter key to exit.");
             return 1;
         }
 

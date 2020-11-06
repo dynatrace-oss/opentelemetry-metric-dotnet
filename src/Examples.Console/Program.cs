@@ -14,6 +14,7 @@
 // limitations under the License.
 // </copyright>
 
+using System;
 using CommandLine;
 using System.Threading.Tasks;
 

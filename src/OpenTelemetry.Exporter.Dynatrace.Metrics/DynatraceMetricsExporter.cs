@@ -16,11 +16,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using OpenTelemetry.Exporter.Dynatrace.Metrics;
 using OpenTelemetry.Metrics.Export;
 
@@ -29,12 +31,14 @@ namespace OpenTelemetry.Exporter.Dynatrace
     public class DynatraceMetricsExporter : MetricExporter
     {
         internal readonly DynatraceExporterOptions Options;
+        private readonly ILogger<DynatraceMetricsExporter> logger;
         private HttpClient httpClient;
         private DynatraceMetricSerializer serializer;
 
-        public DynatraceMetricsExporter(DynatraceExporterOptions options)
+        public DynatraceMetricsExporter(DynatraceExporterOptions options, ILogger<DynatraceMetricsExporter> logger)
         {
             this.Options = options;
+            this.logger = logger;
             this.httpClient = new HttpClient();
             if (!string.IsNullOrEmpty(options.ApiToken))
             {
@@ -49,7 +53,6 @@ namespace OpenTelemetry.Exporter.Dynatrace
         /// </summary>
         public override async Task<ExportResult> ExportAsync(IEnumerable<Metric> metrics, CancellationToken cancellationToken)
         {
-            Console.WriteLine("DynatraceMetricsExporter.ExportAsync()");
             var httpRequest = new HttpRequestMessage(HttpMethod.Post, this.Options.Url);
             var sb = new StringBuilder();
             foreach (var metric in metrics)
@@ -58,25 +61,25 @@ namespace OpenTelemetry.Exporter.Dynatrace
             }
 
             var mintMetrics = sb.ToString();
-            Console.WriteLine(mintMetrics);
+            logger.LogDebug(mintMetrics);
             httpRequest.Content = new StringContent(mintMetrics);
             try
             {
                 var response = await this.httpClient.SendAsync(httpRequest);
                 if (response.IsSuccessStatusCode)
                 {
-                    Console.WriteLine(response.StatusCode);
+                    logger.LogDebug("StatusCode: {StatusCode}", response.StatusCode);
                 }
                 else
                 {
-                    Console.WriteLine(response.StatusCode);
-                    Console.WriteLine(await response.Content.ReadAsStringAsync());
+                    logger.LogError("StatusCode: {StatusCode}", response.StatusCode);
+                    logger.LogError("Content: {Content}", await response.Content.ReadAsStringAsync());
                 }
                 return ExportResult.Success;
             }
             catch (Exception e)
             {
-                Console.WriteLine($"Error sending metrics: {e.Message}");
+                logger.LogError("Error sending metrics: {Error}", e.Message);
                 throw e;
             }
         }

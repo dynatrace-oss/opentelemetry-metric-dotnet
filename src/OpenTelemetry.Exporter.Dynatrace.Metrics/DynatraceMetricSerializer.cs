@@ -106,7 +106,7 @@ namespace OpenTelemetry.Exporter.Dynatrace.Metrics
 
         private void WriteTimestamp(StringBuilder sb, DateTime timestamp)
         {
-            sb.Append($" {new DateTimeOffset(timestamp.ToUniversalTime()).ToUnixTimeMilliseconds()}");
+            sb.Append($" {new DateTimeOffset(timestamp).ToUniversalTime().ToUnixTimeMilliseconds()}");
         }
 
         private void WriteSum(StringBuilder sb, double sumValue)
