@@ -29,10 +29,10 @@ jobs:
       run: dotnet test --no-restore --verbosity normal
 
     - name: Package
-      run: dotnet pack --configuration Release --no-build
+      run: dotnet pack src/OpenTelemetry.Exporter.Dynatrace.Metrics --configuration Release --no-build
 
-    - name: Archive nupkgs
+    - name: Archive nupkg
       uses: actions/upload-artifact@v2
       with:
-        name: packages
+        name: nupkg
         path: '**/bin/**/*.*nupkg'
