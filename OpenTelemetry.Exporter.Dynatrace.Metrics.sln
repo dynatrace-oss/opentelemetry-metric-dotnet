@@ -3,9 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30626.31
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenTelemetry.Exporter.Dynatrace.Metrics", "src\OpenTelemetry.Exporter.Dynatrace.Metrics\OpenTelemetry.Exporter.Dynatrace.Metrics.csproj", "{8DDB77F2-2C08-46E8-AD19-211A21467D69}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenTelemetry.Exporter.Dynatrace.Metrics", "src\OpenTelemetry.Exporter.Dynatrace.Metrics\OpenTelemetry.Exporter.Dynatrace.Metrics.csproj", "{8DDB77F2-2C08-46E8-AD19-211A21467D69}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Examples.Console", "src\Examples.Console\Examples.Console.csproj", "{204AD0B2-FAFE-4DEF-AB3E-FD2D1B3C7547}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Examples.Console", "src\Examples.Console\Examples.Console.csproj", "{204AD0B2-FAFE-4DEF-AB3E-FD2D1B3C7547}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenTelemetry.Exporter.Dynatrace.Metrics.Tests", "src\OpenTelemetry.Exporter.Dynatrace.Metrics.Tests\OpenTelemetry.Exporter.Dynatrace.Metrics.Tests.csproj", "{692EC259-9222-4870-ABE2-05D5AFEE5838}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{204AD0B2-FAFE-4DEF-AB3E-FD2D1B3C7547}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{204AD0B2-FAFE-4DEF-AB3E-FD2D1B3C7547}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{204AD0B2-FAFE-4DEF-AB3E-FD2D1B3C7547}.Release|Any CPU.Build.0 = Release|Any CPU
+		{692EC259-9222-4870-ABE2-05D5AFEE5838}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{692EC259-9222-4870-ABE2-05D5AFEE5838}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{692EC259-9222-4870-ABE2-05D5AFEE5838}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{692EC259-9222-4870-ABE2-05D5AFEE5838}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

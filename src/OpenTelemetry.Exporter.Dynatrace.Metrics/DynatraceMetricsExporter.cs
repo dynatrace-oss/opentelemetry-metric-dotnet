@@ -21,6 +21,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using OpenTelemetry.Exporter.Dynatrace.Metrics;
 using OpenTelemetry.Metrics.Export;
 
 namespace OpenTelemetry.Exporter.Dynatrace
@@ -29,6 +30,7 @@ namespace OpenTelemetry.Exporter.Dynatrace
     {
         internal readonly DynatraceExporterOptions Options;
         private HttpClient httpClient;
+        private DynatraceMetricSerializer serializer;
 
         public DynatraceMetricsExporter(DynatraceExporterOptions options)
         {
@@ -38,6 +40,7 @@ namespace OpenTelemetry.Exporter.Dynatrace
             {
                 this.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Api-Token", this.Options.ApiToken);
             }
+            this.serializer = new DynatraceMetricSerializer();
         }
 
         /// <summary>
@@ -48,61 +51,12 @@ namespace OpenTelemetry.Exporter.Dynatrace
         {
             Console.WriteLine("DynatraceMetricsExporter.ExportAsync()");
             var httpRequest = new HttpRequestMessage(HttpMethod.Post, this.Options.Url);
-
             var sb = new StringBuilder();
             foreach (var metric in metrics)
             {
-                foreach (var metricData in metric.Data)
-                {
-                    WriteMetricKey(sb, metric);
-                    WriteDimensions(sb, metricData);
-                    var labels = metricData.Labels;
-                    switch (metric.AggregationType)
-                    {
-                        case AggregationType.DoubleSum:
-                            {
-                                var sum = metricData as DoubleSumData;
-                                var sumValue = sum.Sum;
-                                this.WriteSum(sb, sumValue);
-                                break;
-                            }
-
-                        case AggregationType.LongSum:
-                            {
-                                var sum = metricData as Int64SumData;
-                                var sumValue = sum.Sum;
-                                this.WriteSum(sb, sumValue);
-                                break;
-                            }
-
-                        case AggregationType.DoubleSummary:
-                            {
-                                var summary = metricData as DoubleSummaryData;
-                                var count = summary.Count;
-                                var sum = summary.Sum;
-                                var min = summary.Min;
-                                var max = summary.Max;
-                                this.WriteSummary(sb, sum, count, min, max);
-                                break;
-                            }
-
-                        case AggregationType.Int64Summary:
-                            {
-                                var summary = metricData as Int64SummaryData;
-                                var count = summary.Count;
-                                var sum = summary.Sum;
-                                var min = summary.Min;
-                                var max = summary.Max;
-                                this.WriteSummary(sb, sum, count, min, max);
-                                break;
-                            }
-                    }
-
-                    this.WriteTimestamp(sb, metricData.Timestamp);
-                }
-
-                sb.AppendLine();
+                serializer.SerializeMetric(sb, metric);
             }
+            sb.AppendLine();
 
             var mintMetrics = sb.ToString();
             Console.WriteLine(mintMetrics);
@@ -125,39 +79,6 @@ namespace OpenTelemetry.Exporter.Dynatrace
             {
                 Console.WriteLine($"Error sending metrics: {e.Message}");
                 throw e;
-            }
-        }
-
-        private void WriteSummary(StringBuilder sb, double sum, long count, double min, double max)
-        {
-            sb.Append($" gauge,min={FormatDouble(min)},max={FormatDouble(max)},sum={FormatDouble(sum)},count={count}");
-        }
-
-        private object FormatDouble(double min)
-        {
-            return min.ToString("0.############");
-        }
-
-        private void WriteTimestamp(StringBuilder sb, DateTime timestamp)
-        {
-            sb.Append($" {new DateTimeOffset(timestamp.ToUniversalTime()).ToUnixTimeMilliseconds()}");
-        }
-
-        private void WriteSum(StringBuilder sb, double sumValue)
-        {
-            sb.Append($" count,delta={sumValue}");
-        }
-
-        private static void WriteMetricKey(StringBuilder sb, Metric metric)
-        {
-            sb.Append($"{metric.MetricName}");
-        }
-
-        private static void WriteDimensions(StringBuilder sb, MetricData data)
-        {
-            foreach (var label in data.Labels)
-            {
-                sb.Append($",{label.Key}={label.Value}");
             }
         }
     }
