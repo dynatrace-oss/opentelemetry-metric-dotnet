@@ -15,6 +15,7 @@
 // </copyright>
 
 using CommandLine;
+using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 
 namespace Examples.Console
