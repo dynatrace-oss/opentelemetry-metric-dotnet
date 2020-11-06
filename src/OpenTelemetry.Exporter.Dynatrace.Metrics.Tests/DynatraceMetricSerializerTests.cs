@@ -27,7 +27,7 @@ namespace OpenTelemetry.Exporter.Dynatrace.Metrics.Tests
             });
 
             string serialized = new DynatraceMetricSerializer().SerializeMetric(m1);
-            string expected = "metric1,dim1=value1,dim2=value2 count,delta=100 1604660628881";
+            string expected = "namespace1.metric1,dim1=value1,dim2=value2 count,delta=100 1604660628881";
             Assert.Equal(expected, serialized);
         }
     }

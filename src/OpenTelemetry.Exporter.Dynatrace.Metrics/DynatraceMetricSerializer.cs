@@ -88,7 +88,7 @@ namespace OpenTelemetry.Exporter.Dynatrace.Metrics
 
         private void WriteMetricKey(StringBuilder sb, Metric metric)
         {
-            sb.Append($"{metric.MetricName}");
+            sb.Append($"{metric.MetricNamespace}.{metric.MetricName}");
         }
 
         private void WriteDimensions(StringBuilder sb, MetricData data)
