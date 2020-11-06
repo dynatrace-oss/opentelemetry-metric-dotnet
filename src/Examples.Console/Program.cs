@@ -16,7 +16,6 @@
 
 using System;
 using CommandLine;
-using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 
 namespace Examples.Console
@@ -25,19 +24,6 @@ namespace Examples.Console
     {
         public static async Task Main(string[] args)
         {
-            var utcnow = DateTime.UtcNow;
-            
-            System.Console.WriteLine("utcnow: " + utcnow);
-            System.Console.WriteLine("utcnow.ToLocalTime: " + utcnow.ToLocalTime());
-            System.Console.WriteLine("utcnow.ToUniversalTime: " + utcnow.ToUniversalTime());
-
-            var datetimeoffset = new DateTimeOffset(utcnow);
-            System.Console.WriteLine("datetimeoffset: " + datetimeoffset);
-            System.Console.WriteLine("datetimeoffset.ToLocalTime: " + datetimeoffset.ToLocalTime());
-            System.Console.WriteLine("datetimeoffset.ToUniversalTime: " + datetimeoffset.ToUniversalTime());
-
-            System.Console.WriteLine("datetimeoffset.ToUnixTimeMilliseconds: " + datetimeoffset.ToUnixTimeMilliseconds());
-
             await Parser.Default.ParseArguments<DynatraceOptions>(args)
                 .MapResult(
                     (DynatraceOptions options) => TestDynatraceExporter.RunAsync(options.Url, options.ApiToken, options.PushIntervalInSecs, options.DurationInMins),
