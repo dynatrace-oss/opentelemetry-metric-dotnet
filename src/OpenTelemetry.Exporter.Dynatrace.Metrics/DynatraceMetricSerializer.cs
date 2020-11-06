@@ -11,7 +11,7 @@ namespace OpenTelemetry.Exporter.Dynatrace.Metrics
         {
             var sb = new StringBuilder();
             SerializeMetric(sb, metric);
-            return sbx.ToString();
+            return sb.ToString();
         }
 
         public void SerializeMetric(StringBuilder sb, Metric metric)
