@@ -23,3 +23,10 @@ jobs:
       run: dotnet build --configuration Release --no-restore
     - name: Test
       run: dotnet test --no-restore --verbosity normal
+    - name: Package
+      run: dotnet pack --configuration Release --no-build
+    - name: Archive nupkgs
+      uses: actions/upload-artifact@v2
+      with:
+        name: packages
+        path: '**/bin/**/*.*nupkg'
