@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using OpenTelemetry.Metrics.Export;
 
@@ -7,6 +8,15 @@ namespace OpenTelemetry.Exporter.Dynatrace.Metrics
 {
     public class DynatraceMetricSerializer
     {
+        private readonly string prefix;
+        private readonly IEnumerable<KeyValuePair<string, string>> tags;
+
+        public DynatraceMetricSerializer(string prefix = null, IEnumerable<KeyValuePair<string, string>> tags = null)
+        {
+            this.prefix = prefix;
+            this.tags = tags ?? Enumerable.Empty<KeyValuePair<string, string>>();
+        }
+
         public string SerializeMetric(Metric metric)
         {
             var sb = new StringBuilder();
@@ -19,7 +29,8 @@ namespace OpenTelemetry.Exporter.Dynatrace.Metrics
             foreach (var metricData in metric.Data)
             {
                 WriteMetricKey(sb, metric);
-                WriteDimensions(sb, metricData);
+                WriteDimensions(sb, metricData.Labels);
+                WriteDimensions(sb, tags);
                 var labels = metricData.Labels;
                 switch (metric.AggregationType)
                 {
@@ -88,12 +99,14 @@ namespace OpenTelemetry.Exporter.Dynatrace.Metrics
 
         private void WriteMetricKey(StringBuilder sb, Metric metric)
         {
-            sb.Append($"{metric.MetricNamespace}.{metric.MetricName}");
+            if (!string.IsNullOrEmpty(prefix)) sb.Append($"{prefix}.");
+            if (!string.IsNullOrEmpty(metric.MetricNamespace)) sb.Append($"{metric.MetricNamespace}.");
+            sb.Append(metric.MetricName);
         }
 
-        private void WriteDimensions(StringBuilder sb, MetricData data)
+        private void WriteDimensions(StringBuilder sb, IEnumerable<KeyValuePair<string, string>> labels)
         {
-            foreach (var label in data.Labels)
+            foreach (var label in labels)
             {
                 sb.Append($",{label.Key}={label.Value}");
             }

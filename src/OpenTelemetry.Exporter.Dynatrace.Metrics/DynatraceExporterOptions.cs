@@ -14,6 +14,8 @@
 // limitations under the License.
 // </copyright>
 
+using System.Collections.Generic;
+
 namespace OpenTelemetry.Exporter.Dynatrace
 {
     /// <summary>
@@ -30,5 +32,15 @@ namespace OpenTelemetry.Exporter.Dynatrace
         /// Gets or sets the dynatrace api-token for authentication.
         /// </summary>
         public string ApiToken { get; set; }
+
+        /// <summary>
+        /// Gets automatically prefixed to a metric name.
+        /// </summary>
+        public string Prefix { get; set; }
+
+        /// <summary>
+        /// Gets automatically added as metric dimension.
+        /// </summary>
+        public IEnumerable<KeyValuePair<string, string>> Tags { get; set; }
     }
 }

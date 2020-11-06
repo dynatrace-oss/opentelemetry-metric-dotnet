@@ -40,7 +40,7 @@ namespace OpenTelemetry.Exporter.Dynatrace
             {
                 this.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Api-Token", this.Options.ApiToken);
             }
-            this.serializer = new DynatraceMetricSerializer();
+            this.serializer = new DynatraceMetricSerializer(options.Prefix, options.Tags);
         }
 
         /// <summary>
