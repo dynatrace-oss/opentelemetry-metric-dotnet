@@ -90,6 +90,7 @@ namespace OpenTelemetry.Exporter.Dynatrace.Metrics
                 }
 
                 this.WriteTimestamp(sb, metricData.Timestamp);
+                sb.AppendLine();
             }
         }
 

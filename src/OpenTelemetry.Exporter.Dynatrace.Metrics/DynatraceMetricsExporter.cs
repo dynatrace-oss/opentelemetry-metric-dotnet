@@ -56,7 +56,6 @@ namespace OpenTelemetry.Exporter.Dynatrace
             {
                 serializer.SerializeMetric(sb, metric);
             }
-            sb.AppendLine();
 
             var mintMetrics = sb.ToString();
             Console.WriteLine(mintMetrics);
