@@ -48,6 +48,24 @@ namespace OpenTelemetry.Exporter.Dynatrace.Metrics.Tests
         }
 
         [Fact]
+        public void SerializeWithoutLabels()
+        {
+            var timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1604660628881).UtcDateTime;
+
+            var m1 = new Metric("namespace1", "metric1", "Description", AggregationType.LongSum);
+            m1.Data.Add(new Int64SumData
+            {
+                Labels = new List<KeyValuePair<string, string>>(),
+                Sum = 100,
+                Timestamp = timestamp
+            });
+
+            string serialized = new DynatraceMetricSerializer().SerializeMetric(m1);
+            string expected = "namespace1.metric1 count,delta=100 1604660628881";
+            Assert.Equal(expected, serialized);
+        }
+
+        [Fact]
         public void PrefixOption()
         {
             var timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1604660628881).UtcDateTime;
