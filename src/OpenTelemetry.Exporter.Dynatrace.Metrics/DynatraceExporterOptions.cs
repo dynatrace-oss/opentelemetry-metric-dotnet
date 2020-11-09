@@ -25,11 +25,21 @@ namespace OpenTelemetry.Exporter.Dynatrace
     {
         /// <summary>
         /// Gets or sets the dynatrace endpoint to send data to.
+        ///
+        /// For example:
+        ///     Local OneAgent: http://127.0.0.1:14499/metrics/ingest (api-token NOT required)
+        ///     Dynatrace Cluster: https://my-cluster/api/v2/metrics/ingest
+        ///
+        /// https://www.dynatrace.com/support/help/dynatrace-api/environment-api/metric-v2/post-ingest-metrics
         /// </summary>
         public string Url { get; set; } = "http://127.0.0.1:14499/metrics/ingest";
 
         /// <summary>
         /// Gets or sets the dynatrace api-token for authentication.
+        ///
+        /// How to aquire an api-token: https://www.dynatrace.com/support/help/dynatrace-api/basics/dynatrace-api-authentication/
+        ///
+        /// "metrics.ingest" permission is required for the api-token.
         /// </summary>
         public string ApiToken { get; set; }
 
@@ -39,7 +49,7 @@ namespace OpenTelemetry.Exporter.Dynatrace
         public string Prefix { get; set; }
 
         /// <summary>
-        /// Gets automatically added as metric dimension.
+        /// Gets automatically added as metric labels/dimensions.
         /// </summary>
         public IEnumerable<KeyValuePair<string, string>> Tags { get; set; }
 
