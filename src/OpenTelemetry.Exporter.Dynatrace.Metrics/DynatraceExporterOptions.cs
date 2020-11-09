@@ -54,7 +54,7 @@ namespace OpenTelemetry.Exporter.Dynatrace
         public IEnumerable<KeyValuePair<string, string>> Tags { get; set; }
 
         /// <summary>
-        /// Automatically adds entity metadata to metric labels (e.g. 'dt.entity.process_group_instance=PROCESS_GROUP_INSTANCE-46F1121843B79F56')
+        /// Automatically adds monitored entity metadata to metric labels (e.g. 'dt.entity.process_group_instance=PROCESS_GROUP_INSTANCE-46F1121843B79F56')
         /// </summary>
         public bool OneAgentMetadataEnrichment { get; set; } = true;
     }

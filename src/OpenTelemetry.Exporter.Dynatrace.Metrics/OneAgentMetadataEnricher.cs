@@ -43,7 +43,7 @@ namespace OpenTelemetry.Exporter.Dynatrace.Metrics
         }
 
         /// <summary>
-        /// Converts a metada
+        /// Converts metadata read from OneAgent to Monitored Entity IDs
         /// </summary>
         /// <param name="entityIdOriginal">entity id as hex with leading '0x', e.g. '0x46f1121843b79f56'</param>
         /// <param name="entityPrefix">dynatrace entity type name, e.g. 'PROCESS_GROUP_INSTANCE' or 'HOST'</param>
