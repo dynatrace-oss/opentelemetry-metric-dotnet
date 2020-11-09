@@ -43,7 +43,7 @@ namespace OpenTelemetry.Exporter.Dynatrace.Metrics.Tests
             });
 
             string serialized = new DynatraceMetricSerializer().SerializeMetric(m1);
-            string expected = "namespace1.metric1,dim1=value1,dim2=value2 count,delta=100 1604660628881" + Environment.NewLine;
+            string expected = "namespace1.metric1,dim1=value1,dim2=value2 count,100 1604660628881" + Environment.NewLine;
             Assert.Equal(expected, serialized);
         }
 
@@ -61,7 +61,7 @@ namespace OpenTelemetry.Exporter.Dynatrace.Metrics.Tests
             });
 
             string serialized = new DynatraceMetricSerializer().SerializeMetric(m1);
-            string expected = "namespace1.metric1 count,delta=100 1604660628881" + Environment.NewLine;
+            string expected = "namespace1.metric1 count,100 1604660628881" + Environment.NewLine;
             Assert.Equal(expected, serialized);
         }
 
@@ -80,7 +80,7 @@ namespace OpenTelemetry.Exporter.Dynatrace.Metrics.Tests
             });
 
             string serialized = new DynatraceMetricSerializer(prefix: "prefix1").SerializeMetric(m1);
-            string expected = "prefix1.namespace1.metric1 count,delta=100 1604660628881" + Environment.NewLine;
+            string expected = "prefix1.namespace1.metric1 count,100 1604660628881" + Environment.NewLine;
             Assert.Equal(expected, serialized);
         }
 
@@ -105,7 +105,7 @@ namespace OpenTelemetry.Exporter.Dynatrace.Metrics.Tests
                 { new KeyValuePair<string, string>("tag2", "value2") },
                 { new KeyValuePair<string, string>("tag3", "value3") },
             }).SerializeMetric(m1);
-            string expected = "namespace1.metric1,dim1=value1,dim2=value2,tag1=value1,tag2=value2,tag3=value3 count,delta=100 1604660628881" + Environment.NewLine;
+            string expected = "namespace1.metric1,dim1=value1,dim2=value2,tag1=value1,tag2=value2,tag3=value3 count,100 1604660628881" + Environment.NewLine;
             Assert.Equal(expected, serialized);
         }
 
@@ -137,9 +137,9 @@ namespace OpenTelemetry.Exporter.Dynatrace.Metrics.Tests
 
             string serialized = new DynatraceMetricSerializer().SerializeMetric(m1);
             string expected =
-                "namespace1.metric1,dim1=value1,dim2=value2 count,delta=100 1604660628881" + Environment.NewLine +
-                "namespace1.metric1,dim1=value1,dim2=value2 count,delta=130 1604660628882" + Environment.NewLine +
-                "namespace1.metric1,dim1=value1,dim2=value2 count,delta=150 1604660628883" + Environment.NewLine;
+                "namespace1.metric1,dim1=value1,dim2=value2 count,100 1604660628881" + Environment.NewLine +
+                "namespace1.metric1,dim1=value1,dim2=value2 count,130 1604660628882" + Environment.NewLine +
+                "namespace1.metric1,dim1=value1,dim2=value2 count,150 1604660628883" + Environment.NewLine;
             Assert.Equal(expected, serialized);
         }
     }

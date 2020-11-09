@@ -111,7 +111,7 @@ namespace OpenTelemetry.Exporter.Dynatrace.Metrics
 
         private void WriteSum(StringBuilder sb, double sumValue)
         {
-            sb.Append($" count,delta={sumValue}");
+            sb.Append($" count,{sumValue}");
         }
 
         private void WriteMetricKey(StringBuilder sb, Metric metric)
