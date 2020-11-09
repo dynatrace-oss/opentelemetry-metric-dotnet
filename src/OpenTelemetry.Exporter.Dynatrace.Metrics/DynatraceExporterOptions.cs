@@ -26,7 +26,7 @@ namespace OpenTelemetry.Exporter.Dynatrace
         /// <summary>
         /// Gets or sets the dynatrace endpoint to send data to.
         /// </summary>
-        public string Url { get; set; }
+        public string Url { get; set; } = "http://127.0.0.1:14499/metrics/ingest";
 
         /// <summary>
         /// Gets or sets the dynatrace api-token for authentication.
@@ -42,5 +42,10 @@ namespace OpenTelemetry.Exporter.Dynatrace
         /// Gets automatically added as metric dimension.
         /// </summary>
         public IEnumerable<KeyValuePair<string, string>> Tags { get; set; }
+
+        /// <summary>
+        /// Automatically adds entity metadata to metric labels (e.g. 'dt.entity.process_group_instance=PROCESS_GROUP_INSTANCE-46F1121843B79F56')
+        /// </summary>
+        public bool OneAgentMetadataEnrichment { get; set; } = true;
     }
 }
