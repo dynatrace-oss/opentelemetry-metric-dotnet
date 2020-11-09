@@ -40,9 +40,7 @@ namespace OpenTelemetry.Exporter.Dynatrace
         private HttpClient httpClient;
         private DynatraceMetricSerializer serializer;
 
-        public DynatraceMetricsExporter(
-                DynatraceExporterOptions options,
-                ILogger<DynatraceMetricsExporter> logger)
+        public DynatraceMetricsExporter(DynatraceExporterOptions options, ILogger<DynatraceMetricsExporter> logger)
         {
             this.Options = options;
             this.logger = logger;
