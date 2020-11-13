@@ -24,6 +24,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using OpenTelemetry.Exporter.Dynatrace.Metrics;
 using OpenTelemetry.Metrics.Export;
 
@@ -40,10 +41,10 @@ namespace OpenTelemetry.Exporter.Dynatrace
         private HttpClient httpClient;
         private DynatraceMetricSerializer serializer;
 
-        public DynatraceMetricsExporter(DynatraceExporterOptions options, ILogger<DynatraceMetricsExporter> logger)
+        public DynatraceMetricsExporter(DynatraceExporterOptions options = null, ILogger<DynatraceMetricsExporter> logger = null)
         {
-            this.Options = options;
-            this.logger = logger;
+            this.Options = options ?? new DynatraceExporterOptions();
+            this.logger = logger ?? NullLogger<DynatraceMetricsExporter>.Instance;
             logger.LogDebug("Dynatrace Metrics Url: {Url}", options.Url);
             this.httpClient = new HttpClient();
             if (!string.IsNullOrEmpty(options.ApiToken))
@@ -54,7 +55,7 @@ namespace OpenTelemetry.Exporter.Dynatrace
             if (options.Tags != null) defaultLabels.AddRange(options.Tags);
             if (options.OneAgentMetadataEnrichment)
             {
-                var enricher = new OneAgentMetadataEnricher(logger);
+                var enricher = new OneAgentMetadataEnricher(this.logger);
                 enricher.EnrichWithDynatraceMetadata(defaultLabels);
             }
             this.serializer = new DynatraceMetricSerializer(options.Prefix, defaultLabels);
