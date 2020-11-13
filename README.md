@@ -1,7 +1,8 @@
 # Dynatrace OpenTelemetry Metrics Exporter for .NET
 
-> **DISCLAIMER**: This project was developed as part of an innovation day by Dynatrace R&D.
-It is not complete, nor supported and only intended as a starting point for those wanting to ingest OpenTelemetry instrumented custom metrics into the Dynatrace platform.
+> This project is developed and maintained by Dynatrace R&D.
+Currently, this is a prototype and not intended for production-use.
+It is not covered by Dynatrace support.
 
 This exporter plugs into the OpenTelemetry Metrics SDK for .NET, which is in alpha/preview state and neither considered stable nor complete as of this writing.
 
