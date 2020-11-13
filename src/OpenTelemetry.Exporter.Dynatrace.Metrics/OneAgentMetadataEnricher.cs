@@ -8,6 +8,11 @@ using Microsoft.Extensions.Logging;
 
 namespace OpenTelemetry.Exporter.Dynatrace.Metrics
 {
+    /// <summary>
+    /// Queries the OneAgent to get metadata about the current process and enriches metric labels with them.
+    ///
+    /// ATTENTION: This feature is experimental and the API is subject to change in future OneAgent versions.
+    /// </summary>
     public class OneAgentMetadataEnricher
     {
         private readonly ILogger<DynatraceMetricsExporter> logger;
