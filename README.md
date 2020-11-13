@@ -27,7 +27,7 @@ var options = new DynatraceExporterOptions
     ApiToken = apiToken,
 };
 
-// create exporter instance and pass logger to be used
+// create exporter instance and pass an optional logger to be used
 ILogger logger = loggerFactory.CreateLogger<DynatraceMetricsExporter>();
 
 var dtExporter = new DynatraceMetricsExporter(options, logger);
