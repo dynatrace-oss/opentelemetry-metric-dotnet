@@ -151,7 +151,7 @@ namespace OpenTelemetry.Exporter.Dynatrace.Metrics
             {
                 input = input.Substring(0, MAX_LENGTH_METRIC_KEY);
             }
-            return SanitizeKey(Regex.Replace(TrimPeriodsAndUnderscores(input), @"\.{2,}", "."));
+            return ReplaceKeyCharacters(TrimKey(RemoveInvalidKeySections(input)));
         }
 
         /// <summary>
@@ -168,7 +168,32 @@ namespace OpenTelemetry.Exporter.Dynatrace.Metrics
             {
                 input = input.Substring(0, MAX_LENGTH_DIMENSION_KEY);
             }
-            return SanitizeKey(Regex.Replace(TrimPeriodsAndUnderscores(input).ToLower(), @"\.{2,}", "."));
+            return ReplaceKeyCharacters(TrimKey(RemoveInvalidKeySections(input)).ToLower());
+        }
+
+        /// <summary>
+        /// Removes leading or trailing characters invalid for keys
+        /// </summary>
+        private static string TrimKey(string str)
+        {
+            str = Regex.Replace(str, @"^[^a-zA-Z][^a-zA-Z_]*", "");
+            return Regex.Replace(str, @"[^a-zA-Z_0-9]*$", "");
+        }
+
+        /// <summary>
+        /// Replaces characters invalid for keys with underscores
+        /// </summary>
+        private static string ReplaceKeyCharacters(string str)
+        {
+            return Regex.Replace(str, @"[^a-zA-Z0-9:_\-\.]+", "_");
+        }
+
+        /// <summary>
+        /// Removes invalid (including empty) key sections
+        /// </summary>
+        private static string RemoveInvalidKeySections(string str)
+        {
+            return Regex.Replace(str, @"\.+[^a-zA-Z][^a-zA-Z0-9:_\-\.]*", ".");
         }
 
         /// <summary>
@@ -187,23 +212,6 @@ namespace OpenTelemetry.Exporter.Dynatrace.Metrics
             }
             input = Regex.Replace(input, @"([,= \\])", "\\$1");
             return Regex.Replace(input, @"[^a-zA-Z0-9:_\-\.,= \\]", "_");
-        }
-
-        /// <summary>
-        /// Removes leading or trailing periods and underscores
-        /// </summary>
-        internal static string TrimPeriodsAndUnderscores(string str)
-        {
-            string beginTrimmed = Regex.Replace(str, @"^[\._]*", "");
-            return Regex.Replace(beginTrimmed, @"[\._]*$", "");
-        }
-
-        /// <summary>
-        /// Replaces invalid characters with underscores according to the MINT protocol
-        /// </summary>
-        internal static string SanitizeKey(string str)
-        {
-            return Regex.Replace(str, @"[^a-zA-Z0-9:_\-\.]", "_");
         }
     }
 }

@@ -145,6 +145,9 @@ namespace OpenTelemetry.Exporter.Dynatrace.Metrics.Tests
 
         [Theory]
         [InlineData("just.a.normal.key", "just.a.normal.key")]
+        [InlineData("~0something", "something")]
+        [InlineData("some~thing", "some_thing")]
+        [InlineData("some~ä#thing", "some_thing")]
         [InlineData("a..b", "a.b")]
         [InlineData("a.....b", "a.b")]
         [InlineData("asd", "asd")]
@@ -153,17 +156,32 @@ namespace OpenTelemetry.Exporter.Dynatrace.Metrics.Tests
         [InlineData("a.", "a")]
         [InlineData(".a.", "a")]
         [InlineData("_a", "a")]
-        [InlineData("a_", "a")]
-        [InlineData("_a_", "a")]
-        [InlineData(".a_", "a")]
+        [InlineData("a_", "a_")]
+        [InlineData("_a_", "a_")]
+        [InlineData(".a_", "a_")]
         [InlineData("_a.", "a")]
-        [InlineData("._._a_._._", "a")]
+        [InlineData("._._a_._._", "a_")]
+        [InlineData("ä_äa", "__a")]
         [InlineData("test..empty.test", "test.empty.test")]
-        [InlineData("a,,,b c=d\\e", "a___b_c_d_e")]
+        [InlineData("a,,,b  c=d\\e\\ =,f", "a_b_c_d_e_f")]
         [InlineData("a!b\"c#d$e%f&g'h(i)j*k+l,m-n.o/p:q;r<s=t>u?v@w[x]y\\z^0 1_2;3{4|5}6~7", "a_b_c_d_e_f_g_h_i_j_k_l_m-n.o_p:q_r_s_t_u_v_w_x_y_z_0_1_2_3_4_5_6_7")]
         public void MetricAndDimensionKeyNormalizer(string input, string expected)
         {
             Assert.Equal(expected, DynatraceMetricSerializer.ToMintMetricKey(input));
+            Assert.Equal(expected, DynatraceMetricSerializer.ToMintDimensionKey(input));
+        }
+
+        [Theory]
+        [InlineData("Preserve.thE_cAsing", "Preserve.thE_cAsing")]
+        public void MetricKeyNormalizer(string input, string expected)
+        {
+            Assert.Equal(expected, DynatraceMetricSerializer.ToMintMetricKey(input));
+        }
+
+        [Theory]
+        [InlineData("to.LOWER_CaSe", "to.lower_case")]
+        public void DimensionKeyNormalizer(string input, string expected)
+        {
             Assert.Equal(expected, DynatraceMetricSerializer.ToMintDimensionKey(input));
         }
 
