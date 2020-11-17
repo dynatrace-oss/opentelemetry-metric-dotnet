@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using OpenTelemetry.Metrics.Export;
 
 namespace OpenTelemetry.Exporter.Dynatrace.Metrics
@@ -26,6 +27,11 @@ namespace OpenTelemetry.Exporter.Dynatrace.Metrics
     {
         private readonly string prefix;
         private readonly IEnumerable<KeyValuePair<string, string>> tags;
+
+        private const int MAX_LENGTH_METRIC_KEY = 250;
+        private const int MAX_LENGTH_DIMENSION_KEY = 100;
+        private const int MAX_LENGTH_DIMENSION_VALUE = 250;
+        private const int MAX_DIMENSIONS = 50;
 
         public DynatraceMetricSerializer(string prefix = null, IEnumerable<KeyValuePair<string, string>> tags = null)
         {
@@ -116,17 +122,96 @@ namespace OpenTelemetry.Exporter.Dynatrace.Metrics
 
         private void WriteMetricKey(StringBuilder sb, Metric metric)
         {
-            if (!string.IsNullOrEmpty(prefix)) sb.Append($"{prefix}.");
-            if (!string.IsNullOrEmpty(metric.MetricNamespace)) sb.Append($"{metric.MetricNamespace}.");
-            sb.Append(metric.MetricName);
+            var keyBuilder = new StringBuilder();
+            if (!string.IsNullOrEmpty(prefix)) keyBuilder.Append($"{prefix}.");
+            if (!string.IsNullOrEmpty(metric.MetricNamespace)) keyBuilder.Append($"{metric.MetricNamespace}.");
+            keyBuilder.Append(metric.MetricName);
+            sb.Append(ToMintMetricKey(keyBuilder.ToString()));
         }
 
         private void WriteDimensions(StringBuilder sb, IEnumerable<KeyValuePair<string, string>> labels)
         {
-            foreach (var label in labels)
+            foreach (var label in labels.Take(MAX_DIMENSIONS))
             {
-                sb.Append($",{label.Key}={label.Value}");
+                sb.Append($",{ToMintDimensionKey(label.Key)}={ToMintDimensionValue(label.Value)}");
             }
+        }
+
+        /// <summary>
+        /// Transforms OpenTelemetry metric names according to the MINT protocol
+        /// </summary>
+        /// <returns>a valid MINT metric key or null, if the input could not be normalized</returns>
+        internal static string ToMintMetricKey(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+            {
+                return null;
+            }
+            if (input.Length > MAX_LENGTH_METRIC_KEY)
+            {
+                input = input.Substring(0, MAX_LENGTH_METRIC_KEY);
+            }
+            return ReplaceKeyCharacters(TrimKey(RemoveInvalidKeySections(input)));
+        }
+
+        /// <summary>
+        /// Transforms OpenTelemetry label keys according to the MINT protocol
+        /// </summary>
+        /// <returns>a valid MINT dimension key or null, if the input could not be normalized</returns>
+        internal static string ToMintDimensionKey(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+            {
+                return null;
+            }
+            if (input.Length > MAX_LENGTH_DIMENSION_KEY)
+            {
+                input = input.Substring(0, MAX_LENGTH_DIMENSION_KEY);
+            }
+            return ReplaceKeyCharacters(TrimKey(RemoveInvalidKeySections(input)).ToLower());
+        }
+
+        /// <summary>
+        /// Removes leading or trailing characters invalid for keys
+        /// </summary>
+        private static string TrimKey(string str)
+        {
+            str = Regex.Replace(str, @"^[^a-zA-Z][^a-zA-Z_]*", "");
+            return Regex.Replace(str, @"[^a-zA-Z_0-9]*$", "");
+        }
+
+        /// <summary>
+        /// Replaces characters invalid for keys with underscores
+        /// </summary>
+        private static string ReplaceKeyCharacters(string str)
+        {
+            return Regex.Replace(str, @"[^a-zA-Z0-9:_\-\.]+", "_");
+        }
+
+        /// <summary>
+        /// Removes invalid (including empty) key sections
+        /// </summary>
+        private static string RemoveInvalidKeySections(string str)
+        {
+            return Regex.Replace(str, @"\.+[^a-zA-Z][^a-zA-Z0-9:_\-\.]*", ".");
+        }
+
+        /// <summary>
+        /// Transforms OpenTelemetry label values according to the MINT protocol
+        /// </summary>
+        /// <returns>a valid MINT dimension value or null, if the input could not be normalized</returns>
+        internal static string ToMintDimensionValue(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+            {
+                return null;
+            }
+            if (input.Length > MAX_LENGTH_DIMENSION_VALUE)
+            {
+                input = input.Substring(0, MAX_LENGTH_DIMENSION_VALUE);
+            }
+            input = Regex.Replace(input, @"([,= \\])", "\\$1");
+            return Regex.Replace(input, @"[^a-zA-Z0-9:_\-\.,= \\]", "_");
         }
     }
 }
