@@ -53,11 +53,6 @@ namespace OpenTelemetry.Exporter.Dynatrace
             }
             var defaultLabels = new List<KeyValuePair<string, string>>();
             if (options.Tags != null) defaultLabels.AddRange(options.Tags);
-            if (options.OneAgentMetadataEnrichment)
-            {
-                var enricher = new OneAgentMetadataEnricher(this.logger);
-                enricher.EnrichWithDynatraceMetadata(defaultLabels);
-            }
             this.serializer = new DynatraceMetricSerializer(options.Prefix, defaultLabels);
         }
 
