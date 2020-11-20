@@ -12,6 +12,7 @@
     <RepositoryUrl>https://github.com/dynatrace-oss/opentelemetry-metric-dotnet</RepositoryUrl>
     <RepositoryType>Git</RepositoryType>
     <PackageIconUrl>https://assets.dynatrace.com/global/resources/Signet_Logo_RGB_CP_512x512px.png</PackageIconUrl>
+    <PackageIcon>icon.png</PackageIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,6 +23,13 @@
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
       <_Parameter1>Dynatrace.OpenTelemetry.Exporter.Metrics.Tests</_Parameter1>
     </AssemblyAttribute>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <None Include="..\..\docs\img\icon.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>
