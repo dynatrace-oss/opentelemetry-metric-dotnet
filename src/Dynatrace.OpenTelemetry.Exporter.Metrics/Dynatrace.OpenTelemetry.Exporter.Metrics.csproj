@@ -1,11 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Version>0.1.0-beta</Version>
-  </PropertyGroup>
-
-  <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <Authors>Dynatrace</Authors>
+    <Company>Dynatrace</Company>
+    <Product>Dynatrace OpenTelemetry Metrics Exporter for .NET</Product>
+    <Version>0.1.0-beta</Version>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <Copyright>Copyright 2020 Dynatrace LLC; Licensed under the Apache License, Version 2.0</Copyright>
+    <PackageProjectUrl>https://github.com/dynatrace-oss/opentelemetry-metric-dotnet</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/dynatrace-oss/opentelemetry-metric-dotnet</RepositoryUrl>
+    <RepositoryType>Git</RepositoryType>
+    <PackageIconUrl>https://assets.dynatrace.com/global/resources/Signet_Logo_RGB_CP_512x512px.png</PackageIconUrl>
   </PropertyGroup>
 
   <ItemGroup>
