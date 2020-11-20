@@ -84,3 +84,9 @@ The `Prefix` property specifies an optional prefix, which is prepended to each m
 #### Default Labels/Dimensions
 
 The `Tags` property can be used to optionally specify a list of key/value pairs, which will be added as additional labels/dimensions to all data points.
+
+### Known issues and limitations
+
+The OpenTelemetry Metrics SDK currently does not allow exporters to distinguish between values received from counters and those received from observers.
+Counter values are passed to the exporter as deltas to the last export whereas for observers, the current value is reported.
+For this exporter, we decided to properly support counters and thus send the received values marked as deltas, which will lead to wrong values being reported for observers, however.
