@@ -17,7 +17,7 @@ Once the Metrics API and SDK are developed further, instructions on using the AP
 To add the exporter to your project, run the following command or add the Nuget package yourself:
 
 ```sh
-dotnet add package OpenTelemetry.Exporter.Dynatrace.Metrics
+dotnet add package Dynatrace.OpenTelemetry.Exporter.Metrics
 ```
 
 ```csharp

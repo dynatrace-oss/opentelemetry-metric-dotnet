@@ -21,7 +21,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using OpenTelemetry.Metrics.Export;
 
-namespace OpenTelemetry.Exporter.Dynatrace.Metrics
+namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 {
     public class DynatraceMetricSerializer
     {

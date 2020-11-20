@@ -15,7 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\OpenTelemetry.Exporter.Dynatrace.Metrics\OpenTelemetry.Exporter.Dynatrace.Metrics.csproj" />
+    <ProjectReference Include="..\Dynatrace.OpenTelemetry.Exporter.Metrics\Dynatrace.OpenTelemetry.Exporter.Metrics.csproj" />
   </ItemGroup>
 
 </Project>

@@ -21,7 +21,7 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry;
-using OpenTelemetry.Exporter.Dynatrace;
+using Dynatrace.OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Metrics.Export;
 using OpenTelemetry.Trace;

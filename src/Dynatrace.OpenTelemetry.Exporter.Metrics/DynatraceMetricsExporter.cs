@@ -25,10 +25,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using OpenTelemetry.Exporter.Dynatrace.Metrics;
+using Dynatrace.OpenTelemetry.Exporter.Metrics;
 using OpenTelemetry.Metrics.Export;
 
-namespace OpenTelemetry.Exporter.Dynatrace
+namespace Dynatrace.OpenTelemetry.Exporter
 {
     /// <summary>
     /// https://www.dynatrace.com/support/help/how-to-use-dynatrace/metrics/metric-ingestion/metric-ingestion-protocol/
