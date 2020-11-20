@@ -22,7 +22,7 @@ using OpenTelemetry.Metrics.Export;
 using OpenTelemetry.Trace;
 using Xunit;
 
-namespace OpenTelemetry.Exporter.Dynatrace.Metrics.Tests
+namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 {
     public class DynatraceMetricSerializerTests
     {

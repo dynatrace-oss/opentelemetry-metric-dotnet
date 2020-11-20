@@ -16,7 +16,7 @@
 
 using System.Collections.Generic;
 
-namespace OpenTelemetry.Exporter.Dynatrace
+namespace Dynatrace.OpenTelemetry.Exporter
 {
     /// <summary>
     /// Options to run dynatrace exporter.
