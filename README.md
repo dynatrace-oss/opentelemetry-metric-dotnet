@@ -20,6 +20,8 @@ To add the exporter to your project, run the following command or add the Nuget 
 dotnet add package Dynatrace.OpenTelemetry.Exporter.Metrics
 ```
 
+This exporter package targets [.NET Standard 2.0](https://docs.microsoft.com/en-us/dotnet/standard/net-standard) and can therefore be included on .NET Core 2.0 and above, as well as .NET Framework 4.6.1 and above.
+
 ```csharp
 // configure API endpoint and authentication token
 var options = new DynatraceExporterOptions
