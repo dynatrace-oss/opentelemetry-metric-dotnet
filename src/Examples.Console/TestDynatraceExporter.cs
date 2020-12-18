@@ -30,7 +30,7 @@ namespace Examples.Console
 {
     internal class TestDynatraceExporter
     {
-        internal static async Task<int> RunAsync(string url, string apiToken, int pushIntervalInSecs, int totalDurationInMins)
+        internal static async Task<int> RunAsync(string url, string apiToken, int pushIntervalInSecs, int totalDurationInMins, bool oneAgentMetadataEnrichment)
         {
             ILoggerFactory loggerFactory = LoggerFactory.Create(builder => {
                 builder.SetMinimumLevel(LogLevel.Debug)
@@ -41,6 +41,7 @@ namespace Examples.Console
             {
                 Url = url,
                 ApiToken = apiToken,
+                OneAgentMetadataEnrichment = oneAgentMetadataEnrichment
             };
             var dtExporter = new DynatraceMetricsExporter(options, loggerFactory.CreateLogger<DynatraceMetricsExporter>());
 

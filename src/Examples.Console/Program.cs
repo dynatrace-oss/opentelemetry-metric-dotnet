@@ -26,7 +26,7 @@ namespace Examples.Console
         {
             await Parser.Default.ParseArguments<DynatraceOptions>(args)
                 .MapResult(
-                    (DynatraceOptions options) => TestDynatraceExporter.RunAsync(options.Url, options.ApiToken, options.PushIntervalInSecs, options.DurationInMins),
+                    (DynatraceOptions options) => TestDynatraceExporter.RunAsync(options.Url, options.ApiToken, options.PushIntervalInSecs, options.DurationInMins, options.OneAgentMetadataEnrichment),
                     errs => Task.FromResult(0));
 
             System.Console.ReadLine();
@@ -46,8 +46,10 @@ namespace Examples.Console
         public string Url { get; set; }
 
         [Option('a', "apiToken", Default = "", HelpText = "Dynatrace API authentication token.", Required = false)]
-
         public string ApiToken { get; set; }
+
+        [Option('o', "oneAgentMetadataEnrichment", Default = false, HelpText = "EXPERIMENTAL: Automatic label enrichment via OneAgent metadata.", Required = false, Hidden = true)]
+        public bool OneAgentMetadataEnrichment { get; set; }
     }
 
 }
