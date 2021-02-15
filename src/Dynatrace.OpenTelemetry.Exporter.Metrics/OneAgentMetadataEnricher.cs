@@ -11,8 +11,6 @@ namespace Dynatrace.OpenTelemetry.Exporter
 {
     /// <summary>
     /// Queries the OneAgent to get metadata about the current process and enriches metric labels with them.
-    ///
-    /// ATTENTION: This feature is experimental and the API is subject to change in future OneAgent versions.
     /// </summary>
     public class OneAgentMetadataEnricher
     {
@@ -25,7 +23,7 @@ namespace Dynatrace.OpenTelemetry.Exporter
 
         public void EnrichWithDynatraceMetadata(ICollection<KeyValuePair<string, string>> labels)
         {
-            var metadata = ReadOneAgentMetadata(GetMagicFileContent());
+            var metadata = ReadOneAgentMetadata(GetMetadataFileContent());
             foreach (var md in metadata)
             {
                 labels.Add(new KeyValuePair<string, string>(md.Key, md.Value));
@@ -54,13 +52,13 @@ namespace Dynatrace.OpenTelemetry.Exporter
             }
         }
 
-        private string[] GetMagicFileContent()
+        private string[] GetMetadataFileContent()
         {
             try
             {
-                var propsFile = File.ReadAllText("dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties");
-                if (string.IsNullOrEmpty(propsFile)) return Array.Empty<string>();
-                return File.ReadAllLines(propsFile);
+                var metadataFilePath = File.ReadAllText("dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties");
+                if (string.IsNullOrEmpty(metadataFilePath)) return Array.Empty<string>();
+                return File.ReadAllLines(metadataFilePath);
             }
             catch (Exception e)
             {
