@@ -33,11 +33,13 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
                 "b=456",
             });
             Assert.Collection(metadata,
-              elem1 => {
+              elem1 =>
+              {
                   Assert.Equal("a", elem1.Key);
                   Assert.Equal("123", elem1.Value);
               },
-              elem2 => {
+              elem2 =>
+              {
                   Assert.Equal("b", elem2.Key);
                   Assert.Equal("456", elem2.Value);
               });

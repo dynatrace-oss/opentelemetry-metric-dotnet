@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
 
     <IsPackable>false</IsPackable>
   </PropertyGroup>
@@ -11,7 +11,10 @@
     <PackageReference Include="xunit" Version="2.4.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.0" />
     <PackageReference Include="coverlet.collector" Version="1.2.0" />
-    <PackageReference Include="OpenTelemetry" Version="0.7.0-beta.1" />
+    <!-- <PackageReference Include="OpenTelemetry" Version="0.7.0-beta.1" /> -->
+
+    <!-- Need to use a version < 1.0.0 since metrics is not included in the v1.0.0 release -->
+    <PackageReference Include="OpenTelemetry" Version="0.8.0-beta" />
   </ItemGroup>
 
   <ItemGroup>
