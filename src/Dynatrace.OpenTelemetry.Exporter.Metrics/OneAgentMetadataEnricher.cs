@@ -1,10 +1,22 @@
+// <copyright company="Dynatrace LLC">
+// Copyright 2020 Dynatrace LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// </copyright>
+
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
-using Dynatrace.OpenTelemetry.Exporter;
+using System.IO.Abstractions;
 using Microsoft.Extensions.Logging;
 
 namespace Dynatrace.OpenTelemetry.Exporter
@@ -14,11 +26,19 @@ namespace Dynatrace.OpenTelemetry.Exporter
     /// </summary>
     public class OneAgentMetadataEnricher
     {
-        private readonly ILogger<DynatraceMetricsExporter> logger;
+        private readonly ILogger<DynatraceMetricsExporter> _logger;
+        
+        // Allows mocking of FileOpen operations. When using the public constructor, the used FileSystem passes calls through to
+        // the default System.IO methods.
+        private readonly IFileSystem _fileSystem;
 
-        public OneAgentMetadataEnricher(ILogger<DynatraceMetricsExporter> logger)
+        public OneAgentMetadataEnricher(ILogger<DynatraceMetricsExporter> logger) : this(logger, new FileSystem())
+        { }
+
+        internal OneAgentMetadataEnricher(ILogger<DynatraceMetricsExporter> logger, IFileSystem fileSystem)
         {
-            this.logger = logger;
+            this._logger = logger;
+            this._fileSystem = fileSystem;
         }
 
         public void EnrichWithDynatraceMetadata(ICollection<KeyValuePair<string, string>> labels)
@@ -34,35 +54,35 @@ namespace Dynatrace.OpenTelemetry.Exporter
         {
             foreach (var line in lines)
             {
-                logger.LogDebug("Parsing OneAgent metadata file: {Line}", line);
+                _logger.LogDebug("Parsing OneAgent metadata file: {Line}", line);
                 var split = line.Split('=');
                 if (split.Length != 2)
                 {
-                    logger.LogWarning("Failed to parse line from OneAgent metadata file: {Line}", line);
+                    _logger.LogWarning("Failed to parse line from OneAgent metadata file: {Line}", line);
                     continue;
                 }
                 var key = split[0];
                 var value = split[1];
                 if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(value))
                 {
-                    logger.LogWarning("Failed to parse line from OneAgent metadata file: {Line}", line);
+                    _logger.LogWarning("Failed to parse line from OneAgent metadata file: {Line}", line);
                     continue;
                 }
                 yield return new KeyValuePair<string, string>(split[0], split[1]);
             }
         }
 
-        private string[] GetMetadataFileContent()
+        internal string[] GetMetadataFileContent()
         {
             try
             {
-                var metadataFilePath = File.ReadAllText("dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties");
+                var metadataFilePath = _fileSystem.File.ReadAllText("dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties");
                 if (string.IsNullOrEmpty(metadataFilePath)) return Array.Empty<string>();
-                return File.ReadAllLines(metadataFilePath);
+                return _fileSystem.File.ReadAllLines(metadataFilePath);
             }
             catch (Exception e)
             {
-                logger.LogDebug("Could not read OneAgent metadata file. This is normal if OneAgent is not installed. Message: {Message}", e.Message);
+                _logger.LogDebug("Could not read OneAgent metadata file. This is normal if OneAgent is not installed. Message: {Message}", e.Message);
                 return Array.Empty<string>();
             }
         }

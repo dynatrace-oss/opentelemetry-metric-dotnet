@@ -21,6 +21,7 @@
 
     <!-- Need to use a version < 1.0.0 since metrics is not included in the v1.0.0 release -->
     <PackageReference Include="OpenTelemetry" Version="0.8.0-beta" />
+    <PackageReference Include="System.IO.Abstractions" Version="13.2.31" />
   </ItemGroup>
   
   <ItemGroup>
