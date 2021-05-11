@@ -16,10 +16,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO.Abstractions;
 using Microsoft.Extensions.Logging;
 
-namespace Dynatrace.OpenTelemetry.Exporter
+namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 {
     /// <summary>
     /// Queries the OneAgent to get metadata about the current process and enriches metric labels with them.
@@ -27,18 +26,19 @@ namespace Dynatrace.OpenTelemetry.Exporter
     public class OneAgentMetadataEnricher
     {
         private readonly ILogger<DynatraceMetricsExporter> _logger;
-        
-        // Allows mocking of FileOpen operations. When using the public constructor, the used FileSystem passes calls through to
-        // the default System.IO methods.
-        private readonly IFileSystem _fileSystem;
+        private readonly IFileReader _fileReader;
 
-        public OneAgentMetadataEnricher(ILogger<DynatraceMetricsExporter> logger) : this(logger, new FileSystem())
-        { }
-
-        internal OneAgentMetadataEnricher(ILogger<DynatraceMetricsExporter> logger, IFileSystem fileSystem)
+        public OneAgentMetadataEnricher(ILogger<DynatraceMetricsExporter> logger) : this(logger, new DefaultFileReader())
         {
             this._logger = logger;
-            this._fileSystem = fileSystem;
+        }
+
+        // Allows mocking of File.ReadAllText and File.ReadAllLines methods. When using the public constructor,
+        // the used FileReader passes the calls through to the System.IO methods.
+        internal OneAgentMetadataEnricher(ILogger<DynatraceMetricsExporter> logger, IFileReader fileReader)
+        {
+            this._logger = logger;
+            this._fileReader = fileReader;
         }
 
         public void EnrichWithDynatraceMetadata(ICollection<KeyValuePair<string, string>> labels)
@@ -72,13 +72,23 @@ namespace Dynatrace.OpenTelemetry.Exporter
             }
         }
 
+        // internal string GetMetadataFileName(string indirectionFileName) {
+        //     return _fileReader.ReadAllText(indirectionFileName);
+        // }
+
+        // internal string[] ReadMetadataFileContent(string metadataFileName) {
+        //     return _fileReader.ReadAllLines(metadataFileName);
+        // }
+
         internal string[] GetMetadataFileContent()
         {
             try
             {
-                var metadataFilePath = _fileSystem.File.ReadAllText("dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties");
+                // return ReadMetadataFileContent(GetMetadataFileName("dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties"));
+
+                var metadataFilePath = _fileReader.ReadAllText("dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties");
                 if (string.IsNullOrEmpty(metadataFilePath)) return Array.Empty<string>();
-                return _fileSystem.File.ReadAllLines(metadataFilePath);
+                return _fileReader.ReadAllLines(metadataFilePath);
             }
             catch (Exception e)
             {

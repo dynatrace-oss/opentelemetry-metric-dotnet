@@ -17,7 +17,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -25,10 +24,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Dynatrace.OpenTelemetry.Exporter.Metrics;
 using OpenTelemetry.Metrics.Export;
 
-namespace Dynatrace.OpenTelemetry.Exporter
+namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 {
     /// <summary>
     /// https://www.dynatrace.com/support/help/how-to-use-dynatrace/metrics/metric-ingestion/metric-ingestion-protocol/

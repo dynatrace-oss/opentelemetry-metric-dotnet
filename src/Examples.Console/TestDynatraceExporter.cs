@@ -25,6 +25,7 @@ using Dynatrace.OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Metrics.Export;
 using OpenTelemetry.Trace;
+using Dynatrace.OpenTelemetry.Exporter.Metrics;
 
 namespace Examples.Console
 {

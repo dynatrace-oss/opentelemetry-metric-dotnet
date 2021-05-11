@@ -17,19 +17,20 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- <PackageReference Include="OpenTelemetry" Version="0.7.0-beta.1" /> -->
-
     <!-- Need to use a version < 1.0.0 since metrics is not included in the v1.0.0 release -->
     <PackageReference Include="OpenTelemetry" Version="0.8.0-beta" />
-    <PackageReference Include="System.IO.Abstractions" Version="13.2.31" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
       <_Parameter1>Dynatrace.OpenTelemetry.Exporter.Metrics.Tests</_Parameter1>
     </AssemblyAttribute>
+    <!-- This is required to have internal interfaces available for testing -->
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>DynamicProxyGenAssembly2</_Parameter1>
+    </AssemblyAttribute>
   </ItemGroup>
-  
+
   <ItemGroup>
     <None Include="..\..\docs\img\icon.png">
       <Pack>True</Pack>
