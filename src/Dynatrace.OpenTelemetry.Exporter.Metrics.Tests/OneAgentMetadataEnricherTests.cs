@@ -34,16 +34,16 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
                 "b=456",
             });
             Assert.Collection(metadata,
-              elem1 =>
-              {
-                  Assert.Equal("a", elem1.Key);
-                  Assert.Equal("123", elem1.Value);
-              },
-              elem2 =>
-              {
-                  Assert.Equal("b", elem2.Key);
-                  Assert.Equal("456", elem2.Value);
-              });
+                elem1 =>
+                {
+                Assert.Equal("a", elem1.Key);
+                Assert.Equal("123", elem1.Value);
+                },
+                elem2 =>
+                {
+                    Assert.Equal("b", elem2.Key);
+                    Assert.Equal("456", elem2.Value);
+                });
         }
 
         [Fact]
@@ -207,7 +207,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
         {
             var fileReader = Mock.Of<IFileReader>();
             Mock.Get(fileReader).Setup(f => f.ReadAllText(It.IsAny<string>())).Returns("indirection_file_name.properties");
-            Mock.Get(fileReader).Setup(f => f.ReadAllLines(It.IsAny<string>())).Returns(new string[] { "key1=value1", "key2=value2" });
+            Mock.Get(fileReader).Setup(f => f.ReadAllLines(It.IsAny<string>())).Returns(new[] { "key1=value1", "key2=value2" });
             var targetList = new List<KeyValuePair<string, string>>();
 
             var unitUnderTest = new OneAgentMetadataEnricher(NullLogger<DynatraceMetricsExporter>.Instance, fileReader);
@@ -226,7 +226,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
         {
             var fileReader = Mock.Of<IFileReader>();
             Mock.Get(fileReader).Setup(f => f.ReadAllText(It.IsAny<string>())).Returns("indirection_file_name.properties");
-            Mock.Get(fileReader).Setup(f => f.ReadAllLines(It.IsAny<string>())).Returns(new string[] { "key1=value1", "key2=", "=value2", "===" });
+            Mock.Get(fileReader).Setup(f => f.ReadAllLines(It.IsAny<string>())).Returns(new[] { "key1=value1", "key2=", "=value2", "===" });
             var targetList = new List<KeyValuePair<string, string>>();
 
             var unitUnderTest = new OneAgentMetadataEnricher(NullLogger<DynatraceMetricsExporter>.Instance, fileReader);

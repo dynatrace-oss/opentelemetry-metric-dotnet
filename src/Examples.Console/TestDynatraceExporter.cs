@@ -17,11 +17,9 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry;
-using Dynatrace.OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Metrics.Export;
 using OpenTelemetry.Trace;
@@ -33,10 +31,11 @@ namespace Examples.Console
     {
         internal static async Task<int> RunAsync(string url, string apiToken, int pushIntervalInSecs, int totalDurationInMins, bool oneAgentMetadataEnrichment)
         {
-            ILoggerFactory loggerFactory = LoggerFactory.Create(builder => {
+            ILoggerFactory loggerFactory = LoggerFactory.Create(builder =>
+            {
                 builder.SetMinimumLevel(LogLevel.Debug)
                        .AddConsole();
-                });
+            });
             var logger = loggerFactory.CreateLogger<TestDynatraceExporter>();
             var options = new DynatraceExporterOptions
             {
@@ -69,8 +68,9 @@ namespace Examples.Console
             var testCounter = meter.CreateInt64Counter("MyCounter");
             var testMeasure = meter.CreateInt64Measure("MyMeasure");
             var testObserver = meter.CreateInt64Observer("MyObservation", CallBackForMyObservation);
-            var labels1 = new List<KeyValuePair<string, string>>();
-            labels1.Add(new KeyValuePair<string, string>("dim1", "value1"));
+            var labels1 = new List<KeyValuePair<string, string>>{
+                new KeyValuePair<string, string>("dim1", "value1")
+            };
 
             var labels2 = new List<KeyValuePair<string, string>>();
             labels2.Add(new KeyValuePair<string, string>("dim1", "value2"));

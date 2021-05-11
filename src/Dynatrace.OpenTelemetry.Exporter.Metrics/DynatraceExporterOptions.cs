@@ -37,7 +37,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
         /// <summary>
         /// Gets or sets the dynatrace api-token for authentication.
         ///
-        /// How to aquire an api-token: https://www.dynatrace.com/support/help/dynatrace-api/basics/dynatrace-api-authentication/
+        /// How to acquire an api-token: https://www.dynatrace.com/support/help/dynatrace-api/basics/dynatrace-api-authentication/
         ///
         /// "metrics.ingest" permission is required for the api-token.
         /// </summary>
