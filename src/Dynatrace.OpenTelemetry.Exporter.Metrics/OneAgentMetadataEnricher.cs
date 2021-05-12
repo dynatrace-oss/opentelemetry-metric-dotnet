@@ -72,20 +72,10 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
             }
         }
 
-        // internal string GetMetadataFileName(string indirectionFileName) {
-        //     return _fileReader.ReadAllText(indirectionFileName);
-        // }
-
-        // internal string[] ReadMetadataFileContent(string metadataFileName) {
-        //     return _fileReader.ReadAllLines(metadataFileName);
-        // }
-
         internal string[] GetMetadataFileContent()
         {
             try
             {
-                // return ReadMetadataFileContent(GetMetadataFileName("dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties"));
-
                 var metadataFilePath = _fileReader.ReadAllText("dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties");
                 if (string.IsNullOrEmpty(metadataFilePath)) return Array.Empty<string>();
                 return _fileReader.ReadAllLines(metadataFilePath);

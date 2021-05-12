@@ -50,7 +50,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
                 this._httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Api-Token", this._options.ApiToken);
             }
             var defaultLabels = new List<KeyValuePair<string, string>>();
-            if (options.Tags != null) defaultLabels.AddRange(options.Tags);
+            if (options.DefaultDimensions != null) defaultLabels.AddRange(options.DefaultDimensions);
             if (options.OneAgentMetadataEnrichment)
             {
                 var enricher = new OneAgentMetadataEnricher(this._logger);

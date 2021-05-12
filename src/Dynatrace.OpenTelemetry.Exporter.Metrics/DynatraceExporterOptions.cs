@@ -32,7 +32,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
         ///
         /// https://www.dynatrace.com/support/help/dynatrace-api/environment-api/metric-v2/post-ingest-metrics
         /// </summary>
-        public string Url { get; set; } = "http://127.0.0.1:14499/metrics/ingest";
+        public string Url { get; set; } = "http://localhost:14499/metrics/ingest";
 
         /// <summary>
         /// Gets or sets the dynatrace api-token for authentication.
@@ -49,9 +49,9 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
         public string Prefix { get; set; }
 
         /// <summary>
-        /// Gets automatically added as metric labels/dimensions.
+        /// Gets automatically added as metric dimensions.
         /// </summary>
-        public IEnumerable<KeyValuePair<string, string>> Tags { get; set; }
+        public IEnumerable<KeyValuePair<string, string>> DefaultDimensions { get; set; }
 
         /// <summary>
         /// Automatically adds monitored entity metadata to metric labels (e.g. 'dt.entity.process_group_instance=PROCESS_GROUP_INSTANCE-46F1121843B79F56')

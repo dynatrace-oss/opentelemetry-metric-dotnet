@@ -33,10 +33,10 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
         private const int MaxLengthDimensionValue = 250;
         private const int MaxDimensions = 50;
 
-        public DynatraceMetricSerializer(string prefix = null, IEnumerable<KeyValuePair<string, string>> tags = null)
+        public DynatraceMetricSerializer(string prefix = null, IEnumerable<KeyValuePair<string, string>> dimensions = null)
         {
             this._prefix = prefix;
-            this._dimensions = tags ?? Enumerable.Empty<KeyValuePair<string, string>>();
+            this._dimensions = dimensions ?? Enumerable.Empty<KeyValuePair<string, string>>();
         }
 
         public string SerializeMetric(Metric metric)
