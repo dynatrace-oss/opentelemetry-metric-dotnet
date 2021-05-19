@@ -72,7 +72,6 @@ var options = new DynatraceExporterOptions
 
     // If a OneAgent is running on the same host as the application, it is possible to add host-specific data as dimensions automatically.
     OneAgentMetadataEnrichment = true,
-
 };
 ```
 

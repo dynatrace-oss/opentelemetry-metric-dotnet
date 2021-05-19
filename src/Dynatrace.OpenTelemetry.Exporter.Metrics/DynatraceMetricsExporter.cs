@@ -69,9 +69,9 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
                 _serializer.SerializeMetric(sb, metric);
             }
 
-            var mintMetrics = sb.ToString();
-            _logger.LogDebug(mintMetrics);
-            httpRequest.Content = new StringContent(mintMetrics);
+            var metricLines = sb.ToString();
+            _logger.LogDebug(metricLines);
+            httpRequest.Content = new StringContent(metricLines);
             try
             {
                 var response = await this._httpClient.SendAsync(httpRequest);

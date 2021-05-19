@@ -99,7 +99,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
                 Timestamp = timestamp
             });
 
-            string serialized = new DynatraceMetricSerializer(tags: new List<KeyValuePair<string, string>> {
+            string serialized = new DynatraceMetricSerializer(dimensions: new List<KeyValuePair<string, string>> {
                 new KeyValuePair<string, string>("tag1", "value1") ,
                 new KeyValuePair<string, string>("tag2", "value2") ,
                 new KeyValuePair<string, string>("tag3", "value3") ,
