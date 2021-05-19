@@ -41,7 +41,7 @@ namespace Examples.Console
         [Option('d', "duration", Default = 2, HelpText = "Total duration in minutes to run the demo. Run atleast for a min to see metrics flowing.", Required = false)]
         public int DurationInMins { get; set; }
 
-        [Option('u', "url", Default = "http://127.0.0.1:14499/metrics/ingest", HelpText = "Dynatrace metrics ingest API URL.", Required = false)]
+        [Option('u', "url", Default = "http://localhost:14499/metrics/ingest", HelpText = "Dynatrace metrics ingest API URL.", Required = false)]
         public string Url { get; set; }
 
         [Option('a', "apiToken", Default = "", HelpText = "Dynatrace API authentication token.", Required = false)]
