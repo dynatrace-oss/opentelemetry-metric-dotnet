@@ -50,5 +50,4 @@ namespace Examples.Console
         [Option('o', "oneAgentMetadataEnrichment", Default = false, HelpText = "EXPERIMENTAL: Automatic label enrichment via OneAgent metadata.", Required = false, Hidden = true)]
         public bool OneAgentMetadataEnrichment { get; set; }
     }
-
 }

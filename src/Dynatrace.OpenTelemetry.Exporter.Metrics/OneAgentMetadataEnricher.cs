@@ -72,7 +72,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
             }
         }
 
-        internal string[] GetMetadataFileContent()
+        private string[] GetMetadataFileContent()
         {
             try
             {

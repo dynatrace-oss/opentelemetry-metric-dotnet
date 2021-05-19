@@ -34,7 +34,7 @@ namespace Examples.Console
             ILoggerFactory loggerFactory = LoggerFactory.Create(builder =>
             {
                 builder.SetMinimumLevel(LogLevel.Debug)
-                       .AddConsole();
+                        .AddConsole();
             });
             var logger = loggerFactory.CreateLogger<TestDynatraceExporter>();
             var options = new DynatraceExporterOptions
@@ -86,9 +86,8 @@ namespace Examples.Console
                 testMeasure.Record(defaultContext, 5, meter.GetLabelSet(labels1));
                 testMeasure.Record(defaultContext, 750, meter.GetLabelSet(labels1));
 
-                // Obviously there is no testObserver.Oberve() here, as Observer instruments
+                // Obviously there is no testObserver.Observe() here, as Observer instruments
                 // have callbacks that are called by the Meter automatically at each collection interval.
-
                 await Task.Delay(1000);
                 var remaining = (totalDurationInMins * 60) - sw.Elapsed.TotalSeconds;
                 logger.LogInformation("Running and emitting metrics. Remaining time: {Remaining} seconds", (int)remaining);
