@@ -29,7 +29,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
         public void ValidMultiline()
         {
             var enricher = new OneAgentMetadataEnricher(NullLogger<DynatraceMetricsExporter>.Instance);
-            var metadata = enricher.ReadOneAgentMetadata(new string[] {
+            var metadata = enricher.ProcessMetadata(new string[] {
                 "a=123",
                 "b=456",
             });
@@ -50,12 +50,12 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
         public void WrongSyntax()
         {
             var enricher = new OneAgentMetadataEnricher(NullLogger<DynatraceMetricsExporter>.Instance);
-            Assert.Empty(enricher.ReadOneAgentMetadata(new string[] { "=0x5c14d9a68d569861" }));
-            Assert.Empty(enricher.ReadOneAgentMetadata(new string[] { "otherKey=" }));
-            Assert.Empty(enricher.ReadOneAgentMetadata(new string[] { "" }));
-            Assert.Empty(enricher.ReadOneAgentMetadata(new string[] { "=" }));
-            Assert.Empty(enricher.ReadOneAgentMetadata(new string[] { "===" }));
-            Assert.Empty(enricher.ReadOneAgentMetadata(new string[] { }));
+            Assert.Empty(enricher.ProcessMetadata(new string[] { "=0x5c14d9a68d569861" }));
+            Assert.Empty(enricher.ProcessMetadata(new string[] { "otherKey=" }));
+            Assert.Empty(enricher.ProcessMetadata(new string[] { "" }));
+            Assert.Empty(enricher.ProcessMetadata(new string[] { "=" }));
+            Assert.Empty(enricher.ProcessMetadata(new string[] { "===" }));
+            Assert.Empty(enricher.ProcessMetadata(new string[] { }));
         }
 
         [Fact]

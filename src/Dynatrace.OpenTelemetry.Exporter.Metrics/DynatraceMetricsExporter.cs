@@ -43,7 +43,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
         {
             this._options = options ?? new DynatraceExporterOptions();
             this._logger = logger ?? NullLogger<DynatraceMetricsExporter>.Instance;
-            logger.LogDebug("Dynatrace Metrics Url: {Url}", options.Url);
+            logger.LogDebug("Dynatrace Metrics Url: {Url}", this._options.Url);
             this._httpClient = new HttpClient();
             if (!string.IsNullOrEmpty(options.ApiToken))
             {

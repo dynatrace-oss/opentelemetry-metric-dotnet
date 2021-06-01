@@ -23,10 +23,12 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
     /// <summary>
     /// Queries the OneAgent to get metadata about the current process and enriches metric labels with them.
     /// </summary>
-    public class OneAgentMetadataEnricher
+    internal class OneAgentMetadataEnricher
     {
         private readonly ILogger<DynatraceMetricsExporter> _logger;
         private readonly IFileReader _fileReader;
+
+        private const string OneAgentIndirectionFileName = "dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties";
 
         public OneAgentMetadataEnricher(ILogger<DynatraceMetricsExporter> logger) : this(logger, new DefaultFileReader())
         {
@@ -43,14 +45,14 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 
         public void EnrichWithDynatraceMetadata(ICollection<KeyValuePair<string, string>> labels)
         {
-            var metadata = ReadOneAgentMetadata(GetMetadataFileContent());
+            var metadata = ProcessMetadata(GetMetadataFileContent());
             foreach (var md in metadata)
             {
                 labels.Add(new KeyValuePair<string, string>(md.Key, md.Value));
             }
         }
 
-        public IEnumerable<KeyValuePair<string, string>> ReadOneAgentMetadata(string[] lines)
+        public IEnumerable<KeyValuePair<string, string>> ProcessMetadata(string[] lines)
         {
             foreach (var line in lines)
             {
@@ -76,7 +78,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
         {
             try
             {
-                var metadataFilePath = _fileReader.ReadAllText("dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties");
+                var metadataFilePath = _fileReader.ReadAllText(OneAgentIndirectionFileName);
                 if (string.IsNullOrEmpty(metadataFilePath)) return Array.Empty<string>();
                 return _fileReader.ReadAllLines(metadataFilePath);
             }

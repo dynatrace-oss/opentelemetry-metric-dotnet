@@ -47,7 +47,7 @@ namespace Examples.Console
         [Option('a', "apiToken", Default = "", HelpText = "Dynatrace API authentication token.", Required = false)]
         public string ApiToken { get; set; }
 
-        [Option('o', "oneAgentMetadataEnrichment", Default = false, HelpText = "EXPERIMENTAL: Automatic label enrichment via OneAgent metadata.", Required = false, Hidden = true)]
+        [Option('o', "oneAgentMetadataEnrichment", Default = true, HelpText = "Automatic label enrichment via OneAgent metadata.", Required = false)]
         public bool OneAgentMetadataEnrichment { get; set; }
     }
 }
