@@ -61,7 +61,7 @@ var options = new DynatraceExporterOptions
     // However, it is also possible to specify Url and ApiToken here.
 
     // *** Additional (optional) parameters: ***
-    // A prefix that will be prepended to each exported metric.
+    // A prefix that will be prepended to each exported metric name.
     Prefix = "dynatrace.opentelemetry",
 
     // Default dimensions are added to each exported metric as "key=value" pairs.
@@ -70,7 +70,7 @@ var options = new DynatraceExporterOptions
         new KeyValuePair<string, string>("key2", "value2"),
     },
 
-    // If a OneAgent is running on the same host as the application, it is possible to add host-specific data as dimensions automatically.
+    // If a OneAgent is running on the same host as the application, it is possible to add host- and process-specific data as dimensions automatically.
     OneAgentMetadataEnrichment = true,
 };
 ```
@@ -85,9 +85,8 @@ The exporter allows for configuring the following settings using the `DynatraceE
 #### Dynatrace API Endpoint
 
 If a OneAgent is installed on the host, it can provide a local endpoint for providing metrics directly without the need for an API token.
-This feature is currently in an Early Adopter phase and has to be enabled as described in the [OneAgent metric API documentation](https://www.dynatrace.com/support/help/how-to-use-dynatrace/metrics/metric-ingestion/ingestion-methods/local-api/).
+This feature can be enabled as described in the [OneAgent metric API documentation](https://www.dynatrace.com/support/help/how-to-use-dynatrace/metrics/metric-ingestion/ingestion-methods/local-api/).
 Using the local API endpoint, the host ID and host name context are automatically added to each metric as dimensions.
-The default metric API endpoint exposed by the OneAgent is `http://localhost:14499/metrics/ingest`.
 
 Alternatively, it is possible to specify the endpoint to which the metrics are sent using the `Url` property.
 The metrics ingest endpoint URL looks like:
@@ -97,6 +96,7 @@ The metrics ingest endpoint URL looks like:
 
 #### Dynatrace API Token
 
+If metrics are not sent to the local OneAgent endpoint but directly to a Dynatrace server, an API token has to be provided.
 The Dynatrace API token to be used by the exporter is specified using the `ApiToken` property and could, for example, be read from an environment variable.
 
 Creating an API token for your Dynatrace environment is described in the [Dynatrace API documentation](https://www.dynatrace.com/support/help/dynatrace-api/basics/dynatrace-api-authentication/).
@@ -114,8 +114,9 @@ The `DefaultDimensions` property can be used to optionally specify a list of key
 
 #### OneAgent metadata enrichment
 
-If the `OneAgentMetadataEnrichment` property is set to true, the exporter attempts to [read metadata from a file](https://www.dynatrace.com/support/help/how-to-use-dynatrace/metrics/metric-ingestion/ingestion-methods/enrich-metrics/).
-Metadata read that way will be added as dimensions to all exported metrics.
+If the `OneAgentMetadataEnrichment` property is set to true, the exporter will retrieve host and process metadata from the OneAgent, if available, and set it as dimensions to all exported metrics.
+More information on the underlying feature used by the exporter can be found in
+the [Dynatrace documentation](https://www.dynatrace.com/support/help/how-to-use-dynatrace/metrics/metric-ingestion/ingestion-methods/enrich-metrics/).
 
 ### Known issues and limitations
 
