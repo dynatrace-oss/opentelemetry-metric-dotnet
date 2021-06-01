@@ -26,7 +26,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
     public class DynatraceMetricSerializer
     {
         private readonly string _prefix;
-        private readonly IEnumerable<KeyValuePair<string, string>> _dimensions;
+        private readonly IEnumerable<KeyValuePair<string, string>> _defaultDimensions;
 
         private const int MaxLengthMetricKey = 250;
         private const int MaxLengthDimensionKey = 100;
@@ -36,7 +36,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
         public DynatraceMetricSerializer(string prefix = null, IEnumerable<KeyValuePair<string, string>> dimensions = null)
         {
             this._prefix = prefix;
-            this._dimensions = dimensions ?? Enumerable.Empty<KeyValuePair<string, string>>();
+            this._defaultDimensions = dimensions ?? Enumerable.Empty<KeyValuePair<string, string>>();
         }
 
         public string SerializeMetric(Metric metric)
@@ -52,7 +52,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
             {
                 WriteMetricKey(sb, metric);
                 WriteDimensions(sb, metricData.Labels);
-                WriteDimensions(sb, this._dimensions);
+                WriteDimensions(sb, this._defaultDimensions);
                 switch (metric.AggregationType)
                 {
                     case AggregationType.DoubleSum:
