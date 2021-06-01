@@ -26,7 +26,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
     public class OneAgentMetadataEnricherTests
     {
         [Fact]
-        public void ProcessGroupOkMultiline()
+        public void ValidMultiline()
         {
             var enricher = new OneAgentMetadataEnricher(NullLogger<DynatraceMetricsExporter>.Instance);
             var metadata = enricher.ReadOneAgentMetadata(new string[] {
@@ -63,12 +63,15 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
         {
             var fileReader = Mock.Of<IFileReader>();
             Mock.Get(fileReader).Setup(f => f.ReadAllText(It.IsAny<string>())).Throws<FileNotFoundException>();
-            var targetList = new List<KeyValuePair<string, string>>();
+
+            var kv = KeyValuePair.Create<string, string>("defaultKey", "defaultValue");
+            var targetList = new List<KeyValuePair<string, string>>() { kv };
 
             var unitUnderTest = new OneAgentMetadataEnricher(NullLogger<DynatraceMetricsExporter>.Instance, fileReader);
 
             unitUnderTest.EnrichWithDynatraceMetadata(targetList);
-            Assert.Empty(targetList);
+            // contains only the element that was in the list before.
+            Assert.Collection(targetList, item => Assert.Equal(item, kv));
             Mock.Get(fileReader).Verify(mock => mock.ReadAllText("dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties"), Times.Once());
         }
 
@@ -77,12 +80,13 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
         {
             var fileReader = Mock.Of<IFileReader>();
             Mock.Get(fileReader).Setup(f => f.ReadAllText(It.IsAny<string>())).Throws<UnauthorizedAccessException>();
-            var targetList = new List<KeyValuePair<string, string>>();
+            var kv = KeyValuePair.Create<string, string>("defaultKey", "defaultValue");
+            var targetList = new List<KeyValuePair<string, string>>() { kv };
 
             var unitUnderTest = new OneAgentMetadataEnricher(NullLogger<DynatraceMetricsExporter>.Instance, fileReader);
-
             unitUnderTest.EnrichWithDynatraceMetadata(targetList);
-            Assert.Empty(targetList);
+
+            Assert.Collection(targetList, item => Assert.Equal(item, kv));
             Mock.Get(fileReader).Verify(f => f.ReadAllText("dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties"), Times.Once());
         }
 
@@ -92,12 +96,13 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
             var fileReader = Mock.Of<IFileReader>();
             // there is a whole host of exceptions that can be thrown by ReadAllText: https://docs.microsoft.com/en-us/dotnet/api/system.io.file.readalltext?view=net-5.0
             Mock.Get(fileReader).Setup(f => f.ReadAllText(It.IsAny<string>())).Throws<Exception>();
-            var targetList = new List<KeyValuePair<string, string>>();
+            var kv = KeyValuePair.Create<string, string>("defaultKey", "defaultValue");
+            var targetList = new List<KeyValuePair<string, string>>() { kv };
 
             var unitUnderTest = new OneAgentMetadataEnricher(NullLogger<DynatraceMetricsExporter>.Instance, fileReader);
-
             unitUnderTest.EnrichWithDynatraceMetadata(targetList);
-            Assert.Empty(targetList);
+
+            Assert.Collection(targetList, item => Assert.Equal(item, kv));
             Mock.Get(fileReader).Verify(f => f.ReadAllText("dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties"), Times.Once());
         }
 
@@ -106,12 +111,13 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
         {
             var fileReader = Mock.Of<IFileReader>();
             Mock.Get(fileReader).Setup(f => f.ReadAllText(It.IsAny<string>())).Returns("");
-            var targetList = new List<KeyValuePair<string, string>>();
+            var kv = KeyValuePair.Create<string, string>("defaultKey", "defaultValue");
+            var targetList = new List<KeyValuePair<string, string>>() { kv };
 
             var unitUnderTest = new OneAgentMetadataEnricher(NullLogger<DynatraceMetricsExporter>.Instance, fileReader);
-
             unitUnderTest.EnrichWithDynatraceMetadata(targetList);
-            Assert.Empty(targetList);
+
+            Assert.Collection(targetList, item => Assert.Equal(item, kv));
             Mock.Get(fileReader).Verify(f => f.ReadAllText("dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties"), Times.Once());
             // if the OneAgent metadata file is empty, there should be no attempt at reading the contents.
             Mock.Get(fileReader).Verify(f => f.ReadAllLines(""), Times.Never());
@@ -127,12 +133,13 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
             and some more text";
 
             Mock.Get(fileReader).Setup(f => f.ReadAllText(It.IsAny<string>())).Returns(indirectionFileContent);
-            var targetList = new List<KeyValuePair<string, string>>();
+            var kv = KeyValuePair.Create<string, string>("defaultKey", "defaultValue");
+            var targetList = new List<KeyValuePair<string, string>>() { kv };
 
             var unitUnderTest = new OneAgentMetadataEnricher(NullLogger<DynatraceMetricsExporter>.Instance, fileReader);
-
             unitUnderTest.EnrichWithDynatraceMetadata(targetList);
-            Assert.Empty(targetList);
+
+            Assert.Collection(targetList, item => Assert.Equal(item, kv));
             Mock.Get(fileReader).Verify(f => f.ReadAllText("dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties"), Times.Once());
             // if the OneAgent metadata file is empty, there should be no attempt at reading the contents.
             Mock.Get(fileReader).Verify(f => f.ReadAllLines(indirectionFileContent), Times.Once());
@@ -144,12 +151,13 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
             var fileReader = Mock.Of<IFileReader>();
             Mock.Get(fileReader).Setup(f => f.ReadAllText(It.IsAny<string>())).Returns("indirection_file_name.properties");
             Mock.Get(fileReader).Setup(f => f.ReadAllLines(It.IsAny<string>())).Throws<FileNotFoundException>();
-            var targetList = new List<KeyValuePair<string, string>>();
+            var kv = KeyValuePair.Create<string, string>("defaultKey", "defaultValue");
+            var targetList = new List<KeyValuePair<string, string>>() { kv };
 
             var unitUnderTest = new OneAgentMetadataEnricher(NullLogger<DynatraceMetricsExporter>.Instance, fileReader);
-
             unitUnderTest.EnrichWithDynatraceMetadata(targetList);
-            Assert.Empty(targetList);
+
+            Assert.Collection(targetList, item => Assert.Equal(item, kv));
             Mock.Get(fileReader).Verify(f => f.ReadAllText("dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties"), Times.Once());
             Mock.Get(fileReader).Verify(f => f.ReadAllLines("indirection_file_name.properties"), Times.Once());
         }
@@ -160,12 +168,13 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
             var fileReader = Mock.Of<IFileReader>();
             Mock.Get(fileReader).Setup(f => f.ReadAllText(It.IsAny<string>())).Returns("indirection_file_name.properties");
             Mock.Get(fileReader).Setup(f => f.ReadAllLines(It.IsAny<string>())).Throws<AccessViolationException>();
-            var targetList = new List<KeyValuePair<string, string>>();
+            var kv = KeyValuePair.Create<string, string>("defaultKey", "defaultValue");
+            var targetList = new List<KeyValuePair<string, string>>() { kv };
 
             var unitUnderTest = new OneAgentMetadataEnricher(NullLogger<DynatraceMetricsExporter>.Instance, fileReader);
-
             unitUnderTest.EnrichWithDynatraceMetadata(targetList);
-            Assert.Empty(targetList);
+
+            Assert.Collection(targetList, item => Assert.Equal(item, kv));
             Mock.Get(fileReader).Verify(f => f.ReadAllText("dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties"), Times.Once());
             Mock.Get(fileReader).Verify(f => f.ReadAllLines("indirection_file_name.properties"), Times.Once());
         }
@@ -176,12 +185,13 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
             var fileReader = Mock.Of<IFileReader>();
             Mock.Get(fileReader).Setup(f => f.ReadAllText(It.IsAny<string>())).Returns("indirection_file_name.properties");
             Mock.Get(fileReader).Setup(f => f.ReadAllLines(It.IsAny<string>())).Throws<Exception>();
-            var targetList = new List<KeyValuePair<string, string>>();
+            var kv = KeyValuePair.Create<string, string>("defaultKey", "defaultValue");
+            var targetList = new List<KeyValuePair<string, string>>() { kv };
 
             var unitUnderTest = new OneAgentMetadataEnricher(NullLogger<DynatraceMetricsExporter>.Instance, fileReader);
-
             unitUnderTest.EnrichWithDynatraceMetadata(targetList);
-            Assert.Empty(targetList);
+
+            Assert.Collection(targetList, item => Assert.Equal(item, kv));
             Mock.Get(fileReader).Verify(f => f.ReadAllText("dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties"), Times.Once());
             Mock.Get(fileReader).Verify(f => f.ReadAllLines("indirection_file_name.properties"), Times.Once());
         }
@@ -192,12 +202,13 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
             var fileReader = Mock.Of<IFileReader>();
             Mock.Get(fileReader).Setup(f => f.ReadAllText(It.IsAny<string>())).Returns("indirection_file_name.properties");
             Mock.Get(fileReader).Setup(f => f.ReadAllLines(It.IsAny<string>())).Returns(Array.Empty<string>());
-            var targetList = new List<KeyValuePair<string, string>>();
+            var kv = KeyValuePair.Create<string, string>("defaultKey", "defaultValue");
+            var targetList = new List<KeyValuePair<string, string>>() { kv };
 
             var unitUnderTest = new OneAgentMetadataEnricher(NullLogger<DynatraceMetricsExporter>.Instance, fileReader);
-
             unitUnderTest.EnrichWithDynatraceMetadata(targetList);
-            Assert.Empty(targetList);
+
+            Assert.Collection(targetList, item => Assert.Equal(item, kv));
             Mock.Get(fileReader).Verify(f => f.ReadAllText("dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties"), Times.Once());
             Mock.Get(fileReader).Verify(f => f.ReadAllLines("indirection_file_name.properties"), Times.Once());
         }
@@ -208,15 +219,17 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
             var fileReader = Mock.Of<IFileReader>();
             Mock.Get(fileReader).Setup(f => f.ReadAllText(It.IsAny<string>())).Returns("indirection_file_name.properties");
             Mock.Get(fileReader).Setup(f => f.ReadAllLines(It.IsAny<string>())).Returns(new[] { "key1=value1", "key2=value2" });
-            var targetList = new List<KeyValuePair<string, string>>();
+            var kv = KeyValuePair.Create<string, string>("defaultKey", "defaultValue");
+            var targetList = new List<KeyValuePair<string, string>>() { kv };
 
             var unitUnderTest = new OneAgentMetadataEnricher(NullLogger<DynatraceMetricsExporter>.Instance, fileReader);
-
             unitUnderTest.EnrichWithDynatraceMetadata(targetList);
-            Assert.NotEmpty(targetList);
-            Assert.Equal(2, targetList.Count);
-            Assert.Contains(KeyValuePair.Create("key1", "value1"), targetList);
-            Assert.Contains(KeyValuePair.Create("key2", "value2"), targetList);
+
+            Assert.Collection(targetList,
+                item => Assert.Equal(kv, item),
+                item => Assert.Equal(KeyValuePair.Create("key1", "value1"), item),
+                item => Assert.Equal(KeyValuePair.Create("key2", "value2"), item)
+            );
             Mock.Get(fileReader).Verify(f => f.ReadAllText("dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties"), Times.Once());
             Mock.Get(fileReader).Verify(f => f.ReadAllLines("indirection_file_name.properties"), Times.Once());
         }
@@ -227,14 +240,16 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
             var fileReader = Mock.Of<IFileReader>();
             Mock.Get(fileReader).Setup(f => f.ReadAllText(It.IsAny<string>())).Returns("indirection_file_name.properties");
             Mock.Get(fileReader).Setup(f => f.ReadAllLines(It.IsAny<string>())).Returns(new[] { "key1=value1", "key2=", "=value2", "===" });
-            var targetList = new List<KeyValuePair<string, string>>();
+            var kv = KeyValuePair.Create<string, string>("defaultKey", "defaultValue");
+            var targetList = new List<KeyValuePair<string, string>>() { kv };
 
             var unitUnderTest = new OneAgentMetadataEnricher(NullLogger<DynatraceMetricsExporter>.Instance, fileReader);
-
             unitUnderTest.EnrichWithDynatraceMetadata(targetList);
-            Assert.NotEmpty(targetList);
-            Assert.Equal(1, targetList.Count);
-            Assert.Contains(KeyValuePair.Create("key1", "value1"), targetList);
+
+            Assert.Collection(targetList,
+                item => Assert.Equal(kv, item),
+                item => Assert.Equal(KeyValuePair.Create("key1", "value1"), item)
+            );
             Mock.Get(fileReader).Verify(f => f.ReadAllText("dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties"), Times.Once());
             Mock.Get(fileReader).Verify(f => f.ReadAllLines("indirection_file_name.properties"), Times.Once());
         }
