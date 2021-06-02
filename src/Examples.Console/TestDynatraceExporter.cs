@@ -39,10 +39,14 @@ namespace Examples.Console
             var logger = loggerFactory.CreateLogger<TestDynatraceExporter>();
             var options = new DynatraceExporterOptions
             {
-                Url = url,
                 ApiToken = apiToken,
                 OneAgentMetadataEnrichment = oneAgentMetadataEnrichment
             };
+            if (url != null) {
+                options.Url = url;
+            } else {
+                logger.LogInformation("no URL provided, falling back to default OneAgent endpoint.");
+            }
             var dtExporter = new DynatraceMetricsExporter(options, loggerFactory.CreateLogger<DynatraceMetricsExporter>());
 
             // Create Processor (called Batcher in Metric spec, this is still not decided)
