@@ -25,18 +25,18 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 {
     public class DynatraceMetricSerializer
     {
-        private readonly string prefix;
-        private readonly IEnumerable<KeyValuePair<string, string>> tags;
+        private readonly string _prefix;
+        private readonly IEnumerable<KeyValuePair<string, string>> _defaultDimensions;
 
-        private const int MAX_LENGTH_METRIC_KEY = 250;
-        private const int MAX_LENGTH_DIMENSION_KEY = 100;
-        private const int MAX_LENGTH_DIMENSION_VALUE = 250;
-        private const int MAX_DIMENSIONS = 50;
+        private const int MaxLengthMetricKey = 250;
+        private const int MaxLengthDimensionKey = 100;
+        private const int MaxLengthDimensionValue = 250;
+        private const int MaxDimensions = 50;
 
-        public DynatraceMetricSerializer(string prefix = null, IEnumerable<KeyValuePair<string, string>> tags = null)
+        public DynatraceMetricSerializer(string prefix = null, IEnumerable<KeyValuePair<string, string>> dimensions = null)
         {
-            this.prefix = prefix;
-            this.tags = tags ?? Enumerable.Empty<KeyValuePair<string, string>>();
+            this._prefix = prefix;
+            this._defaultDimensions = dimensions ?? Enumerable.Empty<KeyValuePair<string, string>>();
         }
 
         public string SerializeMetric(Metric metric)
@@ -52,8 +52,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
             {
                 WriteMetricKey(sb, metric);
                 WriteDimensions(sb, metricData.Labels);
-                WriteDimensions(sb, tags);
-                var labels = metricData.Labels;
+                WriteDimensions(sb, this._defaultDimensions);
                 switch (metric.AggregationType)
                 {
                     case AggregationType.DoubleSum:
@@ -123,7 +122,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
         private void WriteMetricKey(StringBuilder sb, Metric metric)
         {
             var keyBuilder = new StringBuilder();
-            if (!string.IsNullOrEmpty(prefix)) keyBuilder.Append($"{prefix}.");
+            if (!string.IsNullOrEmpty(_prefix)) keyBuilder.Append($"{_prefix}.");
             if (!string.IsNullOrEmpty(metric.MetricNamespace)) keyBuilder.Append($"{metric.MetricNamespace}.");
             keyBuilder.Append(metric.MetricName);
             sb.Append(ToMintMetricKey(keyBuilder.ToString()));
@@ -131,7 +130,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 
         private void WriteDimensions(StringBuilder sb, IEnumerable<KeyValuePair<string, string>> labels)
         {
-            foreach (var label in labels.Take(MAX_DIMENSIONS))
+            foreach (var label in labels.Take(MaxDimensions))
             {
                 sb.Append($",{ToMintDimensionKey(label.Key)}={ToMintDimensionValue(label.Value)}");
             }
@@ -147,9 +146,9 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
             {
                 return null;
             }
-            if (input.Length > MAX_LENGTH_METRIC_KEY)
+            if (input.Length > MaxLengthMetricKey)
             {
-                input = input.Substring(0, MAX_LENGTH_METRIC_KEY);
+                input = input.Substring(0, MaxLengthMetricKey);
             }
             return ReplaceKeyCharacters(TrimKey(RemoveInvalidKeySections(input)));
         }
@@ -164,9 +163,9 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
             {
                 return null;
             }
-            if (input.Length > MAX_LENGTH_DIMENSION_KEY)
+            if (input.Length > MaxLengthDimensionKey)
             {
-                input = input.Substring(0, MAX_LENGTH_DIMENSION_KEY);
+                input = input.Substring(0, MaxLengthDimensionKey);
             }
             return ReplaceKeyCharacters(TrimKey(RemoveInvalidKeySections(input)).ToLower());
         }
@@ -206,9 +205,9 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
             {
                 return null;
             }
-            if (input.Length > MAX_LENGTH_DIMENSION_VALUE)
+            if (input.Length > MaxLengthDimensionValue)
             {
-                input = input.Substring(0, MAX_LENGTH_DIMENSION_VALUE);
+                input = input.Substring(0, MaxLengthDimensionValue);
             }
             input = Regex.Replace(input, @"([,= \\])", "\\$1");
             return Regex.Replace(input, @"[^a-zA-Z0-9:_\-\.,= \\]", "_");

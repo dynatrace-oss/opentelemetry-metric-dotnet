@@ -16,7 +16,7 @@
 
 using System.Collections.Generic;
 
-namespace Dynatrace.OpenTelemetry.Exporter
+namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 {
     /// <summary>
     /// Options to run dynatrace exporter.
@@ -32,12 +32,12 @@ namespace Dynatrace.OpenTelemetry.Exporter
         ///
         /// https://www.dynatrace.com/support/help/dynatrace-api/environment-api/metric-v2/post-ingest-metrics
         /// </summary>
-        public string Url { get; set; } = "http://127.0.0.1:14499/metrics/ingest";
+        public string Url { get; set; } = "http://localhost:14499/metrics/ingest";
 
         /// <summary>
         /// Gets or sets the dynatrace api-token for authentication.
         ///
-        /// How to aquire an api-token: https://www.dynatrace.com/support/help/dynatrace-api/basics/dynatrace-api-authentication/
+        /// How to acquire an api-token: https://www.dynatrace.com/support/help/dynatrace-api/basics/dynatrace-api-authentication/
         ///
         /// "metrics.ingest" permission is required for the api-token.
         /// </summary>
@@ -49,8 +49,13 @@ namespace Dynatrace.OpenTelemetry.Exporter
         public string Prefix { get; set; }
 
         /// <summary>
-        /// Gets automatically added as metric labels/dimensions.
+        /// Gets automatically added as metric dimensions.
         /// </summary>
-        public IEnumerable<KeyValuePair<string, string>> Tags { get; set; }
+        public IEnumerable<KeyValuePair<string, string>> DefaultDimensions { get; set; }
+
+        /// <summary>
+        /// Automatically adds host and process metadata retrieved from the OneAgent as metric labels.
+        /// </summary>
+        public bool OneAgentMetadataEnrichment { get; set; } = true;
     }
 }

@@ -16,10 +16,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using OpenTelemetry.Metrics;
 using OpenTelemetry.Metrics.Export;
-using OpenTelemetry.Trace;
 using Xunit;
 
 namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
@@ -31,9 +28,10 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
         {
             var timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1604660628881).UtcDateTime;
 
-            var labels1 = new List<KeyValuePair<string, string>>();
-            labels1.Add(new KeyValuePair<string, string>("dim1", "value1"));
-            labels1.Add(new KeyValuePair<string, string>("dim2", "value2"));
+            var labels1 = new List<KeyValuePair<string, string>> {
+                new KeyValuePair<string, string>("dim1", "value1"),
+                new KeyValuePair<string, string>("dim2", "value2")
+            };
             var m1 = new Metric("namespace1", "metric1", "Description", AggregationType.LongSum);
             m1.Data.Add(new Int64SumData
             {
@@ -89,9 +87,10 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
         {
             var timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1604660628881).UtcDateTime;
 
-            var labels1 = new List<KeyValuePair<string, string>>();
-            labels1.Add(new KeyValuePair<string, string>("dim1", "value1"));
-            labels1.Add(new KeyValuePair<string, string>("dim2", "value2"));
+            var labels1 = new List<KeyValuePair<string, string>> {
+                new KeyValuePair<string, string>("dim1", "value1"),
+                new KeyValuePair<string, string>("dim2", "value2")
+            };
             var m1 = new Metric("namespace1", "metric1", "Description", AggregationType.LongSum);
             m1.Data.Add(new Int64SumData
             {
@@ -100,10 +99,10 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
                 Timestamp = timestamp
             });
 
-            string serialized = new DynatraceMetricSerializer(tags: new List<KeyValuePair<string, string>> {
-                { new KeyValuePair<string, string>("tag1", "value1") },
-                { new KeyValuePair<string, string>("tag2", "value2") },
-                { new KeyValuePair<string, string>("tag3", "value3") },
+            string serialized = new DynatraceMetricSerializer(dimensions: new List<KeyValuePair<string, string>> {
+                new KeyValuePair<string, string>("tag1", "value1") ,
+                new KeyValuePair<string, string>("tag2", "value2") ,
+                new KeyValuePair<string, string>("tag3", "value3") ,
             }).SerializeMetric(m1);
             string expected = "namespace1.metric1,dim1=value1,dim2=value2,tag1=value1,tag2=value2,tag3=value3 count,delta=100 1604660628881" + Environment.NewLine;
             Assert.Equal(expected, serialized);
@@ -112,9 +111,10 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
         [Fact]
         public void SerializeLongSumBatch()
         {
-            var labels1 = new List<KeyValuePair<string, string>>();
-            labels1.Add(new KeyValuePair<string, string>("dim1", "value1"));
-            labels1.Add(new KeyValuePair<string, string>("dim2", "value2"));
+            var labels1 = new List<KeyValuePair<string, string>>{
+                new KeyValuePair<string, string>("dim1", "value1"),
+                new KeyValuePair<string, string>("dim2", "value2")
+            };
             var m1 = new Metric("namespace1", "metric1", "Description", AggregationType.LongSum);
             m1.Data.Add(new Int64SumData
             {

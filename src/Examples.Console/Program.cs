@@ -14,7 +14,6 @@
 // limitations under the License.
 // </copyright>
 
-using System;
 using CommandLine;
 using System.Threading.Tasks;
 
@@ -26,7 +25,7 @@ namespace Examples.Console
         {
             await Parser.Default.ParseArguments<DynatraceOptions>(args)
                 .MapResult(
-                    (DynatraceOptions options) => TestDynatraceExporter.RunAsync(options.Url, options.ApiToken, options.PushIntervalInSecs, options.DurationInMins),
+                    (DynatraceOptions options) => TestDynatraceExporter.RunAsync(options.Url, options.ApiToken, options.PushIntervalInSecs, options.DurationInMins, options.OneAgentMetadataEnrichment),
                     errs => Task.FromResult(0));
 
             System.Console.ReadLine();
@@ -42,12 +41,13 @@ namespace Examples.Console
         [Option('d', "duration", Default = 2, HelpText = "Total duration in minutes to run the demo. Run atleast for a min to see metrics flowing.", Required = false)]
         public int DurationInMins { get; set; }
 
-        [Option('u', "url", Default = "http://127.0.0.1:14499/metrics/ingest", HelpText = "Dynatrace metrics ingest API URL.", Required = false)]
+        [Option('u', "url", HelpText = "Dynatrace metrics ingest API URL.", Required = false)]
         public string Url { get; set; }
 
         [Option('a', "apiToken", Default = "", HelpText = "Dynatrace API authentication token.", Required = false)]
-
         public string ApiToken { get; set; }
-    }
 
+        [Option('o', "oneAgentMetadataEnrichment", Default = true, HelpText = "Automatic label enrichment via OneAgent metadata.", Required = false)]
+        public bool OneAgentMetadataEnrichment { get; set; }
+    }
 }

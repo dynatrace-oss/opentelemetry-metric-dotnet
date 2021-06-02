@@ -17,7 +17,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -25,10 +24,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Dynatrace.OpenTelemetry.Exporter.Metrics;
 using OpenTelemetry.Metrics.Export;
 
-namespace Dynatrace.OpenTelemetry.Exporter
+namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 {
     /// <summary>
     /// https://www.dynatrace.com/support/help/how-to-use-dynatrace/metrics/metric-ingestion/metric-ingestion-protocol/
@@ -36,56 +34,61 @@ namespace Dynatrace.OpenTelemetry.Exporter
     /// </summary>
     public class DynatraceMetricsExporter : MetricExporter
     {
-        internal readonly DynatraceExporterOptions Options;
-        private readonly ILogger<DynatraceMetricsExporter> logger;
-        private HttpClient httpClient;
-        private DynatraceMetricSerializer serializer;
+        private readonly DynatraceExporterOptions _options;
+        private readonly ILogger<DynatraceMetricsExporter> _logger;
+        private readonly HttpClient _httpClient;
+        private readonly DynatraceMetricSerializer _serializer;
 
         public DynatraceMetricsExporter(DynatraceExporterOptions options = null, ILogger<DynatraceMetricsExporter> logger = null)
         {
-            this.Options = options ?? new DynatraceExporterOptions();
-            this.logger = logger ?? NullLogger<DynatraceMetricsExporter>.Instance;
-            logger.LogDebug("Dynatrace Metrics Url: {Url}", options.Url);
-            this.httpClient = new HttpClient();
+            this._options = options ?? new DynatraceExporterOptions();
+            this._logger = logger ?? NullLogger<DynatraceMetricsExporter>.Instance;
+            logger.LogDebug("Dynatrace Metrics Url: {Url}", this._options.Url);
+            this._httpClient = new HttpClient();
             if (!string.IsNullOrEmpty(options.ApiToken))
             {
-                this.httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Api-Token", this.Options.ApiToken);
+                this._httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Api-Token", this._options.ApiToken);
             }
             var defaultLabels = new List<KeyValuePair<string, string>>();
-            if (options.Tags != null) defaultLabels.AddRange(options.Tags);
-            this.serializer = new DynatraceMetricSerializer(options.Prefix, defaultLabels);
+            if (options.DefaultDimensions != null) defaultLabels.AddRange(options.DefaultDimensions);
+            if (options.OneAgentMetadataEnrichment)
+            {
+                var enricher = new OneAgentMetadataEnricher(this._logger);
+                enricher.EnrichWithDynatraceMetadata(defaultLabels);
+            }
+            this._serializer = new DynatraceMetricSerializer(options.Prefix, defaultLabels);
         }
 
         public override async Task<ExportResult> ExportAsync(IEnumerable<Metric> metrics, CancellationToken cancellationToken)
         {
             var sw = Stopwatch.StartNew();
-            var httpRequest = new HttpRequestMessage(HttpMethod.Post, this.Options.Url);
+            var httpRequest = new HttpRequestMessage(HttpMethod.Post, this._options.Url);
             var sb = new StringBuilder();
             foreach (var metric in metrics)
             {
-                serializer.SerializeMetric(sb, metric);
+                _serializer.SerializeMetric(sb, metric);
             }
 
-            var mintMetrics = sb.ToString();
-            logger.LogDebug(mintMetrics);
-            httpRequest.Content = new StringContent(mintMetrics);
+            var metricLines = sb.ToString();
+            _logger.LogDebug(metricLines);
+            httpRequest.Content = new StringContent(metricLines);
             try
             {
-                var response = await this.httpClient.SendAsync(httpRequest);
+                var response = await this._httpClient.SendAsync(httpRequest);
                 if (response.IsSuccessStatusCode)
                 {
-                    logger.LogDebug("StatusCode: {StatusCode}, Duration: {Duration}ms", response.StatusCode, sw.Elapsed.TotalMilliseconds);
+                    _logger.LogDebug("StatusCode: {StatusCode}, Duration: {Duration}ms", response.StatusCode, sw.Elapsed.TotalMilliseconds);
                 }
                 else
                 {
-                    logger.LogError("StatusCode: {StatusCode}: Duration: {Duration}ms", response.StatusCode, sw.Elapsed.TotalMilliseconds);
-                    logger.LogError("Content: {Content}", await response.Content.ReadAsStringAsync());
+                    _logger.LogError("StatusCode: {StatusCode}: Duration: {Duration}ms", response.StatusCode, sw.Elapsed.TotalMilliseconds);
+                    _logger.LogError("Content: {Content}", await response.Content.ReadAsStringAsync());
                 }
                 return ExportResult.Success;
             }
             catch (Exception e)
             {
-                logger.LogError("Error sending metrics: {Error}", e.Message);
+                _logger.LogError("Error sending metrics: {Error}", e.Message);
                 throw e;
             }
         }
