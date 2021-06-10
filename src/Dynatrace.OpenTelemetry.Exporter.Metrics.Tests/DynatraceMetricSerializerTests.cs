@@ -83,7 +83,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
         }
 
         [Fact]
-        public void TagsOption()
+        public void DimensionsOption()
         {
             var timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1604660628881).UtcDateTime;
 
@@ -100,11 +100,11 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
             });
 
             string serialized = new DynatraceMetricSerializer(dimensions: new List<KeyValuePair<string, string>> {
-                new KeyValuePair<string, string>("tag1", "value1") ,
-                new KeyValuePair<string, string>("tag2", "value2") ,
-                new KeyValuePair<string, string>("tag3", "value3") ,
+                new KeyValuePair<string, string>("dimension1", "value1") ,
+                new KeyValuePair<string, string>("dimension2", "value2") ,
+                new KeyValuePair<string, string>("dimension3", "value3") ,
             }).SerializeMetric(m1);
-            string expected = "namespace1.metric1,dim1=value1,dim2=value2,tag1=value1,tag2=value2,tag3=value3 count,delta=100 1604660628881" + Environment.NewLine;
+            string expected = "namespace1.metric1,dim1=value1,dim2=value2,dimension1=value1,dimension2=value2,dimension3=value3 count,delta=100 1604660628881" + Environment.NewLine;
             Assert.Equal(expected, serialized);
         }
 
@@ -141,60 +141,6 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
                 "namespace1.metric1,dim1=value1,dim2=value2 count,delta=130 1604660628882" + Environment.NewLine +
                 "namespace1.metric1,dim1=value1,dim2=value2 count,delta=150 1604660628883" + Environment.NewLine;
             Assert.Equal(expected, serialized);
-        }
-
-        [Theory]
-        [InlineData("just.a.normal.key", "just.a.normal.key")]
-        [InlineData("~0something", "something")]
-        [InlineData("some~thing", "some_thing")]
-        [InlineData("some~ä#thing", "some_thing")]
-        [InlineData("a..b", "a.b")]
-        [InlineData("a.....b", "a.b")]
-        [InlineData("asd", "asd")]
-        [InlineData(".", "")]
-        [InlineData(".a", "a")]
-        [InlineData("a.", "a")]
-        [InlineData(".a.", "a")]
-        [InlineData("_a", "a")]
-        [InlineData("a_", "a_")]
-        [InlineData("_a_", "a_")]
-        [InlineData(".a_", "a_")]
-        [InlineData("_a.", "a")]
-        [InlineData("._._a_._._", "a_")]
-        [InlineData("ä_äa", "__a")]
-        [InlineData("test..empty.test", "test.empty.test")]
-        [InlineData("a,,,b  c=d\\e\\ =,f", "a_b_c_d_e_f")]
-        [InlineData("a!b\"c#d$e%f&g'h(i)j*k+l,m-n.o/p:q;r<s=t>u?v@w[x]y\\z^0 1_2;3{4|5}6~7", "a_b_c_d_e_f_g_h_i_j_k_l_m-n.o_p:q_r_s_t_u_v_w_x_y_z_0_1_2_3_4_5_6_7")]
-        public void MetricAndDimensionKeyNormalizer(string input, string expected)
-        {
-            Assert.Equal(expected, DynatraceMetricSerializer.ToMintMetricKey(input));
-            Assert.Equal(expected, DynatraceMetricSerializer.ToMintDimensionKey(input));
-        }
-
-        [Theory]
-        [InlineData("Preserve.thE_cAsing", "Preserve.thE_cAsing")]
-        public void MetricKeyNormalizer(string input, string expected)
-        {
-            Assert.Equal(expected, DynatraceMetricSerializer.ToMintMetricKey(input));
-        }
-
-        [Theory]
-        [InlineData("to.LOWER_CaSe", "to.lower_case")]
-        public void DimensionKeyNormalizer(string input, string expected)
-        {
-            Assert.Equal(expected, DynatraceMetricSerializer.ToMintDimensionKey(input));
-        }
-
-        [Theory]
-        [InlineData("it-preserves_Capital.lEtters", "it-preserves_Capital.lEtters")]
-        [InlineData(" spaces escaped ", "\\ spaces\\ escaped\\ ")]
-        [InlineData("wait,a,minute", "wait\\,a\\,minute")]
-        [InlineData("equality=fine", "equality\\=fine")]
-        [InlineData("a,,,b c=d\\e", "a\\,\\,\\,b\\ c\\=d\\\\e")]
-        [InlineData("a!b\"c#d$e%f&g'h(i)j*k+l,m-n.o/p:q;r<s=t>u?v@w[x]y\\z^0 1_2;3{4|5}6~7", "a_b_c_d_e_f_g_h_i_j_k_l\\,m-n.o_p:q_r_s\\=t_u_v_w_x_y\\\\z_0\\ 1_2_3_4_5_6_7")]
-        public void DimensionValueNormalizer(string input, string expected)
-        {
-            Assert.Equal(expected, DynatraceMetricSerializer.ToMintDimensionValue(input));
         }
     }
 }

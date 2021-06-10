@@ -43,6 +43,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
             this._fileReader = fileReader;
         }
 
+        // todo remove.
         public void EnrichWithDynatraceMetadata(ICollection<KeyValuePair<string, string>> labels)
         {
             var metadata = ProcessMetadata(GetMetadataFileContent());
@@ -52,7 +53,11 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
             }
         }
 
-        public IEnumerable<KeyValuePair<string, string>> ProcessMetadata(string[] lines)
+        public IEnumerable<KeyValuePair<string, string>> GetOneAgentDimensions() {
+            return ProcessMetadata(GetMetadataFileContent());
+        }
+
+        internal IEnumerable<KeyValuePair<string, string>> ProcessMetadata(string[] lines)
         {
             foreach (var line in lines)
             {

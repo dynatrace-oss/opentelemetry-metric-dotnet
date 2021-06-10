@@ -49,14 +49,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
             {
                 this._httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Api-Token", this._options.ApiToken);
             }
-            var defaultLabels = new List<KeyValuePair<string, string>>();
-            if (options.DefaultDimensions != null) defaultLabels.AddRange(options.DefaultDimensions);
-            if (options.OneAgentMetadataEnrichment)
-            {
-                var enricher = new OneAgentMetadataEnricher(this._logger);
-                enricher.EnrichWithDynatraceMetadata(defaultLabels);
-            }
-            this._serializer = new DynatraceMetricSerializer(options.Prefix, defaultLabels);
+            this._serializer = new DynatraceMetricSerializer(this._logger, options.Prefix, options.DefaultDimensions, options.OneAgentMetadataEnrichment);
         }
 
         public override async Task<ExportResult> ExportAsync(IEnumerable<Metric> metrics, CancellationToken cancellationToken)
