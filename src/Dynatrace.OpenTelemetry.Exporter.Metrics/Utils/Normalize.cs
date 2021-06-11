@@ -32,16 +32,12 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Utils
         private static readonly Regex reMkFirstIdentifierSectionStart = new Regex("^[^a-zA-Z_]+", RegexOptions.Compiled);
         // characters not valid as leading characters in subsequent subsections.
         private static readonly Regex reMkSubsequentIdentifierSectionStart = new Regex("^[^a-zA-Z0-9_]+", RegexOptions.Compiled);
-        // chars that are invalid as trailing characters
-        private static readonly Regex reMkIdentifierSectionEnd = new Regex("[^a-zA-Z0-9_\\-]+$", RegexOptions.Compiled);
         // invalid characters for the rest of the key.
         private static readonly Regex reMkInvalidCharacters = new Regex("[^a-zA-Z0-9_\\-]+", RegexOptions.Compiled);
 
         // Dimension keys (dk)
         // Dimension keys start with a lowercase letter or an underscore.
         private static readonly Regex reDkSectionStart = new Regex("^[^a-z_]+", RegexOptions.Compiled);
-        // trailing characters not in this character class are trimmed off.
-        private static readonly Regex reDkSectionEnd = new Regex("[^a-z0-9_\\-:]+$", RegexOptions.Compiled);
         // invalid characters in the rest of the dimension key
         private static readonly Regex reDkInvalidCharacters = new Regex("[^a-z0-9_\\-:]+", RegexOptions.Compiled);
 
@@ -49,8 +45,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Utils
         // Characters that need to be escaped in dimension values
         private static readonly Regex reDvCharactersToEscape = new Regex("([= ,\\\\])", RegexOptions.Compiled);
         private static readonly Regex reDvControlCharacters = new Regex("[\\p{C}]+", RegexOptions.Compiled);
-        private static readonly Regex reDvControlCharactersStart = new Regex("^[\\p{C}]+", RegexOptions.Compiled);
-        private static readonly Regex reDvControlCharactersEnd = new Regex("[\\p{C}]+$", RegexOptions.Compiled);
+
         // This regex checks if there is an odd number of trailing backslashes in the string. It can be
         // read as: {not a slash}{any number of 2-slash pairs}{one slash}{end line}.
         private static readonly Regex reDvHasOddNumberOfTrailingBackslashes = new Regex("[^\\\\](?:\\\\\\\\)*\\\\$", RegexOptions.Compiled);
@@ -68,6 +63,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Utils
             {
                 return null;
             }
+
             if (key.Length > MaxLengthMetricKey)
             {
                 key = key.Substring(0, MaxLengthMetricKey);
@@ -79,65 +75,60 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Utils
                 return null;
             }
             bool firstSection = true;
-
             StringBuilder normalizedKeyBuilder = new StringBuilder();
 
             foreach (string section in sections)
             {
-                string normalizedSection;
-                // first key section cannot start with a number while subsequent sections can.
-                if (firstSection)
-                {
-                    normalizedSection = reMkFirstIdentifierSectionStart.Replace(section, "");
-                }
-                else
-                {
-                    normalizedSection = reMkSubsequentIdentifierSectionStart.Replace(section, "");
-                }
-
-                // trim trailing invalid chars
-                normalizedSection = reMkIdentifierSectionEnd.Replace(normalizedSection, "");
-
-                // replace invalid chars with an underscore
-                normalizedSection = reMkInvalidCharacters.Replace(normalizedSection, "_");
-
-                if (normalizedSection.Length == 0)
+                // check only if it is empty, and ignore a null check.
+                if (section.Length == 0)
                 {
                     if (firstSection)
                     {
-                        // logger.warning(
+                        // todo make this not static and add a logger
+                        // _logger.warning(
                         //     String.format(
                         //         "first metric key section empty while normalizing '%s', discarding...", key));
                         return null;
                     }
-                    // section is empty after normalization and will be discarded.
-                    // logger.info(
-                    //     String.format(
-                    //         "normalization of section '%s' in '%s' leads to empty section, discarding section...",
-                    //         section, key));
+                    else
+                    {
+                        // skip empty sections
+                        continue;
+                    }
+                }
+
+                string normalizedSection;
+                // first key section cannot start with a number while subsequent sections can.
+                if (firstSection)
+                {
+                    normalizedSection = reMkFirstIdentifierSectionStart.Replace(section, "_");
                 }
                 else
                 {
-                    // re-concatenate the split sections separated with dots.
-                    if (!firstSection)
-                    {
-                        normalizedKeyBuilder.Append(".");
-                    }
-                    else
-                    {
-                        firstSection = false;
-                    }
-
-                    normalizedKeyBuilder.Append(normalizedSection);
+                    normalizedSection = reMkSubsequentIdentifierSectionStart.Replace(section, "_");
                 }
-            }
 
+                // replace invalid chars with an underscore
+                normalizedSection = reMkInvalidCharacters.Replace(normalizedSection, "_");
+
+                // re-concatenate the split sections separated with dots.
+                if (!firstSection)
+                {
+                    normalizedKeyBuilder.Append(".");
+                }
+                else
+                {
+                    firstSection = false;
+                }
+
+                normalizedKeyBuilder.Append(normalizedSection);
+            }
             return normalizedKeyBuilder.ToString();
         }
 
         internal static string DimensionKey(string key)
         {
-            if (string.IsNullOrWhiteSpace(key))
+            if (string.IsNullOrEmpty(key))
             {
                 return "";
             }
@@ -156,33 +147,22 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Utils
                 {
                     // move to lowercase
                     string normalizedSection = section.ToLower();
-                    // trim leading and trailing invalid characters.
-                    normalizedSection = reDkSectionStart.Replace(normalizedSection, "");
-                    normalizedSection = reDkSectionEnd.Replace(normalizedSection, "");
+                    // replace consecutive leading chars with an underscore.
+                    normalizedSection = reDkSectionStart.Replace(normalizedSection, "_");
                     // replace consecutive invalid characters within the section with one underscore:
                     normalizedSection = reDkInvalidCharacters.Replace(normalizedSection, "_");
 
-                    if (normalizedSection.Length == 0)
+                    // re-concatenate the split sections separated with dots.
+                    if (!firstSection)
                     {
-                        // section is empty after normalization and will be discarded.
-                        // logger.info(
-                        //     String.format(
-                        //         "normalization of section '%s' lead to empty section, discarding...", section));
+                        normalizedKeyBuilder.Append(".");
                     }
                     else
                     {
-                        // re-concatenate the split sections separated with dots.
-                        if (!firstSection)
-                        {
-                            normalizedKeyBuilder.Append(".");
-                        }
-                        else
-                        {
-                            firstSection = false;
-                        }
-
-                        normalizedKeyBuilder.Append(normalizedSection);
+                        firstSection = false;
                     }
+
+                    normalizedKeyBuilder.Append(normalizedSection);
                 }
             }
             return normalizedKeyBuilder.ToString();
@@ -198,9 +178,8 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Utils
             {
                 value = value.Substring(0, MaxLengthDimensionValue);
             }
-            // trim leading and trailing control characters and collapse contained control chars to an "_"
-            value = reDvControlCharactersStart.Replace(value, "");
-            value = reDvControlCharactersEnd.Replace(value, "");
+
+            // collapse invalid characters to an underscore.
             value = reDvControlCharacters.Replace(value, "_");
 
             return value;
