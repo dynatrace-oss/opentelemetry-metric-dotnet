@@ -33,11 +33,11 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
         private static readonly IEnumerable<KeyValuePair<string, string>> _staticDimensions = new List<KeyValuePair<string, string>> { new KeyValuePair<string, string>("dt.metrics.source", "opentelemetry") };
         private static readonly int MaxDimensions = 50;
 
-        public DynatraceMetricSerializer(ILogger<DynatraceMetricsExporter> logger, string prefix = null, IEnumerable<KeyValuePair<string, string>> dimensions = null, bool enrichWithDynatraceMetadata = true)
+        public DynatraceMetricSerializer(ILogger<DynatraceMetricsExporter> logger, string prefix = null, IEnumerable<KeyValuePair<string, string>> defaultDimensions = null, bool enrichWithDynatraceMetadata = true)
         {
             this._logger = logger;
             this._prefix = prefix;
-            this._defaultDimensions = dimensions ?? Enumerable.Empty<KeyValuePair<string, string>>();
+            this._defaultDimensions = defaultDimensions ?? Enumerable.Empty<KeyValuePair<string, string>>();
             if (enrichWithDynatraceMetadata)
             {
                 var enricher = new OneAgentMetadataEnricher(this._logger);
@@ -141,7 +141,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
             var keyBuilder = new StringBuilder();
             if (!string.IsNullOrEmpty(_prefix)) keyBuilder.Append($"{_prefix}.");
             // todo is this needed?
-            // if (!string.IsNullOrEmpty(metric.MetricNamespace)) keyBuilder.Append($"{metric.MetricNamespace}.");
+            if (!string.IsNullOrEmpty(metric.MetricNamespace)) keyBuilder.Append($"{metric.MetricNamespace}.");
             keyBuilder.Append(metric.MetricName);
             return ToMetricKey(keyBuilder.ToString());
         }
