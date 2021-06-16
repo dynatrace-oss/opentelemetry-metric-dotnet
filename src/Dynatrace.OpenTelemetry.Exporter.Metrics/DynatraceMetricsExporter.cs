@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -38,6 +39,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
         private readonly ILogger<DynatraceMetricsExporter> _logger;
         private readonly HttpClient _httpClient;
         private readonly DynatraceMetricSerializer _serializer;
+        private const int _maxBatchSize = 1000;
 
         public DynatraceMetricsExporter(DynatraceExporterOptions options = null, ILogger<DynatraceMetricsExporter> logger = null)
         {
@@ -57,34 +59,51 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
         {
             var sw = Stopwatch.StartNew();
             var httpRequest = new HttpRequestMessage(HttpMethod.Post, this._options.Url);
-            var sb = new StringBuilder();
-            foreach (var metric in metrics)
+
+            // split all metrics into batches of _maxBatchSize
+            var chunked = metrics
+            .Select((val, i) => new { val, batch = i / _maxBatchSize })
+            .GroupBy(x => x.batch)
+            .Select(x => x.Select(v => v.val));
+
+            var exportResults = new List<ExportResult>();
+
+            foreach (var chunk in chunked)
             {
-                _serializer.SerializeMetric(sb, metric);
+                var sb = new StringBuilder();
+
+                foreach (var metric in chunk)
+                {
+                    _serializer.SerializeMetric(sb, metric);
+                }
+
+                var metricLines = sb.ToString();
+                _logger.LogDebug(metricLines);
+                httpRequest.Content = new StringContent(metricLines);
+                try
+                {
+                    var response = await this._httpClient.SendAsync(httpRequest);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        _logger.LogDebug("StatusCode: {StatusCode}, Duration: {Duration}ms", response.StatusCode, sw.Elapsed.TotalMilliseconds);
+                        exportResults.Add(ExportResult.Success);
+                    }
+                    else
+                    {
+                        _logger.LogError("StatusCode: {StatusCode}: Duration: {Duration}ms", response.StatusCode, sw.Elapsed.TotalMilliseconds);
+                        _logger.LogError("Content: {Content}", await response.Content.ReadAsStringAsync());
+                        exportResults.Add(ExportResult.FailedNotRetryable);
+                    }
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError("Error sending metrics: {Error}", e.Message);
+                    throw e;
+                }
             }
 
-            var metricLines = sb.ToString();
-            _logger.LogDebug(metricLines);
-            httpRequest.Content = new StringContent(metricLines);
-            try
-            {
-                var response = await this._httpClient.SendAsync(httpRequest);
-                if (response.IsSuccessStatusCode)
-                {
-                    _logger.LogDebug("StatusCode: {StatusCode}, Duration: {Duration}ms", response.StatusCode, sw.Elapsed.TotalMilliseconds);
-                }
-                else
-                {
-                    _logger.LogError("StatusCode: {StatusCode}: Duration: {Duration}ms", response.StatusCode, sw.Elapsed.TotalMilliseconds);
-                    _logger.LogError("Content: {Content}", await response.Content.ReadAsStringAsync());
-                }
-                return ExportResult.Success;
-            }
-            catch (Exception e)
-            {
-                _logger.LogError("Error sending metrics: {Error}", e.Message);
-                throw e;
-            }
+            // if all chunks were exported successfully, return success, otherwise failed.
+            return exportResults.All(x => x == ExportResult.Success) ? ExportResult.Success : ExportResult.FailedNotRetryable;
         }
     }
 }
