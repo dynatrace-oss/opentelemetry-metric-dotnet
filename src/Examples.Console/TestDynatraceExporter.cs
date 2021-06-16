@@ -38,8 +38,6 @@ namespace Examples.Console
             });
             var logger = loggerFactory.CreateLogger<TestDynatraceExporter>();
 
-            logger.LogInformation(pushIntervalInSecs.ToString());
-
             var options = new DynatraceExporterOptions
             {
                 ApiToken = apiToken,

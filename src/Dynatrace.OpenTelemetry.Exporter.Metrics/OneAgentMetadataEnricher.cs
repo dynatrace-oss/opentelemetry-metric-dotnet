@@ -84,7 +84,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
             }
             catch (Exception e)
             {
-                _logger.LogDebug("Could not read OneAgent metadata file. This is normal if OneAgent is not installed. Message: {Message}", e.Message);
+                _logger.LogWarning("Could not read OneAgent metadata file. This is normal if OneAgent is not installed. Message: {Message}", e.Message);
                 return Array.Empty<string>();
             }
         }
