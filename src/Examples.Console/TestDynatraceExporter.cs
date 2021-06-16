@@ -37,14 +37,20 @@ namespace Examples.Console
                         .AddConsole();
             });
             var logger = loggerFactory.CreateLogger<TestDynatraceExporter>();
+
+            logger.LogInformation(pushIntervalInSecs.ToString());
+
             var options = new DynatraceExporterOptions
             {
                 ApiToken = apiToken,
                 OneAgentMetadataEnrichment = oneAgentMetadataEnrichment
             };
-            if (url != null) {
+            if (url != null)
+            {
                 options.Url = url;
-            } else {
+            }
+            else
+            {
                 logger.LogInformation("no URL provided, falling back to default OneAgent endpoint.");
             }
             var dtExporter = new DynatraceMetricsExporter(options, loggerFactory.CreateLogger<DynatraceMetricsExporter>());

@@ -25,7 +25,7 @@ namespace Examples.Console
         {
             await Parser.Default.ParseArguments<DynatraceOptions>(args)
                 .MapResult(
-                    (DynatraceOptions options) => TestDynatraceExporter.RunAsync(options.Url, options.ApiToken, options.PushIntervalInSecs, options.DurationInMins, options.OneAgentMetadataEnrichment),
+                    (DynatraceOptions options) => TestDynatraceExporter.RunAsync(options.Url, options.ApiToken, options.PushIntervalInSecs, options.DurationInMins, !options.DisableOneAgentMetadataEnrichment),
                     errs => Task.FromResult(0));
 
             System.Console.ReadLine();
@@ -35,19 +35,19 @@ namespace Examples.Console
     [Verb("dynatrace", HelpText = "Specify the options required to test Dynatrace")]
     internal class DynatraceOptions
     {
-        [Option('i', "pushIntervalInSecs", Default = 15, HelpText = "The interval at which Push controller pushes metrics.", Required = false)]
+        [Option('i', "pushIntervalInSecs", Default = 15, HelpText = "The interval at which metrics are pushed to Dynatrace.", Required = false)]
         public int PushIntervalInSecs { get; set; }
 
-        [Option('d', "duration", Default = 2, HelpText = "Total duration in minutes to run the demo. Run atleast for a min to see metrics flowing.", Required = false)]
+        [Option('d', "duration", Default = 2, HelpText = "Total duration in minutes to run the demo. Run at least for one minute to see metrics flowing.", Required = false)]
         public int DurationInMins { get; set; }
 
-        [Option('u', "url", HelpText = "Dynatrace metrics ingest API URL.", Required = false)]
+        [Option('u', "url", HelpText = "Dynatrace metrics ingest API URL, including the '/api/v2/metrics/ingest' suffix.", Required = false)]
         public string Url { get; set; }
 
-        [Option('a', "apiToken", Default = "", HelpText = "Dynatrace API authentication token.", Required = false)]
+        [Option('a', "apiToken",  HelpText = "Dynatrace API authentication token with the 'metrics.ingest' permission.", Required = false)]
         public string ApiToken { get; set; }
 
-        [Option('o', "oneAgentMetadataEnrichment", Default = true, HelpText = "Automatic label enrichment via OneAgent metadata.", Required = false)]
-        public bool OneAgentMetadataEnrichment { get; set; }
+        [Option('n', "noOneAgentEnrichment",  HelpText = "Disable automatic label enrichment via OneAgent metadata.", Required = false)]
+        public bool DisableOneAgentMetadataEnrichment { get; set; } = false;
     }
 }
