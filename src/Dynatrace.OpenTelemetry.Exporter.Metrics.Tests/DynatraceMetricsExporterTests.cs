@@ -108,6 +108,55 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
             mockMessageHandler.Protected().Verify("SendAsync", Times.Exactly(2), ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>());
         }
 
+        [Fact]
+        public async void TestExportMultipleWithPrefix()
+        {
+            var mockMessageHandler = new Mock<HttpMessageHandler>();
+            mockMessageHandler.Protected()
+            .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.OK,
+                Content = new StringContent("test")
+            });
+
+            var exporter = new DynatraceMetricsExporter(new DynatraceExporterOptions { Prefix = "my.prefix" }, null, new HttpClient(mockMessageHandler.Object));
+
+            var result = await exporter.ExportAsync(CreateMetrics(), CancellationToken.None);
+            var expectedString = "my.prefix.namespace1.metric1,dt.metrics.source=opentelemetry count,delta=100 1604660628881" + Environment.NewLine + "my.prefix.namespace2.metric2,dt.metrics.source=opentelemetry count,delta=200 1604660628881" + Environment.NewLine;
+
+            mockMessageHandler.Protected().Verify("SendAsync", Times.Exactly(1), ItExpr.Is<HttpRequestMessage>(req => req.Method == HttpMethod.Post), ItExpr.IsAny<CancellationToken>());
+            mockMessageHandler.Protected().Verify("SendAsync", Times.Exactly(1), ItExpr.Is<HttpRequestMessage>(req => req.RequestUri.AbsoluteUri == "http://localhost:14499/metrics/ingest"), ItExpr.IsAny<CancellationToken>());
+            mockMessageHandler.Protected().Verify("SendAsync", Times.Exactly(1), ItExpr.Is<HttpRequestMessage>(req => !req.Headers.Contains("Api-Token")), ItExpr.IsAny<CancellationToken>());
+            mockMessageHandler.Protected().Verify("SendAsync", Times.Exactly(1), ItExpr.Is<HttpRequestMessage>(req => req.Content.ReadAsStringAsync().Result == expectedString), ItExpr.IsAny<CancellationToken>());
+        }
+
+        private List<Metric> CreateMetrics()
+        {
+            var metrics = new List<Metric>();
+
+            var timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1604660628881).UtcDateTime;
+
+            var metric1 = new Metric("namespace1", "metric1", "Description", AggregationType.LongSum);
+            metric1.Data.Add(new Int64SumData
+            {
+                Sum = 100,
+                Timestamp = timestamp
+            });
+
+            metrics.Add(metric1);
+
+            var metric2 = new Metric("namespace2", "metric2", "Description", AggregationType.LongSum);
+            metric2.Data.Add(new Int64SumData
+            {
+                Sum = 200,
+                Timestamp = timestamp
+            });
+            metrics.Add(metric2);
+
+            return metrics;
+
+        }
 
         private Metric CreateMetric()
         {
