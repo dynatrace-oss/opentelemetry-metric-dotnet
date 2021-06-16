@@ -41,7 +41,8 @@ namespace Examples.Console
             var options = new DynatraceExporterOptions
             {
                 ApiToken = apiToken,
-                EnrichWithOneAgentMetadata = oneAgentMetadataEnrichment
+                EnrichWithOneAgentMetadata = oneAgentMetadataEnrichment,
+                DefaultDimensions = new Dictionary<string, string> { { "default1", "defval1" } }
             };
             if (url != null)
             {

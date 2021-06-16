@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
 using OpenTelemetry.Metrics.Export;
 using Xunit;
 
@@ -87,6 +88,25 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
         }
 
         [Fact]
+        public void PrefixOptionWithTrailingDot()
+        {
+            var timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1604660628881).UtcDateTime;
+
+            var labels = new List<KeyValuePair<string, string>>();
+            var metric = new Metric("namespace1", "metric1", "Description", AggregationType.LongSum);
+            metric.Data.Add(new Int64SumData
+            {
+                Labels = labels,
+                Sum = 100,
+                Timestamp = timestamp
+            });
+
+            string serialized = new DynatraceMetricSerializer(_logger, prefix: "prefix.").SerializeMetric(metric);
+            string expected = "prefix.namespace1.metric1,dt.metrics.source=opentelemetry count,delta=100 1604660628881" + Environment.NewLine;
+            Assert.Equal(expected, serialized);
+        }
+
+        [Fact]
         public void DimensionsOption()
         {
             var timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1604660628881).UtcDateTime;
@@ -145,6 +165,32 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
                 "namespace1.metric1,label1=value1,label2=value2,dt.metrics.source=opentelemetry count,delta=100 1604660628881" + Environment.NewLine +
                 "namespace1.metric1,label1=value1,label2=value2,dt.metrics.source=opentelemetry count,delta=130 1604660628882" + Environment.NewLine +
                 "namespace1.metric1,label1=value1,label2=value2,dt.metrics.source=opentelemetry count,delta=150 1604660628883" + Environment.NewLine;
+            Assert.Equal(expected, serialized);
+        }
+
+        [Fact]
+        public void DimensionPrecedence()
+        {
+            var timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1604660628881).UtcDateTime;
+
+            var defaultDimensions = new Dictionary<string, string> { { "dimension1", "default" }, { "dimension2", "default" }, { "dimension3", "default" } };
+            var labels = new List<KeyValuePair<string, string>> {
+                new KeyValuePair<string, string>("dimension2", "label"),
+                new KeyValuePair<string, string>("dimension3", "label")
+            };
+            var staticDimensions = new Dictionary<string, string> { { "dimension3", "static" } };
+
+            var metric = new Metric("namespace1", "metric1", "Description", AggregationType.LongSum);
+            metric.Data.Add(new Int64SumData
+            {
+                Labels = labels,
+                Sum = 100,
+                Timestamp = timestamp
+            });
+
+            var serialized = new DynatraceMetricSerializer(_logger, null, defaultDimensions, staticDimensions).SerializeMetric(metric);
+
+            string expected = "namespace1.metric1,dimension1=default,dimension2=label,dimension3=static,dt.metrics.source=opentelemetry count,delta=100 1604660628881" + Environment.NewLine;
             Assert.Equal(expected, serialized);
         }
     }
