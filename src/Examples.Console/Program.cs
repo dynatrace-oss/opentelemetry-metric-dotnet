@@ -28,7 +28,6 @@ namespace Examples.Console
                     (DynatraceOptions options) => TestDynatraceExporter.RunAsync(options.Url, options.ApiToken, options.PushIntervalInSecs, options.DurationInMins, !options.DisableOneAgentMetadataEnrichment),
                     errs => Task.FromResult(0));
 
-            System.Console.ReadLine();
         }
     }
 

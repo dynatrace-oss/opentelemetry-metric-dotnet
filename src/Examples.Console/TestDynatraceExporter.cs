@@ -102,8 +102,7 @@ namespace Examples.Console
             }
 
             logger.LogInformation("Metrics server shutdown.");
-            logger.LogInformation("Press Enter key to exit.");
-            return 1;
+            return 0;
         }
 
         internal static void CallBackForMyObservation(Int64ObserverMetric observerMetric)
