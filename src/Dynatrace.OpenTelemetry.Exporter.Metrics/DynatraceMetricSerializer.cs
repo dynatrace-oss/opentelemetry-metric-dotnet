@@ -41,7 +41,9 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
             if (enrichWithDynatraceMetadata)
             {
                 var enricher = new OneAgentMetadataEnricher(this._logger);
-                _oneAgentDimensions = enricher.GetOneAgentDimensions();
+                var dimensions = new List<KeyValuePair<string, string>>();
+                enricher.EnrichWithDynatraceMetadata(dimensions);
+                _oneAgentDimensions = dimensions;
             }
         }
 
