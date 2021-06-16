@@ -43,10 +43,6 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
                 var enricher = new OneAgentMetadataEnricher(this._logger);
                 _oneAgentDimensions = enricher.GetOneAgentDimensions();
             }
-            else
-            {
-                _oneAgentDimensions = Enumerable.Empty<KeyValuePair<string, string>>();
-            }
         }
 
         public string SerializeMetric(Metric metric)
@@ -62,7 +58,8 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
             {
                 var metricKey = CreateMetricKey(metric);
                 // skip lines with invalid metric keys.
-                if (string.IsNullOrEmpty(metricKey)) {
+                if (string.IsNullOrEmpty(metricKey))
+                {
                     _logger.LogWarning("metric key was empty after normalization, skipping metric (original name {})", metric.MetricName);
                     continue;
                 }
@@ -137,7 +134,8 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
             sb.Append($" count,delta={sumValue}");
         }
 
-        private string CreateMetricKey(Metric metric) {
+        private string CreateMetricKey(Metric metric)
+        {
             var keyBuilder = new StringBuilder();
             if (!string.IsNullOrEmpty(_prefix)) keyBuilder.Append($"{_prefix}.");
             // todo is this needed?
@@ -161,14 +159,22 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
         {
             var dictionary = new Dictionary<string, string>();
 
+            if (dimensionLists == null)
+            {
+                return Enumerable.Empty<KeyValuePair<string, string>>();
+            }
+
             foreach (var dimensionList in dimensionLists)
             {
-                foreach (var dimension in dimensionList)
+                if (dimensionList != null)
                 {
-                    var normalizedKey = ToDimensionKey(dimension.Key);
-                    if (!string.IsNullOrEmpty(normalizedKey))
+                    foreach (var dimension in dimensionList)
                     {
-                        dictionary.Add(normalizedKey, ToDimensionValue(dimension.Value));
+                        var normalizedKey = ToDimensionKey(dimension.Key);
+                        if (!string.IsNullOrEmpty(normalizedKey))
+                        {
+                            dictionary.Add(normalizedKey, ToDimensionValue(dimension.Value));
+                        }
                     }
                 }
             }
