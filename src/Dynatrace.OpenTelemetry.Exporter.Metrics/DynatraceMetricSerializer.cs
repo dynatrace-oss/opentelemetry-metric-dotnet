@@ -33,8 +33,8 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
         private static readonly int MaxDimensions = 50;
 
         // public constructor.
-        public DynatraceMetricSerializer(ILogger<DynatraceMetricsExporter> logger, string prefix = null, IEnumerable<KeyValuePair<string, string>> defaultDimensions = null, bool enrichWithDynatraceMetadata = true)
-        : this(logger, prefix, defaultDimensions, PrepareOneAgentDimensions(logger, enrichWithDynatraceMetadata)) { }
+        public DynatraceMetricSerializer(ILogger<DynatraceMetricsExporter> logger, string prefix = null, IEnumerable<KeyValuePair<string, string>> defaultDimensions = null, bool enrichWithOneAgentMetadata = true)
+        : this(logger, prefix, defaultDimensions, PrepareOneAgentDimensions(logger, enrichWithOneAgentMetadata)) { }
 
         // this is required to read the OneAgent dimensions and still use constructor chaining
         private static IEnumerable<KeyValuePair<string, string>> PrepareOneAgentDimensions(ILogger<DynatraceMetricsExporter> logger, bool enrichWithDynatraceMetadata = true)

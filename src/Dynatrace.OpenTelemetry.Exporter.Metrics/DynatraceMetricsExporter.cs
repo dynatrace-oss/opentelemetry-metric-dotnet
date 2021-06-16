@@ -42,17 +42,19 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
         private const int _maxBatchSize = 1000;
 
         public DynatraceMetricsExporter(DynatraceExporterOptions options = null, ILogger<DynatraceMetricsExporter> logger = null)
-        {
+        :this(options, logger, new HttpClient()){}
+
+        internal DynatraceMetricsExporter(DynatraceExporterOptions options, ILogger<DynatraceMetricsExporter> logger, HttpClient client) {
             this._options = options ?? new DynatraceExporterOptions();
             this._logger = logger ?? NullLogger<DynatraceMetricsExporter>.Instance;
-            logger.LogDebug("Dynatrace Metrics Url: {Url}", this._options.Url);
-            this._httpClient = new HttpClient();
-            if (!string.IsNullOrEmpty(options.ApiToken))
+            this._logger.LogDebug("Dynatrace Metrics Url: {Url}", this._options.Url);
+            this._httpClient = client;
+            if (!string.IsNullOrEmpty(this._options.ApiToken))
             {
                 this._httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Api-Token", this._options.ApiToken);
             }
             this._httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue(new ProductHeaderValue("opentelemetry-metric-dotnet")));
-            this._serializer = new DynatraceMetricSerializer(this._logger, options.Prefix, options.DefaultDimensions, options.EnrichWithOneAgentMetadata);
+            this._serializer = new DynatraceMetricSerializer(this._logger, this._options.Prefix, this._options.DefaultDimensions, this._options.EnrichWithOneAgentMetadata);
         }
 
         public override async Task<ExportResult> ExportAsync(IEnumerable<Metric> metrics, CancellationToken cancellationToken)
