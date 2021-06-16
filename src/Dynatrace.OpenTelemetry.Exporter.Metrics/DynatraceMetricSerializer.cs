@@ -146,16 +146,6 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
             return ToMetricKey(keyBuilder.ToString());
         }
 
-        private void WriteMetricKey(StringBuilder sb, Metric metric)
-        {
-            var keyBuilder = new StringBuilder();
-            if (!string.IsNullOrEmpty(_prefix)) keyBuilder.Append($"{_prefix}.");
-            // if (!string.IsNullOrEmpty(metric.MetricNamespace)) keyBuilder.Append($"{metric.MetricNamespace}.");
-            keyBuilder.Append(metric.MetricName);
-            sb.Append(ToMetricKey(keyBuilder.ToString()));
-        }
-
-
         // further right overwrites further left.
         internal static IEnumerable<KeyValuePair<string, string>> DeduplicateAndNormalizeDimensions(params IEnumerable<KeyValuePair<string, string>>[] dimensionLists)
         {
