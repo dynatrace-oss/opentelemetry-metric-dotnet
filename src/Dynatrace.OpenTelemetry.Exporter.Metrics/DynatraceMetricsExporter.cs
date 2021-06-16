@@ -42,9 +42,10 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
         private const int _maxBatchSize = 1000;
 
         public DynatraceMetricsExporter(DynatraceExporterOptions options = null, ILogger<DynatraceMetricsExporter> logger = null)
-        :this(options, logger, new HttpClient()){}
+        : this(options, logger, new HttpClient()) { }
 
-        internal DynatraceMetricsExporter(DynatraceExporterOptions options, ILogger<DynatraceMetricsExporter> logger, HttpClient client) {
+        internal DynatraceMetricsExporter(DynatraceExporterOptions options, ILogger<DynatraceMetricsExporter> logger, HttpClient client)
+        {
             this._options = options ?? new DynatraceExporterOptions();
             this._logger = logger ?? NullLogger<DynatraceMetricsExporter>.Instance;
             this._logger.LogDebug("Dynatrace Metrics Url: {Url}", this._options.Url);
@@ -59,9 +60,6 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 
         public override async Task<ExportResult> ExportAsync(IEnumerable<Metric> metrics, CancellationToken cancellationToken)
         {
-            var sw = Stopwatch.StartNew();
-            var httpRequest = new HttpRequestMessage(HttpMethod.Post, this._options.Url);
-
             // split all metrics into batches of _maxBatchSize
             var chunked = metrics
             .Select((val, i) => new { val, batch = i / _maxBatchSize })
@@ -72,6 +70,8 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 
             foreach (var chunk in chunked)
             {
+                var sw = Stopwatch.StartNew();
+                var httpRequest = new HttpRequestMessage(HttpMethod.Post, this._options.Url);
                 var sb = new StringBuilder();
 
                 foreach (var metric in chunk)
