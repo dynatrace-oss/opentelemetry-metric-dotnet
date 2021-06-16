@@ -25,7 +25,6 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Utils
         private const int MaxLengthMetricKey = 250;
         private const int MaxLengthDimensionKey = 100;
         private const int MaxLengthDimensionValue = 250;
-        private const int MaxDimensions = 50;
 
         //  Metric keys (mk)
         //  characters not valid as leading characters in the first identifier key section
@@ -205,6 +204,27 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Utils
             }
 
             return escaped;
+        }
+
+        internal static IEnumerable<KeyValuePair<string, string>> DimensionList(IEnumerable<KeyValuePair<string, string>> dimensions)
+        {
+            if (dimensions == null)
+            {
+                return null;
+            }
+
+            var targetList = new List<KeyValuePair<string, string>>();
+            foreach (var dimension in dimensions)
+            {
+
+                var normalizedKey = DimensionKey(dimension.Key);
+                if (!string.IsNullOrEmpty(normalizedKey))
+                {
+                    targetList.Add(new KeyValuePair<string, string>(normalizedKey, EscapeDimensionValue(DimensionValue(dimension.Value))));
+                }
+            }
+
+            return targetList;
         }
     }
 }

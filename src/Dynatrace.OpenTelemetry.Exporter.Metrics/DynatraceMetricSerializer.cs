@@ -29,22 +29,25 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
         private readonly ILogger<DynatraceMetricsExporter> _logger;
         private readonly string _prefix;
         private readonly IEnumerable<KeyValuePair<string, string>> _defaultDimensions;
-        private readonly IEnumerable<KeyValuePair<string, string>> _oneAgentDimensions;
-        private static readonly IEnumerable<KeyValuePair<string, string>> _staticDimensions = new List<KeyValuePair<string, string>> { new KeyValuePair<string, string>("dt.metrics.source", "opentelemetry") };
+        private readonly IEnumerable<KeyValuePair<string, string>> _staticDimensions;
         private static readonly int MaxDimensions = 50;
 
         public DynatraceMetricSerializer(ILogger<DynatraceMetricsExporter> logger, string prefix = null, IEnumerable<KeyValuePair<string, string>> defaultDimensions = null, bool enrichWithDynatraceMetadata = true)
         {
             this._logger = logger;
             this._prefix = prefix;
-            this._defaultDimensions = defaultDimensions ?? Enumerable.Empty<KeyValuePair<string, string>>();
+            this._defaultDimensions = Normalize.DimensionList(defaultDimensions) ?? Enumerable.Empty<KeyValuePair<string, string>>();
+
+            var staticDims = new List<KeyValuePair<string, string>> { new KeyValuePair<string, string>("dt.metrics.source", "opentelemetry") };
+
             if (enrichWithDynatraceMetadata)
             {
                 var enricher = new OneAgentMetadataEnricher(this._logger);
                 var dimensions = new List<KeyValuePair<string, string>>();
-                enricher.EnrichWithDynatraceMetadata(dimensions);
-                _oneAgentDimensions = dimensions;
+                enricher.EnrichWithDynatraceMetadata(staticDims);
             }
+
+            this._staticDimensions = Normalize.DimensionList(staticDims);
         }
 
         public string SerializeMetric(Metric metric)
@@ -67,7 +70,8 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
                 }
                 sb.Append(metricKey);
 
-                var normalizedDimensions = DeduplicateAndNormalizeDimensions(this._defaultDimensions, metricData.Labels, this._oneAgentDimensions, DynatraceMetricSerializer._staticDimensions);
+                // default dimensions and static dimensions are normalized once upon serializer creation.
+                var normalizedDimensions = MergeDimensions(this._defaultDimensions, Normalize.DimensionList(metricData.Labels), this._staticDimensions);
                 WriteDimensions(sb, normalizedDimensions);
 
                 switch (metric.AggregationType)
@@ -146,8 +150,9 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
             return ToMetricKey(keyBuilder.ToString());
         }
 
-        // further right overwrites further left.
-        internal static IEnumerable<KeyValuePair<string, string>> DeduplicateAndNormalizeDimensions(params IEnumerable<KeyValuePair<string, string>>[] dimensionLists)
+        // Items from Enumerables passed further right overwrite items from Enumerables passed further left.
+        // Pass only normalized dimension lists to this function.
+        internal static IEnumerable<KeyValuePair<string, string>> MergeDimensions(params IEnumerable<KeyValuePair<string, string>>[] dimensionLists)
         {
             var dictionary = new Dictionary<string, string>();
 
@@ -162,11 +167,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
                 {
                     foreach (var dimension in dimensionList)
                     {
-                        var normalizedKey = ToDimensionKey(dimension.Key);
-                        if (!string.IsNullOrEmpty(normalizedKey))
-                        {
-                            dictionary.Add(normalizedKey, ToDimensionValue(dimension.Value));
-                        }
+                        dictionary.Add(dimension.Key, dimension.Value);
                     }
                 }
             }

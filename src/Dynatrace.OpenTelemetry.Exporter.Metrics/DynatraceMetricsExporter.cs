@@ -52,7 +52,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
                 this._httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Api-Token", this._options.ApiToken);
             }
             this._httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue(new ProductHeaderValue("opentelemetry-metric-dotnet")));
-            this._serializer = new DynatraceMetricSerializer(this._logger, options.Prefix, options.DefaultDimensions, options.OneAgentMetadataEnrichment);
+            this._serializer = new DynatraceMetricSerializer(this._logger, options.Prefix, options.DefaultDimensions, options.EnrichWithOneAgentMetadata);
         }
 
         public override async Task<ExportResult> ExportAsync(IEnumerable<Metric> metrics, CancellationToken cancellationToken)
