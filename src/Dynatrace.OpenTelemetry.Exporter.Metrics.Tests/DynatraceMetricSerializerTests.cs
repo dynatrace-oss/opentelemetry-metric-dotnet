@@ -50,6 +50,27 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
         }
 
         [Fact]
+        public void TestDimensionValuesNormalized()
+        {
+            var timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1604660628881).UtcDateTime;
+
+            var labels = new List<KeyValuePair<string, string>> {
+                new KeyValuePair<string, string>("label1", "\\=\" =="),
+            };
+            var metric = new Metric("namespace1", "metric1", "Description", AggregationType.LongSum);
+            metric.Data.Add(new Int64SumData
+            {
+                Labels = labels,
+                Sum = 100,
+                Timestamp = timestamp
+            });
+
+            string serialized = new DynatraceMetricSerializer(_logger).SerializeMetric(metric);
+            string expected = "namespace1.metric1,label1=\\\\\\=\"\\ \\=\\=,dt.metrics.source=opentelemetry count,delta=100 1604660628881" + Environment.NewLine;
+            Assert.Equal(expected, serialized);
+        }
+
+        [Fact]
         public void SerializeWithoutLabels()
         {
             var timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1604660628881).UtcDateTime;
