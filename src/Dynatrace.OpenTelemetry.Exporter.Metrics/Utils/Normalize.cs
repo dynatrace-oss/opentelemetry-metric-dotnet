@@ -83,10 +83,6 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Utils
                 {
                     if (firstSection)
                     {
-                        // todo make this not static and add a logger
-                        // _logger.warning(
-                        //     String.format(
-                        //         "first metric key section empty while normalizing '%s', discarding...", key));
                         return null;
                     }
                     else

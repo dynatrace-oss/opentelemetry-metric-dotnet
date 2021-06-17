@@ -83,7 +83,10 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
                 sb.Append(metricKey);
 
                 // default dimensions and static dimensions are normalized once upon serializer creation.
+                // the labels from opentelemetry are normalized here, then all dimensions are merged.
                 var normalizedDimensions = MergeDimensions(this._defaultDimensions, Normalize.DimensionList(metricData.Labels), this._staticDimensions);
+
+                // merged dimensions are normalized and escaped since we called Normalize.DimensionList on each of the sublists.
                 WriteDimensions(sb, normalizedDimensions);
 
                 switch (metric.AggregationType)
@@ -152,6 +155,10 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
             sb.Append($" count,delta={sumValue}");
         }
 
+        /// <summary>
+        /// Transforms OpenTelemetry metric names to metric keys valid in Dynatrace
+        /// </summary>
+        /// <returns>a valid metric key or null, if the input could not be normalized</returns>
         private string CreateMetricKey(Metric metric)
         {
             var keyBuilder = new StringBuilder();
@@ -159,18 +166,18 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
             // todo is this needed?
             if (!string.IsNullOrEmpty(metric.MetricNamespace)) keyBuilder.Append($"{metric.MetricNamespace}.");
             keyBuilder.Append(metric.MetricName);
-            return ToMetricKey(keyBuilder.ToString());
+            return Normalize.MetricKey(keyBuilder.ToString());
         }
 
         // Items from Enumerables passed further right overwrite items from Enumerables passed further left.
         // Pass only normalized dimension lists to this function.
-        internal static IEnumerable<KeyValuePair<string, string>> MergeDimensions(params IEnumerable<KeyValuePair<string, string>>[] dimensionLists)
+        internal static List<KeyValuePair<string, string>> MergeDimensions(params IEnumerable<KeyValuePair<string, string>>[] dimensionLists)
         {
             var dictionary = new Dictionary<string, string>();
 
             if (dimensionLists == null)
             {
-                return Enumerable.Empty<KeyValuePair<string, string>>();
+                return new List<KeyValuePair<string, string>>();
             }
 
             foreach (var dimensionList in dimensionLists)
@@ -194,36 +201,18 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
             return dictionary.ToList();
         }
 
-        private void WriteDimensions(StringBuilder sb, IEnumerable<KeyValuePair<string, string>> labels)
+        // pass only normalized lists to this function.
+        private void WriteDimensions(StringBuilder sb, List<KeyValuePair<string, string>> dimensions)
         {
-            foreach (var label in labels.Take(MaxDimensions))
+            // should be negative if there are fewer dimensions than the maximum
+            var diffToMaxDimensions = MaxDimensions - dimensions.Count;
+            var toSkip = diffToMaxDimensions < 0 ? Math.Abs(diffToMaxDimensions) : 0;
+
+            // if there are more dimensions, skip the first n dimensions so that 50 dimensions remain
+            foreach (var dimension in dimensions.Skip(toSkip))
             {
-                // todo make sure empty keys are handled.
-                sb.Append($",{ToDimensionKey(label.Key)}={ToDimensionValue(label.Value)}");
+                sb.Append($",{dimension.Key}={dimension.Value}");
             }
-        }
-
-        /// <summary>
-        /// Transforms OpenTelemetry metric names to metric keys valid in Dynatrace
-        /// </summary>
-        /// <returns>a valid metric key or null, if the input could not be normalized</returns>
-        private static string ToMetricKey(string input)
-        {
-            return Normalize.MetricKey(input);
-        }
-
-        /// <summary>
-        /// Transforms OpenTelemetry label values to metric values valid in Dynatrace.
-        /// </summary>
-        /// <returns>a valid dimension key or null, if the input could not be normalized</returns>
-        private static string ToDimensionKey(string input)
-        {
-            return Normalize.DimensionKey(input);
-        }
-
-        private static string ToDimensionValue(string input)
-        {
-            return Normalize.EscapeDimensionValue(Normalize.DimensionValue(input));
         }
     }
 }
