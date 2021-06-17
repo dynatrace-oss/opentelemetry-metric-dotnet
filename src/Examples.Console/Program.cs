@@ -25,7 +25,7 @@ namespace Examples.Console
         {
             await Parser.Default.ParseArguments<DynatraceOptions>(args)
                 .MapResult(
-                    (DynatraceOptions options) => TestDynatraceExporter.RunAsync(options.Url, options.ApiToken, options.PushIntervalInSecs, options.DurationInMins, !options.DisableOneAgentMetadataEnrichment),
+                    (DynatraceOptions options) => ExampleDynatraceExporter.RunAsync(options.Url, options.ApiToken, options.PushIntervalInSecs, options.DurationInMins, !options.DisableOneAgentMetadataEnrichment),
                     errs => Task.FromResult(0));
 
         }
