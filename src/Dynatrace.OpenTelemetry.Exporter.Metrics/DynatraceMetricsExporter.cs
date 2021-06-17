@@ -39,7 +39,6 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
         private readonly ILogger<DynatraceMetricsExporter> _logger;
         private readonly HttpClient _httpClient;
         private readonly DynatraceMetricSerializer _serializer;
-        private const int _maxBatchSize = 1000;
 
         public DynatraceMetricsExporter(DynatraceExporterOptions options = null, ILogger<DynatraceMetricsExporter> logger = null)
         : this(options, logger, new HttpClient()) { }
@@ -62,7 +61,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
         {
             // split all metrics into batches of _maxBatchSize
             var chunked = metrics
-            .Select((val, i) => new { val, batch = i / _maxBatchSize })
+            .Select((val, i) => new { val, batch = i / DynatraceMetricApiConstants.PayloadLinesLimit })
             .GroupBy(x => x.batch)
             .Select(x => x.Select(v => v.val));
 

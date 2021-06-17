@@ -32,7 +32,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
         ///
         /// https://www.dynatrace.com/support/help/dynatrace-api/environment-api/metric-v2/post-ingest-metrics
         /// </summary>
-        public string Url { get; set; } = "http://localhost:14499/metrics/ingest";
+        public string Url { get; set; } = DynatraceMetricApiConstants.DefaultOneAgentEndpoint;
 
         /// <summary>
         /// Gets or sets the Dynatrace api token for authentication.
