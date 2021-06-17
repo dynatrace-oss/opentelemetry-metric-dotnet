@@ -42,7 +42,8 @@ namespace Examples.Console
             {
                 ApiToken = apiToken,
                 EnrichWithOneAgentMetadata = oneAgentMetadataEnrichment,
-                DefaultDimensions = new Dictionary<string, string> { { "default1", "defval1" } }
+                DefaultDimensions = new Dictionary<string, string> { { "default1", "defval1" } },
+                Prefix = "otel.dotnet"
             };
             if (url != null)
             {
@@ -52,6 +53,7 @@ namespace Examples.Console
             {
                 logger.LogInformation("no URL provided, falling back to default OneAgent endpoint.");
             }
+            // create the Dynatrace metrics exporter
             var dtExporter = new DynatraceMetricsExporter(options, loggerFactory.CreateLogger<DynatraceMetricsExporter>());
 
             // Create Processor (called Batcher in Metric spec, this is still not decided)
@@ -71,18 +73,18 @@ namespace Examples.Console
             // If user did not set the Default MeterProvider (shown in earlier lines),
             // all metric operations become no-ops.
             var meterProvider = MeterProvider.Default;
-            var meter = meterProvider.GetMeter("MyMeter");
+            var meter = meterProvider.GetMeter("my_meter");
 
-            // the rest is purely from Metrics API.
-            var testCounter = meter.CreateInt64Counter("MyCounter");
-            var testMeasure = meter.CreateInt64Measure("MyMeasure");
-            var testObserver = meter.CreateInt64Observer("MyObservation", CallBackForMyObservation);
+            // the rest is purely from the OpenTelemetry Metrics API.
+            var testCounter = meter.CreateInt64Counter("my_counter");
+            var testMeasure = meter.CreateInt64Measure("my_measure");
+            var testObserver = meter.CreateInt64Observer("my_observation", CallBackForMyObservation);
             var labels1 = new List<KeyValuePair<string, string>>{
-                new KeyValuePair<string, string>("dim1", "value1")
+                new KeyValuePair<string, string>("my_label", "value1")
             };
 
             var labels2 = new List<KeyValuePair<string, string>>();
-            labels2.Add(new KeyValuePair<string, string>("dim1", "value2"));
+            labels2.Add(new KeyValuePair<string, string>("my_label", "value2"));
             var defaultContext = default(SpanContext);
 
             Stopwatch sw = Stopwatch.StartNew();
@@ -92,8 +94,8 @@ namespace Examples.Console
 
                 testMeasure.Record(defaultContext, 100, meter.GetLabelSet(labels1));
                 testMeasure.Record(defaultContext, 500, meter.GetLabelSet(labels1));
-                testMeasure.Record(defaultContext, 5, meter.GetLabelSet(labels1));
-                testMeasure.Record(defaultContext, 750, meter.GetLabelSet(labels1));
+                testMeasure.Record(defaultContext, 5, meter.GetLabelSet(labels2));
+                testMeasure.Record(defaultContext, 750, meter.GetLabelSet(labels2));
 
                 // Obviously there is no testObserver.Observe() here, as Observer instruments
                 // have callbacks that are called by the Meter automatically at each collection interval.
@@ -102,16 +104,16 @@ namespace Examples.Console
                 logger.LogInformation("Running and emitting metrics. Remaining time: {Remaining} seconds", (int)remaining);
             }
 
-            logger.LogInformation("Metrics server shutdown.");
+            logger.LogInformation("Metrics exporter has shut down.");
             return 0;
         }
 
         internal static void CallBackForMyObservation(Int64ObserverMetric observerMetric)
         {
-            var labels1 = new List<KeyValuePair<string, string>>();
-            labels1.Add(new KeyValuePair<string, string>("dim1", "value1"));
+            var labels = new List<KeyValuePair<string, string>>();
+            labels.Add(new KeyValuePair<string, string>("my_label", "value1"));
 
-            observerMetric.Observe(Process.GetCurrentProcess().WorkingSet64, labels1);
+            observerMetric.Observe(Process.GetCurrentProcess().WorkingSet64, labels);
         }
     }
 }

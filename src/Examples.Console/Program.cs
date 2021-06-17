@@ -43,7 +43,7 @@ namespace Examples.Console
         [Option('u', "url", HelpText = "Dynatrace metrics ingest API URL, including the '/api/v2/metrics/ingest' suffix.", Required = false)]
         public string Url { get; set; }
 
-        [Option('a', "apiToken",  HelpText = "Dynatrace API authentication token with the 'metrics.ingest' permission.", Required = false)]
+        [Option('t', "token",  HelpText = "Dynatrace API authentication token with the 'metrics.ingest' permission.", Required = false)]
         public string ApiToken { get; set; }
 
         [Option('n', "noOneAgentEnrichment",  HelpText = "Disable automatic label enrichment via OneAgent metadata.", Required = false)]
