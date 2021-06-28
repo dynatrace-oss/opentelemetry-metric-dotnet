@@ -195,9 +195,10 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Utils.Tests
         [InlineData("escape comma", "a,b", "a\\,b")]
         [InlineData("escape equals", "a=b", "a\\=b")]
         [InlineData("escape backslash", "a\\b", "a\\\\b")]
+        [InlineData("escape double quotes", "a\"b\"\"c", "a\\\"b\\\"\\\"c")]
         [InlineData("escape multiple special chars", " ,=\\", "\\ \\,\\=\\\\")]
         [InlineData("escape consecutive special chars", "  ,,==\\\\", "\\ \\ \\,\\,\\=\\=\\\\\\\\")]
-        [InlineData("escape key-value pair", "key=\"value\"", "key\\=\"value\"")]
+        [InlineData("escape key-value pair", "key=\"value\"", "key\\=\\\"value\\\"")]
         public void DimensionValueEscapedCorrectly(string name, string input, string expected)
         {
             Assert.Equal(expected, Normalize.EscapeDimensionValue(input));
@@ -212,7 +213,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Utils.Tests
             Assert.Equal(new string('a', 249), Normalize.EscapeDimensionValue(new string('a', 249) + '='));
             //   escape sequence not broken apart 2
             Assert.Equal(new string('a', 248) + "\\=", Normalize.EscapeDimensionValue(new string('a', 248) + "=="));
-            // escape sequence not broken apart 3: 
+            // escape sequence not broken apart 3:
             // 3 trailing backslashes before escaping, 1 escaped trailing backslash
             Assert.Equal(new string('a', 247) + "\\\\", Normalize.EscapeDimensionValue(new string('a', 247) + "\\\\\\"));
             // dimension value of only backslashes

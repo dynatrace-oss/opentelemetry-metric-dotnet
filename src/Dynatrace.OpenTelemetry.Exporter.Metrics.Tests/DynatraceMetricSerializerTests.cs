@@ -66,7 +66,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
             });
 
             string serialized = new DynatraceMetricSerializer(_logger).SerializeMetric(metric);
-            string expected = "namespace1.metric1,label1=\\\\\\=\"\\ \\=\\=,dt.metrics.source=opentelemetry count,delta=100 1604660628881" + Environment.NewLine;
+            string expected = "namespace1.metric1,label1=\\\\\\=\\\"\\ \\=\\=,dt.metrics.source=opentelemetry count,delta=100 1604660628881" + Environment.NewLine;
             Assert.Equal(expected, serialized);
         }
 
