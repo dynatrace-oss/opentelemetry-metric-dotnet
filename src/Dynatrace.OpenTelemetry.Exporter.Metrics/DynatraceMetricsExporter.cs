@@ -59,7 +59,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 
         public override async Task<ExportResult> ExportAsync(IEnumerable<Metric> metrics, CancellationToken cancellationToken)
         {
-            // split all metrics into batches of _maxBatchSize
+            // split all metrics into batches of DynatraceMetricApiConstants.PayloadLinesLimit lines
             var chunked = metrics
             .Select((val, i) => new { val, batch = i / DynatraceMetricApiConstants.PayloadLinesLimit })
             .GroupBy(x => x.batch)

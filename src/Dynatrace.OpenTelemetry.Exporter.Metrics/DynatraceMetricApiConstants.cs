@@ -20,17 +20,21 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
     {
         private const string defaultOneAgentEndpoint = "http://localhost:14499/metrics/ingest";
         private const int payloadLinesLimit = 1000;
+        private const int maxDimensions = 50;
 
         public static string DefaultOneAgentEndpoint
         {
             get { return defaultOneAgentEndpoint; }
-            private set { }
         }
 
         public static int PayloadLinesLimit
         {
             get { return payloadLinesLimit; }
-            private set { }
+        }
+
+        public static int MaxDimensions
+        {
+            get { return maxDimensions; }
         }
     }
 }

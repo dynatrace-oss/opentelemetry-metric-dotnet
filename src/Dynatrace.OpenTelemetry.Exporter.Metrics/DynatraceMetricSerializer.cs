@@ -15,7 +15,9 @@
 // </copyright>
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
 using Dynatrace.OpenTelemetry.Exporter.Metrics.Utils;
@@ -30,7 +32,6 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
         private readonly string _prefix;
         private readonly IEnumerable<KeyValuePair<string, string>> _defaultDimensions;
         private readonly IEnumerable<KeyValuePair<string, string>> _staticDimensions;
-        private static readonly int MaxDimensions = 50;
 
         // public constructor.
         public DynatraceMetricSerializer(ILogger<DynatraceMetricsExporter> logger, string prefix = null, IEnumerable<KeyValuePair<string, string>> defaultDimensions = null, bool enrichWithOneAgentMetadata = true)
@@ -171,9 +172,10 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 
         // Items from Enumerables passed further right overwrite items from Enumerables passed further left.
         // Pass only normalized dimension lists to this function.
+        // The order of the items passed will be preserved.
         internal static List<KeyValuePair<string, string>> MergeDimensions(params IEnumerable<KeyValuePair<string, string>>[] dimensionLists)
         {
-            var dictionary = new Dictionary<string, string>();
+            var dictionary = new OrderedDictionary();
 
             if (dimensionLists == null)
             {
@@ -186,7 +188,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
                 {
                     foreach (var dimension in dimensionList)
                     {
-                        if (!dictionary.ContainsKey(dimension.Key))
+                        if (!dictionary.Contains(dimension.Key))
                         {
                             dictionary.Add(dimension.Key, dimension.Value);
                         }
@@ -198,14 +200,21 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
                 }
             }
 
-            return dictionary.ToList();
+            var outList = new List<KeyValuePair<string, string>>(dictionary.Count);
+
+            foreach (DictionaryEntry entry in dictionary)
+            {
+                outList.Add(new KeyValuePair<string, string>(entry.Key.ToString(), entry.Value.ToString()));
+            }
+
+            return outList;
         }
 
         // pass only normalized lists to this function.
         private void WriteDimensions(StringBuilder sb, List<KeyValuePair<string, string>> dimensions)
         {
             // should be negative if there are fewer dimensions than the maximum
-            var diffToMaxDimensions = MaxDimensions - dimensions.Count;
+            var diffToMaxDimensions = DynatraceMetricApiConstants.MaxDimensions - dimensions.Count;
             var toSkip = diffToMaxDimensions < 0 ? Math.Abs(diffToMaxDimensions) : 0;
 
             // if there are more dimensions, skip the first n dimensions so that 50 dimensions remain
