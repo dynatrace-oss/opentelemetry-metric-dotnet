@@ -15,28 +15,52 @@
 // </copyright>
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
+using Dynatrace.OpenTelemetry.Exporter.Metrics.Utils;
+using Microsoft.Extensions.Logging;
 using OpenTelemetry.Metrics.Export;
 
 namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 {
     public class DynatraceMetricSerializer
     {
+        private readonly ILogger<DynatraceMetricsExporter> _logger;
         private readonly string _prefix;
         private readonly IEnumerable<KeyValuePair<string, string>> _defaultDimensions;
+        private readonly IEnumerable<KeyValuePair<string, string>> _staticDimensions;
 
-        private const int MaxLengthMetricKey = 250;
-        private const int MaxLengthDimensionKey = 100;
-        private const int MaxLengthDimensionValue = 250;
-        private const int MaxDimensions = 50;
+        // public constructor.
+        public DynatraceMetricSerializer(ILogger<DynatraceMetricsExporter> logger, string prefix = null, IEnumerable<KeyValuePair<string, string>> defaultDimensions = null, bool enrichWithDynatraceMetadata = true)
+        : this(logger, prefix, defaultDimensions, PrepareMetadataDimensions(logger, enrichWithDynatraceMetadata)) { }
 
-        public DynatraceMetricSerializer(string prefix = null, IEnumerable<KeyValuePair<string, string>> dimensions = null)
+        // this is required to read the Dynatrace metadata dimensions and still use constructor chaining
+        private static IEnumerable<KeyValuePair<string, string>> PrepareMetadataDimensions(ILogger<DynatraceMetricsExporter> logger, bool enrichWithDynatraceMetadata = true)
         {
+            var metadataDimensions = new List<KeyValuePair<string, string>> { };
+
+            if (enrichWithDynatraceMetadata)
+            {
+                var enricher = new DynatraceMetadataEnricher(logger);
+                var dimensions = new List<KeyValuePair<string, string>>();
+                enricher.EnrichWithDynatraceMetadata(metadataDimensions);
+            }
+            return metadataDimensions;
+        }
+
+        // internal constructor offers an interface for testing and is used by the public constructor
+        internal DynatraceMetricSerializer(ILogger<DynatraceMetricsExporter> logger, string prefix, IEnumerable<KeyValuePair<string, string>> defaultDimensions, IEnumerable<KeyValuePair<string, string>> metadataDimensions)
+        {
+            this._logger = logger;
             this._prefix = prefix;
-            this._defaultDimensions = dimensions ?? Enumerable.Empty<KeyValuePair<string, string>>();
+            this._defaultDimensions = Normalize.DimensionList(defaultDimensions) ?? Enumerable.Empty<KeyValuePair<string, string>>();
+
+            var staticDimensions = new List<KeyValuePair<string, string>> { new KeyValuePair<string, string>("dt.metrics.source", "opentelemetry") };
+            staticDimensions.AddRange(metadataDimensions);
+            this._staticDimensions = Normalize.DimensionList(staticDimensions);
         }
 
         public string SerializeMetric(Metric metric)
@@ -50,9 +74,22 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
         {
             foreach (var metricData in metric.Data)
             {
-                WriteMetricKey(sb, metric);
-                WriteDimensions(sb, metricData.Labels);
-                WriteDimensions(sb, this._defaultDimensions);
+                var metricKey = CreateMetricKey(metric);
+                // skip lines with invalid metric keys.
+                if (string.IsNullOrEmpty(metricKey))
+                {
+                    _logger.LogWarning("metric key was empty after normalization, skipping metric (original name {})", metric.MetricName);
+                    continue;
+                }
+                sb.Append(metricKey);
+
+                // default dimensions and static dimensions are normalized once upon serializer creation.
+                // the labels from opentelemetry are normalized here, then all dimensions are merged.
+                var normalizedDimensions = MergeDimensions(this._defaultDimensions, Normalize.DimensionList(metricData.Labels), this._staticDimensions);
+
+                // merged dimensions are normalized and escaped since we called Normalize.DimensionList on each of the sublists.
+                WriteDimensions(sb, normalizedDimensions);
+
                 switch (metric.AggregationType)
                 {
                     case AggregationType.DoubleSum:
@@ -111,7 +148,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 
         private void WriteTimestamp(StringBuilder sb, DateTime timestamp)
         {
-            sb.Append($" {new DateTimeOffset(timestamp).ToUniversalTime().ToUnixTimeMilliseconds()}");
+            sb.Append($" {new DateTimeOffset(timestamp.ToLocalTime()).ToUnixTimeMilliseconds()}");
         }
 
         private void WriteSum(StringBuilder sb, double sumValue)
@@ -119,98 +156,72 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
             sb.Append($" count,delta={sumValue}");
         }
 
-        private void WriteMetricKey(StringBuilder sb, Metric metric)
+        /// <summary>
+        /// Transforms OpenTelemetry metric names to metric keys valid in Dynatrace
+        /// </summary>
+        /// <returns>a valid metric key or null, if the input could not be normalized</returns>
+        private string CreateMetricKey(Metric metric)
         {
             var keyBuilder = new StringBuilder();
             if (!string.IsNullOrEmpty(_prefix)) keyBuilder.Append($"{_prefix}.");
+            // todo is this needed?
             if (!string.IsNullOrEmpty(metric.MetricNamespace)) keyBuilder.Append($"{metric.MetricNamespace}.");
             keyBuilder.Append(metric.MetricName);
-            sb.Append(ToMintMetricKey(keyBuilder.ToString()));
+            return Normalize.MetricKey(keyBuilder.ToString());
         }
 
-        private void WriteDimensions(StringBuilder sb, IEnumerable<KeyValuePair<string, string>> labels)
+        // Items from Enumerables passed further right overwrite items from Enumerables passed further left.
+        // Pass only normalized dimension lists to this function.
+        // The order of the items passed will be preserved.
+        internal static List<KeyValuePair<string, string>> MergeDimensions(params IEnumerable<KeyValuePair<string, string>>[] dimensionLists)
         {
-            foreach (var label in labels.Take(MaxDimensions))
+            var dictionary = new OrderedDictionary();
+
+            if (dimensionLists == null)
             {
-                sb.Append($",{ToMintDimensionKey(label.Key)}={ToMintDimensionValue(label.Value)}");
+                return new List<KeyValuePair<string, string>>();
             }
+
+            foreach (var dimensionList in dimensionLists)
+            {
+                if (dimensionList != null)
+                {
+                    foreach (var dimension in dimensionList)
+                    {
+                        if (!dictionary.Contains(dimension.Key))
+                        {
+                            dictionary.Add(dimension.Key, dimension.Value);
+                        }
+                        else
+                        {
+                            dictionary[dimension.Key] = dimension.Value;
+                        }
+                    }
+                }
+            }
+
+            var outList = new List<KeyValuePair<string, string>>(dictionary.Count);
+
+            foreach (DictionaryEntry entry in dictionary)
+            {
+                outList.Add(new KeyValuePair<string, string>(entry.Key.ToString(), entry.Value.ToString()));
+            }
+
+            return outList;
         }
 
-        /// <summary>
-        /// Transforms OpenTelemetry metric names according to the MINT protocol
-        /// </summary>
-        /// <returns>a valid MINT metric key or null, if the input could not be normalized</returns>
-        internal static string ToMintMetricKey(string input)
+        // pass only normalized lists to this function.
+        private void WriteDimensions(StringBuilder sb, List<KeyValuePair<string, string>> dimensions)
         {
-            if (string.IsNullOrWhiteSpace(input))
-            {
-                return null;
-            }
-            if (input.Length > MaxLengthMetricKey)
-            {
-                input = input.Substring(0, MaxLengthMetricKey);
-            }
-            return ReplaceKeyCharacters(TrimKey(RemoveInvalidKeySections(input)));
-        }
+            // should be negative if there are fewer dimensions than the maximum
+            var diffToMaxDimensions = DynatraceMetricApiConstants.MaxDimensions - dimensions.Count;
+            var toSkip = diffToMaxDimensions < 0 ? Math.Abs(diffToMaxDimensions) : 0;
 
-        /// <summary>
-        /// Transforms OpenTelemetry label keys according to the MINT protocol
-        /// </summary>
-        /// <returns>a valid MINT dimension key or null, if the input could not be normalized</returns>
-        internal static string ToMintDimensionKey(string input)
-        {
-            if (string.IsNullOrWhiteSpace(input))
+            // if there are more dimensions, skip the first n dimensions so that 50 dimensions remain
+            foreach (var dimension in dimensions.Skip(toSkip))
             {
-                return null;
+                sb.Append($",{dimension.Key}={dimension.Value}");
             }
-            if (input.Length > MaxLengthDimensionKey)
-            {
-                input = input.Substring(0, MaxLengthDimensionKey);
-            }
-            return ReplaceKeyCharacters(TrimKey(RemoveInvalidKeySections(input)).ToLower());
-        }
-
-        /// <summary>
-        /// Removes leading or trailing characters invalid for keys
-        /// </summary>
-        private static string TrimKey(string str)
-        {
-            str = Regex.Replace(str, @"^[^a-zA-Z][^a-zA-Z_]*", "");
-            return Regex.Replace(str, @"[^a-zA-Z_0-9]*$", "");
-        }
-
-        /// <summary>
-        /// Replaces characters invalid for keys with underscores
-        /// </summary>
-        private static string ReplaceKeyCharacters(string str)
-        {
-            return Regex.Replace(str, @"[^a-zA-Z0-9:_\-\.]+", "_");
-        }
-
-        /// <summary>
-        /// Removes invalid (including empty) key sections
-        /// </summary>
-        private static string RemoveInvalidKeySections(string str)
-        {
-            return Regex.Replace(str, @"\.+[^a-zA-Z][^a-zA-Z0-9:_\-\.]*", ".");
-        }
-
-        /// <summary>
-        /// Transforms OpenTelemetry label values according to the MINT protocol
-        /// </summary>
-        /// <returns>a valid MINT dimension value or null, if the input could not be normalized</returns>
-        internal static string ToMintDimensionValue(string input)
-        {
-            if (string.IsNullOrWhiteSpace(input))
-            {
-                return null;
-            }
-            if (input.Length > MaxLengthDimensionValue)
-            {
-                input = input.Substring(0, MaxLengthDimensionValue);
-            }
-            input = Regex.Replace(input, @"([,= \\])", "\\$1");
-            return Regex.Replace(input, @"[^a-zA-Z0-9:_\-\.,= \\]", "_");
         }
     }
 }

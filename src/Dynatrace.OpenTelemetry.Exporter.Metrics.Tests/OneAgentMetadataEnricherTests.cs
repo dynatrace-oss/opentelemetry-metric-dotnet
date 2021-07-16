@@ -23,12 +23,12 @@ using Xunit;
 
 namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 {
-    public class OneAgentMetadataEnricherTests
+    public class DynatraceMetadataEnricherTests
     {
         [Fact]
         public void ValidMultiline()
         {
-            var enricher = new OneAgentMetadataEnricher(NullLogger<DynatraceMetricsExporter>.Instance);
+            var enricher = new DynatraceMetadataEnricher(NullLogger<DynatraceMetricsExporter>.Instance);
             var metadata = enricher.ProcessMetadata(new string[] {
                 "a=123",
                 "b=456",
@@ -49,7 +49,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
         [Fact]
         public void WrongSyntax()
         {
-            var enricher = new OneAgentMetadataEnricher(NullLogger<DynatraceMetricsExporter>.Instance);
+            var enricher = new DynatraceMetadataEnricher(NullLogger<DynatraceMetricsExporter>.Instance);
             Assert.Empty(enricher.ProcessMetadata(new string[] { "=0x5c14d9a68d569861" }));
             Assert.Empty(enricher.ProcessMetadata(new string[] { "otherKey=" }));
             Assert.Empty(enricher.ProcessMetadata(new string[] { "" }));
@@ -67,7 +67,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
             var kv = KeyValuePair.Create<string, string>("initialDimensionKey", "initialDimensionValue");
             var targetList = new List<KeyValuePair<string, string>>() { kv };
 
-            var unitUnderTest = new OneAgentMetadataEnricher(NullLogger<DynatraceMetricsExporter>.Instance, fileReader);
+            var unitUnderTest = new DynatraceMetadataEnricher(NullLogger<DynatraceMetricsExporter>.Instance, fileReader);
 
             unitUnderTest.EnrichWithDynatraceMetadata(targetList);
             // contains only the element that was in the list before.
@@ -83,7 +83,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
             var kv = KeyValuePair.Create<string, string>("initialDimensionKey", "initialDimensionValue");
             var targetList = new List<KeyValuePair<string, string>>() { kv };
 
-            var unitUnderTest = new OneAgentMetadataEnricher(NullLogger<DynatraceMetricsExporter>.Instance, fileReader);
+            var unitUnderTest = new DynatraceMetadataEnricher(NullLogger<DynatraceMetricsExporter>.Instance, fileReader);
             unitUnderTest.EnrichWithDynatraceMetadata(targetList);
 
             Assert.Collection(targetList, item => Assert.Equal(item, kv));
@@ -99,7 +99,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
             var kv = KeyValuePair.Create<string, string>("initialDimensionKey", "initialDimensionValue");
             var targetList = new List<KeyValuePair<string, string>>() { kv };
 
-            var unitUnderTest = new OneAgentMetadataEnricher(NullLogger<DynatraceMetricsExporter>.Instance, fileReader);
+            var unitUnderTest = new DynatraceMetadataEnricher(NullLogger<DynatraceMetricsExporter>.Instance, fileReader);
             unitUnderTest.EnrichWithDynatraceMetadata(targetList);
 
             Assert.Collection(targetList, item => Assert.Equal(item, kv));
@@ -114,12 +114,12 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
             var kv = KeyValuePair.Create<string, string>("initialDimensionKey", "initialDimensionValue");
             var targetList = new List<KeyValuePair<string, string>>() { kv };
 
-            var unitUnderTest = new OneAgentMetadataEnricher(NullLogger<DynatraceMetricsExporter>.Instance, fileReader);
+            var unitUnderTest = new DynatraceMetadataEnricher(NullLogger<DynatraceMetricsExporter>.Instance, fileReader);
             unitUnderTest.EnrichWithDynatraceMetadata(targetList);
 
             Assert.Collection(targetList, item => Assert.Equal(item, kv));
             Mock.Get(fileReader).Verify(f => f.ReadAllText("dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties"), Times.Once());
-            // if the OneAgent metadata file is empty, there should be no attempt at reading the contents.
+            // if the metadata file is empty, there should be no attempt at reading the contents.
             Mock.Get(fileReader).Verify(f => f.ReadAllLines(""), Times.Never());
         }
 
@@ -136,12 +136,12 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
             var kv = KeyValuePair.Create<string, string>("initialDimensionKey", "initialDimensionValue");
             var targetList = new List<KeyValuePair<string, string>>() { kv };
 
-            var unitUnderTest = new OneAgentMetadataEnricher(NullLogger<DynatraceMetricsExporter>.Instance, fileReader);
+            var unitUnderTest = new DynatraceMetadataEnricher(NullLogger<DynatraceMetricsExporter>.Instance, fileReader);
             unitUnderTest.EnrichWithDynatraceMetadata(targetList);
 
             Assert.Collection(targetList, item => Assert.Equal(item, kv));
             Mock.Get(fileReader).Verify(f => f.ReadAllText("dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties"), Times.Once());
-            // if the OneAgent metadata file is empty, there should be no attempt at reading the contents.
+            // if the metadata file is empty, there should be no attempt at reading the contents.
             Mock.Get(fileReader).Verify(f => f.ReadAllLines(indirectionFileContent), Times.Once());
         }
 
@@ -154,7 +154,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
             var kv = KeyValuePair.Create<string, string>("initialDimensionKey", "initialDimensionValue");
             var targetList = new List<KeyValuePair<string, string>>() { kv };
 
-            var unitUnderTest = new OneAgentMetadataEnricher(NullLogger<DynatraceMetricsExporter>.Instance, fileReader);
+            var unitUnderTest = new DynatraceMetadataEnricher(NullLogger<DynatraceMetricsExporter>.Instance, fileReader);
             unitUnderTest.EnrichWithDynatraceMetadata(targetList);
 
             Assert.Collection(targetList, item => Assert.Equal(item, kv));
@@ -171,7 +171,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
             var kv = KeyValuePair.Create<string, string>("initialDimensionKey", "initialDimensionValue");
             var targetList = new List<KeyValuePair<string, string>>() { kv };
 
-            var unitUnderTest = new OneAgentMetadataEnricher(NullLogger<DynatraceMetricsExporter>.Instance, fileReader);
+            var unitUnderTest = new DynatraceMetadataEnricher(NullLogger<DynatraceMetricsExporter>.Instance, fileReader);
             unitUnderTest.EnrichWithDynatraceMetadata(targetList);
 
             Assert.Collection(targetList, item => Assert.Equal(item, kv));
@@ -188,7 +188,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
             var kv = KeyValuePair.Create<string, string>("initialDimensionKey", "initialDimensionValue");
             var targetList = new List<KeyValuePair<string, string>>() { kv };
 
-            var unitUnderTest = new OneAgentMetadataEnricher(NullLogger<DynatraceMetricsExporter>.Instance, fileReader);
+            var unitUnderTest = new DynatraceMetadataEnricher(NullLogger<DynatraceMetricsExporter>.Instance, fileReader);
             unitUnderTest.EnrichWithDynatraceMetadata(targetList);
 
             Assert.Collection(targetList, item => Assert.Equal(item, kv));
@@ -205,7 +205,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
             var kv = KeyValuePair.Create<string, string>("initialDimensionKey", "initialDimensionValue");
             var targetList = new List<KeyValuePair<string, string>>() { kv };
 
-            var unitUnderTest = new OneAgentMetadataEnricher(NullLogger<DynatraceMetricsExporter>.Instance, fileReader);
+            var unitUnderTest = new DynatraceMetadataEnricher(NullLogger<DynatraceMetricsExporter>.Instance, fileReader);
             unitUnderTest.EnrichWithDynatraceMetadata(targetList);
 
             Assert.Collection(targetList, item => Assert.Equal(item, kv));
@@ -222,7 +222,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
             var kv = KeyValuePair.Create<string, string>("initialDimensionKey", "initialDimensionValue");
             var targetList = new List<KeyValuePair<string, string>>() { kv };
 
-            var unitUnderTest = new OneAgentMetadataEnricher(NullLogger<DynatraceMetricsExporter>.Instance, fileReader);
+            var unitUnderTest = new DynatraceMetadataEnricher(NullLogger<DynatraceMetricsExporter>.Instance, fileReader);
             unitUnderTest.EnrichWithDynatraceMetadata(targetList);
 
             Assert.Collection(targetList,
@@ -243,7 +243,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
             var kv = KeyValuePair.Create<string, string>("initialDimensionKey", "initialDimensionValue");
             var targetList = new List<KeyValuePair<string, string>>() { kv };
 
-            var unitUnderTest = new OneAgentMetadataEnricher(NullLogger<DynatraceMetricsExporter>.Instance, fileReader);
+            var unitUnderTest = new DynatraceMetadataEnricher(NullLogger<DynatraceMetricsExporter>.Instance, fileReader);
             unitUnderTest.EnrichWithDynatraceMetadata(targetList);
 
             Assert.Collection(targetList,
