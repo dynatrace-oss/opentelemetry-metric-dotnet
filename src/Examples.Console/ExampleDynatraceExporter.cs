@@ -29,7 +29,7 @@ namespace Examples.Console
 {
     internal class ExampleDynatraceExporter
     {
-        internal static async Task<int> RunAsync(string url, string apiToken, int pushIntervalInSecs, int totalDurationInMins, bool oneAgentMetadataEnrichment)
+        internal static async Task<int> RunAsync(string url, string apiToken, int pushIntervalInSecs, int totalDurationInMins, bool dynatraceMetadataEnrichment)
         {
             ILoggerFactory loggerFactory = LoggerFactory.Create(builder =>
             {
@@ -41,7 +41,7 @@ namespace Examples.Console
             var options = new DynatraceExporterOptions
             {
                 ApiToken = apiToken,
-                EnrichWithOneAgentMetadata = oneAgentMetadataEnrichment,
+                EnrichWithDynatraceMetadata = dynatraceMetadataEnrichment,
                 DefaultDimensions = new Dictionary<string, string> { { "default1", "defval1" } },
                 Prefix = "otel.dotnet"
             };

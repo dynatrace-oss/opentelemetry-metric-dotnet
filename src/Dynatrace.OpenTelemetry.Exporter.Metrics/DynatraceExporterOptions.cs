@@ -54,8 +54,8 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
         public IEnumerable<KeyValuePair<string, string>> DefaultDimensions { get; set; }
 
         /// <summary>
-        /// Automatically adds host and process metadata retrieved from the OneAgent as metric labels.
+        /// Automatically adds Dynatrace metadata as metric labels.
         /// </summary>
-        public bool EnrichWithOneAgentMetadata { get; set; } = true;
+        public bool EnrichWithDynatraceMetadata { get; set; } = true;
     }
 }

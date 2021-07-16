@@ -25,7 +25,7 @@ namespace Examples.Console
         {
             await Parser.Default.ParseArguments<DynatraceOptions>(args)
                 .MapResult(
-                    (DynatraceOptions options) => ExampleDynatraceExporter.RunAsync(options.Url, options.ApiToken, options.PushIntervalInSecs, options.DurationInMins, !options.DisableOneAgentMetadataEnrichment),
+                    (DynatraceOptions options) => ExampleDynatraceExporter.RunAsync(options.Url, options.ApiToken, options.PushIntervalInSecs, options.DurationInMins, !options.DisableDynatraceMetadataEnrichment),
                     errs => Task.FromResult(0));
 
         }
@@ -46,7 +46,7 @@ namespace Examples.Console
         [Option('t', "token",  HelpText = "Dynatrace API authentication token with the 'metrics.ingest' permission.", Required = false)]
         public string ApiToken { get; set; }
 
-        [Option('n', "noOneAgentEnrichment",  HelpText = "Disable automatic label enrichment via OneAgent metadata.", Required = false)]
-        public bool DisableOneAgentMetadataEnrichment { get; set; } = false;
+        [Option('n', "noDynatraceMetadataEnrichment",  HelpText = "Disable automatic label enrichment via Dynatrace metadata.", Required = false)]
+        public bool DisableDynatraceMetadataEnrichment { get; set; } = false;
     }
 }

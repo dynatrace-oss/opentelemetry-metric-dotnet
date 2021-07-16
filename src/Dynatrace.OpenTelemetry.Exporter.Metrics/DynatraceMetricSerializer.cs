@@ -34,32 +34,32 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
         private readonly IEnumerable<KeyValuePair<string, string>> _staticDimensions;
 
         // public constructor.
-        public DynatraceMetricSerializer(ILogger<DynatraceMetricsExporter> logger, string prefix = null, IEnumerable<KeyValuePair<string, string>> defaultDimensions = null, bool enrichWithOneAgentMetadata = true)
-        : this(logger, prefix, defaultDimensions, PrepareOneAgentDimensions(logger, enrichWithOneAgentMetadata)) { }
+        public DynatraceMetricSerializer(ILogger<DynatraceMetricsExporter> logger, string prefix = null, IEnumerable<KeyValuePair<string, string>> defaultDimensions = null, bool enrichWithDynatraceMetadata = true)
+        : this(logger, prefix, defaultDimensions, PrepareMetadataDimensions(logger, enrichWithDynatraceMetadata)) { }
 
-        // this is required to read the OneAgent dimensions and still use constructor chaining
-        private static IEnumerable<KeyValuePair<string, string>> PrepareOneAgentDimensions(ILogger<DynatraceMetricsExporter> logger, bool enrichWithDynatraceMetadata = true)
+        // this is required to read the Dynatrace metadata dimensions and still use constructor chaining
+        private static IEnumerable<KeyValuePair<string, string>> PrepareMetadataDimensions(ILogger<DynatraceMetricsExporter> logger, bool enrichWithDynatraceMetadata = true)
         {
-            var oneAgentDimensions = new List<KeyValuePair<string, string>> { };
+            var metadataDimensions = new List<KeyValuePair<string, string>> { };
 
             if (enrichWithDynatraceMetadata)
             {
-                var enricher = new OneAgentMetadataEnricher(logger);
+                var enricher = new DynatraceMetadataEnricher(logger);
                 var dimensions = new List<KeyValuePair<string, string>>();
-                enricher.EnrichWithDynatraceMetadata(oneAgentDimensions);
+                enricher.EnrichWithDynatraceMetadata(metadataDimensions);
             }
-            return oneAgentDimensions;
+            return metadataDimensions;
         }
 
         // internal constructor offers an interface for testing and is used by the public constructor
-        internal DynatraceMetricSerializer(ILogger<DynatraceMetricsExporter> logger, string prefix, IEnumerable<KeyValuePair<string, string>> defaultDimensions, IEnumerable<KeyValuePair<string, string>> oneAgentDimensions)
+        internal DynatraceMetricSerializer(ILogger<DynatraceMetricsExporter> logger, string prefix, IEnumerable<KeyValuePair<string, string>> defaultDimensions, IEnumerable<KeyValuePair<string, string>> metadataDimensions)
         {
             this._logger = logger;
             this._prefix = prefix;
             this._defaultDimensions = Normalize.DimensionList(defaultDimensions) ?? Enumerable.Empty<KeyValuePair<string, string>>();
 
             var staticDimensions = new List<KeyValuePair<string, string>> { new KeyValuePair<string, string>("dt.metrics.source", "opentelemetry") };
-            staticDimensions.AddRange(oneAgentDimensions);
+            staticDimensions.AddRange(metadataDimensions);
             this._staticDimensions = Normalize.DimensionList(staticDimensions);
         }
 
