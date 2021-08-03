@@ -94,13 +94,13 @@ In addition to the `Url` and `ApiToken`, optional properties can be set on the `
 - A `Prefix`, that is prepended to every metric key.
 - `DefaultDimensions`, which are added as dimensions to every exported metric
 - A toggle, `EnrichWithOneAgentMetadata`, which allows turning off the enrichment of metrics with host-specific information.
-    See [below](#dynatrace-api-endpoint) for more information.
+  See [below](#dynatrace-api-endpoint) for more information.
 
 ```csharp
 var exporterOptions = new DynatraceExporterOptions()
 {
     Url = "https://{your-environment-id}.live.dynatrace.com/api/v2/metrics/ingest",
-    ApiToken = "YOUR_API_TOKEN",
+    ApiToken = "YOUR_API_TOKEN", // don't hardcode but read from a secure source
     Prefix = "metric.key.prefix",
     DefaultDimensions = new List<KeyValuePair<string, string>>()
     {
@@ -138,9 +138,8 @@ The exporter allows for configuring the following settings using the `DynatraceE
 ### Dynatrace API Endpoint
 
 A OneAgent installed on the host can provide a local endpoint for ingesting metrics without the need for an API token.
-The [OneAgent metric API documentation](https://www.dynatrace.com/support/help/how-to-use-dynatrace/metrics/metric-ingestion/ingestion-methods/local-api/) provides information on how to set up a local OneAgent endpoint.
+The [OneAgent metric API documentation](https://www.dynatrace.com/support/help/how-to-use-dynatrace/metrics/metric-ingestion/ingestion-methods/local-api/) provides information on how to enable the local OneAgent endpoint, if necessary.
 Using the local API endpoint, the host ID and host name context are automatically added to each metric as dimensions.
-If this is not desired, it can be turned off using the [`EnrichWithOneAgentMetadata` toggle](#export-oneagent-metadata).
 
 If no OneAgent is running on the host or if metrics should be sent to a different endpoint, the `Url` property allows for setting that endpoint.
 
