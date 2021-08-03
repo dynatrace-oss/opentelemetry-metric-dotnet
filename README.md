@@ -120,6 +120,13 @@ To run it use
 dotnet run --project src/Examples.Console/Examples.Console.csproj
 ```
 
+or change into the folder and use `dotnet run`:
+
+```sh
+cd src/Examples.Console
+dotnet run
+```
+
 Without any further configuration, the example app will try to export to a local OneAgent endpoint, which requires no authentication.
 More information about the local OneAgent endpoint can be found [below](#dynatrace-api-endpoint).
 The example app provides a number of command line options, which can be retrieved by running `dotnet run --project src/Examples.Console/Examples.Console.csproj -- --help`.
