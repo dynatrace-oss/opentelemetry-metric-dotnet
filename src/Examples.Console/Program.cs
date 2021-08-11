@@ -40,13 +40,13 @@ namespace Examples.Console
         [Option('d', "duration", Default = 2, HelpText = "Total duration in minutes to run the demo. Run at least for one minute to see metrics flowing.", Required = false)]
         public int DurationInMins { get; set; }
 
-        [Option('u', "url", HelpText = "Dynatrace metrics ingest API URL, including the '/api/v2/metrics/ingest' suffix.", Required = false)]
+        [Option('u', "url", HelpText = "Dynatrace metrics ingest API URL, including the '/api/v2/metrics/ingest' suffix. If not specified, the local OneAgent endpoint will be used.", Required = false)]
         public string Url { get; set; }
 
-        [Option('t', "token",  HelpText = "Dynatrace API authentication token with the 'metrics.ingest' permission.", Required = false)]
+        [Option('t', "token", HelpText = "Dynatrace API authentication token with the 'metrics.ingest' permission.", Required = false)]
         public string ApiToken { get; set; }
 
-        [Option('n', "noDynatraceMetadataEnrichment",  HelpText = "Disable automatic label enrichment via Dynatrace metadata.", Required = false)]
+        [Option('n', "noDynatraceMetadataEnrichment", HelpText = "Disable automatic label enrichment via Dynatrace metadata.", Required = false)]
         public bool DisableDynatraceMetadataEnrichment { get; set; } = false;
     }
 }

@@ -27,7 +27,7 @@ using Dynatrace.OpenTelemetry.Exporter.Metrics;
 
 namespace Examples.Console
 {
-    internal class ExampleDynatraceExporter
+    internal class DynatraceExporterExample
     {
         internal static async Task<int> RunAsync(string url, string apiToken, int pushIntervalInSecs, int totalDurationInMins, bool dynatraceMetadataEnrichment)
         {
@@ -36,7 +36,7 @@ namespace Examples.Console
                 builder.SetMinimumLevel(LogLevel.Debug)
                         .AddConsole();
             });
-            var logger = loggerFactory.CreateLogger<ExampleDynatraceExporter>();
+            var logger = loggerFactory.CreateLogger<DynatraceExporterExample>();
 
             var options = new DynatraceExporterOptions
             {

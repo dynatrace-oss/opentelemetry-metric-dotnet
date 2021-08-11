@@ -61,15 +61,14 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
         {
             // split all metrics into batches of DynatraceMetricApiConstants.PayloadLinesLimit lines
             var chunked = metrics
-            .Select((val, i) => new { val, batch = i / DynatraceMetricApiConstants.PayloadLinesLimit })
-            .GroupBy(x => x.batch)
-            .Select(x => x.Select(v => v.val));
+                .Select((val, i) => new { val, batch = i / DynatraceMetricApiConstants.PayloadLinesLimit })
+                .GroupBy(x => x.batch)
+                .Select(x => x.Select(v => v.val));
 
             var exportResults = new List<ExportResult>();
 
             foreach (var chunk in chunked)
             {
-                var sw = Stopwatch.StartNew();
                 var httpRequest = new HttpRequestMessage(HttpMethod.Post, this._options.Url);
                 var sb = new StringBuilder();
 
@@ -86,12 +85,12 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
                     var response = await this._httpClient.SendAsync(httpRequest);
                     if (response.IsSuccessStatusCode)
                     {
-                        _logger.LogDebug("StatusCode: {StatusCode}, Duration: {Duration}ms", response.StatusCode, sw.Elapsed.TotalMilliseconds);
+                        _logger.LogDebug("StatusCode: {StatusCode}", response.StatusCode);
                         exportResults.Add(ExportResult.Success);
                     }
                     else
                     {
-                        _logger.LogError("StatusCode: {StatusCode}: Duration: {Duration}ms", response.StatusCode, sw.Elapsed.TotalMilliseconds);
+                        _logger.LogError("StatusCode: {StatusCode}", response.StatusCode);
                         _logger.LogError("Content: {Content}", await response.Content.ReadAsStringAsync());
                         exportResults.Add(ExportResult.FailedNotRetryable);
                     }

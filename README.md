@@ -114,13 +114,7 @@ var exporterOptions = new DynatraceExporterOptions()
 ## Example application
 
 We provide an example command line application which exports metrics to Dynatrace.
-To run it use
-
-```sh
-dotnet run --project src/Examples.Console/Examples.Console.csproj
-```
-
-or change into the folder and use `dotnet run`:
+To run it, change into the folder and use `dotnet run`:
 
 ```sh
 cd src/Examples.Console

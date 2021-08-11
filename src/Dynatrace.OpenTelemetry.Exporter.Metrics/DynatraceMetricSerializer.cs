@@ -78,7 +78,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
                 // skip lines with invalid metric keys.
                 if (string.IsNullOrEmpty(metricKey))
                 {
-                    _logger.LogWarning("metric key was empty after normalization, skipping metric (original name {})", metric.MetricName);
+                    _logger.LogWarning("metric key was empty after normalization, skipping metric (original name '{}')", metric.MetricName);
                     continue;
                 }
                 sb.Append(metricKey);
@@ -164,7 +164,6 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
         {
             var keyBuilder = new StringBuilder();
             if (!string.IsNullOrEmpty(_prefix)) keyBuilder.Append($"{_prefix}.");
-            // todo is this needed?
             if (!string.IsNullOrEmpty(metric.MetricNamespace)) keyBuilder.Append($"{metric.MetricNamespace}.");
             keyBuilder.Append(metric.MetricName);
             return Normalize.MetricKey(keyBuilder.ToString());

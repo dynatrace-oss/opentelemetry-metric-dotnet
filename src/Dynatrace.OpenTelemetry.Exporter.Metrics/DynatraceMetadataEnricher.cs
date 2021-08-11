@@ -28,7 +28,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
         private readonly ILogger<DynatraceMetricsExporter> _logger;
         private readonly IFileReader _fileReader;
 
-        private const string IndirectionFileName = "dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties";
+        private const string OneAgentIndirectionFileName = "dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties";
 
         public DynatraceMetadataEnricher(ILogger<DynatraceMetricsExporter> logger) : this(logger, new DefaultFileReader())
         {
@@ -78,7 +78,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
         {
             try
             {
-                var metadataFilePath = _fileReader.ReadAllText(IndirectionFileName);
+                var metadataFilePath = _fileReader.ReadAllText(OneAgentIndirectionFileName);
                 if (string.IsNullOrEmpty(metadataFilePath)) return Array.Empty<string>();
                 return _fileReader.ReadAllLines(metadataFilePath);
             }

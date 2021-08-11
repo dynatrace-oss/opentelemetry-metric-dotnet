@@ -35,7 +35,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
         public string Url { get; set; } = DynatraceMetricApiConstants.DefaultOneAgentEndpoint;
 
         /// <summary>
-        /// Gets or sets the Dynatrace api token for authentication.
+        /// Gets or sets the Dynatrace API token for authentication.
         ///
         /// How to acquire an api-token: https://www.dynatrace.com/support/help/dynatrace-api/basics/dynatrace-api-authentication/
         ///
