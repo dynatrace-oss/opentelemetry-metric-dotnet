@@ -17,6 +17,10 @@
 using System.Linq;
 using Xunit;
 
+// This warning appears since the parametrized unit tests have a name (for human readability)
+// which is not used, since it is currently not supported by xUnit. This #pragma disables the warning that the name is not used.
+#pragma warning disable xUnit1026
+
 namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Utils.Tests
 {
 
