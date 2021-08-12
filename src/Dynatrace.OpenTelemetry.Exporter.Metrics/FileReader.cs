@@ -18,28 +18,28 @@ using System.IO;
 
 namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 {
-    /// <summary>
-    /// Provides specific file reading operations, which are passed through to the
-    /// respective methods on <c>System.IO.File</c>
-    /// </summary>
-    internal interface IFileReader
-    {
-        string ReadAllText(string filename);
-        string[] ReadAllLines(string filename);
-    }
+	/// <summary>
+	/// Provides specific file reading operations, which are passed through to the
+	/// respective methods on <c>System.IO.File</c>
+	/// </summary>
+	internal interface IFileReader
+	{
+		string ReadAllText(string filename);
+		string[] ReadAllLines(string filename);
+	}
 
-    internal class DefaultFileReader : IFileReader
-    {
-        /// <summary>Returns the result of File.ReadAllLines(filename).</summary>
-        public string[] ReadAllLines(string filename)
-        {
-            return File.ReadAllLines(filename);
-        }
+	internal class DefaultFileReader : IFileReader
+	{
+		/// <summary>Returns the result of File.ReadAllLines(filename).</summary>
+		public string[] ReadAllLines(string filename)
+		{
+			return File.ReadAllLines(filename);
+		}
 
-        /// <summary>Returns the result of File.ReadAllText(filename).</summary>
-        public string ReadAllText(string filename)
-        {
-            return File.ReadAllText(filename);
-        }
-    }
+		/// <summary>Returns the result of File.ReadAllText(filename).</summary>
+		public string ReadAllText(string filename)
+		{
+			return File.ReadAllText(filename);
+		}
+	}
 }

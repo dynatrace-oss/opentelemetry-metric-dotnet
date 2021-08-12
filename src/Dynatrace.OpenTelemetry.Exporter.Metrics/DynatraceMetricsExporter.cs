@@ -28,81 +28,81 @@ using OpenTelemetry.Metrics.Export;
 
 namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 {
-    /// <summary>
-    /// https://www.dynatrace.com/support/help/how-to-use-dynatrace/metrics/metric-ingestion/metric-ingestion-protocol/
-    /// https://www.dynatrace.com/support/help/dynatrace-api/environment-api/metric-v2/post-ingest-metrics
-    /// </summary>
-    public class DynatraceMetricsExporter : MetricExporter
-    {
-        private readonly DynatraceExporterOptions _options;
-        private readonly ILogger<DynatraceMetricsExporter> _logger;
-        private readonly HttpClient _httpClient;
-        private readonly DynatraceMetricSerializer _serializer;
+	/// <summary>
+	/// https://www.dynatrace.com/support/help/how-to-use-dynatrace/metrics/metric-ingestion/metric-ingestion-protocol/
+	/// https://www.dynatrace.com/support/help/dynatrace-api/environment-api/metric-v2/post-ingest-metrics
+	/// </summary>
+	public class DynatraceMetricsExporter : MetricExporter
+	{
+		private readonly DynatraceExporterOptions _options;
+		private readonly ILogger<DynatraceMetricsExporter> _logger;
+		private readonly HttpClient _httpClient;
+		private readonly DynatraceMetricSerializer _serializer;
 
-        public DynatraceMetricsExporter(DynatraceExporterOptions options = null, ILogger<DynatraceMetricsExporter> logger = null)
-        : this(options, logger, new HttpClient()) { }
+		public DynatraceMetricsExporter(DynatraceExporterOptions options = null, ILogger<DynatraceMetricsExporter> logger = null)
+		: this(options, logger, new HttpClient()) { }
 
-        internal DynatraceMetricsExporter(DynatraceExporterOptions options, ILogger<DynatraceMetricsExporter> logger, HttpClient client)
-        {
-            _options = options ?? new DynatraceExporterOptions();
-            _logger = logger ?? NullLogger<DynatraceMetricsExporter>.Instance;
-            _logger.LogDebug("Dynatrace Metrics Url: {Url}", _options.Url);
-            _httpClient = client;
-            if (!string.IsNullOrEmpty(_options.ApiToken))
-            {
-                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Api-Token", _options.ApiToken);
-            }
-            _httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue(new ProductHeaderValue("opentelemetry-metric-dotnet")));
-            _serializer = new DynatraceMetricSerializer(_logger, _options.Prefix, _options.DefaultDimensions, _options.EnrichWithDynatraceMetadata);
-        }
+		internal DynatraceMetricsExporter(DynatraceExporterOptions options, ILogger<DynatraceMetricsExporter> logger, HttpClient client)
+		{
+			_options = options ?? new DynatraceExporterOptions();
+			_logger = logger ?? NullLogger<DynatraceMetricsExporter>.Instance;
+			_logger.LogDebug("Dynatrace Metrics Url: {Url}", _options.Url);
+			_httpClient = client;
+			if (!string.IsNullOrEmpty(_options.ApiToken))
+			{
+				_httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Api-Token", _options.ApiToken);
+			}
+			_httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue(new ProductHeaderValue("opentelemetry-metric-dotnet")));
+			_serializer = new DynatraceMetricSerializer(_logger, _options.Prefix, _options.DefaultDimensions, _options.EnrichWithDynatraceMetadata);
+		}
 
-        public override async Task<ExportResult> ExportAsync(IEnumerable<Metric> metrics, CancellationToken cancellationToken)
-        {
-            // split all metrics into batches of DynatraceMetricApiConstants.PayloadLinesLimit lines
-            var chunked = metrics
-                .Select((val, i) => new { val, batch = i / DynatraceMetricApiConstants.PayloadLinesLimit })
-                .GroupBy(x => x.batch)
-                .Select(x => x.Select(v => v.val));
+		public override async Task<ExportResult> ExportAsync(IEnumerable<Metric> metrics, CancellationToken cancellationToken)
+		{
+			// split all metrics into batches of DynatraceMetricApiConstants.PayloadLinesLimit lines
+			var chunked = metrics
+				.Select((val, i) => new { val, batch = i / DynatraceMetricApiConstants.PayloadLinesLimit })
+				.GroupBy(x => x.batch)
+				.Select(x => x.Select(v => v.val));
 
-            var exportResults = new List<ExportResult>();
+			var exportResults = new List<ExportResult>();
 
-            foreach (var chunk in chunked)
-            {
-                var httpRequest = new HttpRequestMessage(HttpMethod.Post, _options.Url);
-                var sb = new StringBuilder();
+			foreach (var chunk in chunked)
+			{
+				var httpRequest = new HttpRequestMessage(HttpMethod.Post, _options.Url);
+				var sb = new StringBuilder();
 
-                foreach (var metric in chunk)
-                {
-                    _serializer.SerializeMetric(sb, metric);
-                }
+				foreach (var metric in chunk)
+				{
+					_serializer.SerializeMetric(sb, metric);
+				}
 
-                var metricLines = sb.ToString();
-                _logger.LogDebug(metricLines);
-                httpRequest.Content = new StringContent(metricLines);
-                try
-                {
-                    var response = await _httpClient.SendAsync(httpRequest);
-                    if (response.IsSuccessStatusCode)
-                    {
-                        _logger.LogDebug("StatusCode: {StatusCode}", response.StatusCode);
-                        exportResults.Add(ExportResult.Success);
-                    }
-                    else
-                    {
-                        _logger.LogError("StatusCode: {StatusCode}", response.StatusCode);
-                        _logger.LogError("Content: {Content}", await response.Content.ReadAsStringAsync());
-                        exportResults.Add(ExportResult.FailedNotRetryable);
-                    }
-                }
-                catch (Exception e)
-                {
-                    _logger.LogError("Error sending metrics: {Error}", e.Message);
-                    throw e;
-                }
-            }
+				var metricLines = sb.ToString();
+				_logger.LogDebug(metricLines);
+				httpRequest.Content = new StringContent(metricLines);
+				try
+				{
+					var response = await _httpClient.SendAsync(httpRequest);
+					if (response.IsSuccessStatusCode)
+					{
+						_logger.LogDebug("StatusCode: {StatusCode}", response.StatusCode);
+						exportResults.Add(ExportResult.Success);
+					}
+					else
+					{
+						_logger.LogError("StatusCode: {StatusCode}", response.StatusCode);
+						_logger.LogError("Content: {Content}", await response.Content.ReadAsStringAsync());
+						exportResults.Add(ExportResult.FailedNotRetryable);
+					}
+				}
+				catch (Exception e)
+				{
+					_logger.LogError("Error sending metrics: {Error}", e.Message);
+					throw e;
+				}
+			}
 
-            // if all chunks were exported successfully, return success, otherwise failed.
-            return exportResults.All(x => x == ExportResult.Success) ? ExportResult.Success : ExportResult.FailedNotRetryable;
-        }
-    }
+			// if all chunks were exported successfully, return success, otherwise failed.
+			return exportResults.All(x => x == ExportResult.Success) ? ExportResult.Success : ExportResult.FailedNotRetryable;
+		}
+	}
 }
