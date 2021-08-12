@@ -40,12 +40,11 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
         // this is required to read the Dynatrace metadata dimensions and still use constructor chaining
         private static IEnumerable<KeyValuePair<string, string>> PrepareMetadataDimensions(ILogger<DynatraceMetricsExporter> logger, bool enrichWithDynatraceMetadata = true)
         {
-            var metadataDimensions = new List<KeyValuePair<string, string>> { };
+            var metadataDimensions = new List<KeyValuePair<string, string>>();
 
             if (enrichWithDynatraceMetadata)
             {
                 var enricher = new DynatraceMetadataEnricher(logger);
-                var dimensions = new List<KeyValuePair<string, string>>();
                 enricher.EnrichWithDynatraceMetadata(metadataDimensions);
             }
             return metadataDimensions;
@@ -54,13 +53,13 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
         // internal constructor offers an interface for testing and is used by the public constructor
         internal DynatraceMetricSerializer(ILogger<DynatraceMetricsExporter> logger, string prefix, IEnumerable<KeyValuePair<string, string>> defaultDimensions, IEnumerable<KeyValuePair<string, string>> metadataDimensions)
         {
-            this._logger = logger;
-            this._prefix = prefix;
-            this._defaultDimensions = Normalize.DimensionList(defaultDimensions) ?? Enumerable.Empty<KeyValuePair<string, string>>();
+            _logger = logger;
+            _prefix = prefix;
+            _defaultDimensions = Normalize.DimensionList(defaultDimensions);
 
             var staticDimensions = new List<KeyValuePair<string, string>> { new KeyValuePair<string, string>("dt.metrics.source", "opentelemetry") };
             staticDimensions.AddRange(metadataDimensions);
-            this._staticDimensions = Normalize.DimensionList(staticDimensions);
+            _staticDimensions = Normalize.DimensionList(staticDimensions);
         }
 
         public string SerializeMetric(Metric metric)

@@ -28,26 +28,26 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Utils
 
         //  Metric keys (mk)
         //  characters not valid as leading characters in the first identifier key section
-        private static readonly Regex reMkFirstIdentifierSectionStart = new Regex("^[^a-zA-Z_]+", RegexOptions.Compiled);
+        private static readonly Regex ReMkFirstIdentifierSectionStart = new Regex("^[^a-zA-Z_]+", RegexOptions.Compiled);
         // characters not valid as leading characters in subsequent subsections.
-        private static readonly Regex reMkSubsequentIdentifierSectionStart = new Regex("^[^a-zA-Z0-9_]+", RegexOptions.Compiled);
+        private static readonly Regex ReMkSubsequentIdentifierSectionStart = new Regex("^[^a-zA-Z0-9_]+", RegexOptions.Compiled);
         // invalid characters for the rest of the key.
-        private static readonly Regex reMkInvalidCharacters = new Regex("[^a-zA-Z0-9_\\-]+", RegexOptions.Compiled);
+        private static readonly Regex ReMkInvalidCharacters = new Regex("[^a-zA-Z0-9_\\-]+", RegexOptions.Compiled);
 
         // Dimension keys (dk)
         // Dimension keys start with a lowercase letter or an underscore.
-        private static readonly Regex reDkSectionStart = new Regex("^[^a-z_]+", RegexOptions.Compiled);
+        private static readonly Regex ReDkSectionStart = new Regex("^[^a-z_]+", RegexOptions.Compiled);
         // invalid characters in the rest of the dimension key
-        private static readonly Regex reDkInvalidCharacters = new Regex("[^a-z0-9_\\-:]+", RegexOptions.Compiled);
+        private static readonly Regex ReDkInvalidCharacters = new Regex("[^a-z0-9_\\-:]+", RegexOptions.Compiled);
 
         // Dimension values (dv)
         // Characters that need to be escaped in dimension values
-        private static readonly Regex reDvCharactersToEscape = new Regex("([= ,\\\\\"])", RegexOptions.Compiled);
-        private static readonly Regex reDvControlCharacters = new Regex("[\\p{C}]+", RegexOptions.Compiled);
+        private static readonly Regex ReDvCharactersToEscape = new Regex("([= ,\\\\\"])", RegexOptions.Compiled);
+        private static readonly Regex ReDvControlCharacters = new Regex("[\\p{C}]+", RegexOptions.Compiled);
 
         // This regex checks if there is an odd number of trailing backslashes in the string. It can be
         // read as: {not a slash}{any number of 2-slash pairs}{one slash}{end line}.
-        private static readonly Regex reDvHasOddNumberOfTrailingBackslashes = new Regex("[^\\\\](?:\\\\\\\\)*\\\\$", RegexOptions.Compiled);
+        private static readonly Regex ReDvHasOddNumberOfTrailingBackslashes = new Regex("[^\\\\](?:\\\\\\\\)*\\\\$", RegexOptions.Compiled);
 
         private Normalize() { }
 
@@ -96,15 +96,15 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Utils
                 // first key section cannot start with a number while subsequent sections can.
                 if (firstSection)
                 {
-                    normalizedSection = reMkFirstIdentifierSectionStart.Replace(section, "_");
+                    normalizedSection = ReMkFirstIdentifierSectionStart.Replace(section, "_");
                 }
                 else
                 {
-                    normalizedSection = reMkSubsequentIdentifierSectionStart.Replace(section, "_");
+                    normalizedSection = ReMkSubsequentIdentifierSectionStart.Replace(section, "_");
                 }
 
                 // replace invalid chars with an underscore
-                normalizedSection = reMkInvalidCharacters.Replace(normalizedSection, "_");
+                normalizedSection = ReMkInvalidCharacters.Replace(normalizedSection, "_");
 
                 // re-concatenate the split sections separated with dots.
                 if (!firstSection)
@@ -143,9 +143,9 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Utils
                     // move to lowercase
                     string normalizedSection = section.ToLower();
                     // replace consecutive leading chars with an underscore.
-                    normalizedSection = reDkSectionStart.Replace(normalizedSection, "_");
+                    normalizedSection = ReDkSectionStart.Replace(normalizedSection, "_");
                     // replace consecutive invalid characters within the section with one underscore:
-                    normalizedSection = reDkInvalidCharacters.Replace(normalizedSection, "_");
+                    normalizedSection = ReDkInvalidCharacters.Replace(normalizedSection, "_");
 
                     // re-concatenate the split sections separated with dots.
                     if (!firstSection)
@@ -175,7 +175,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Utils
             }
 
             // collapse invalid characters to an underscore.
-            value = reDvControlCharacters.Replace(value, "_");
+            value = ReDvControlCharacters.Replace(value, "_");
 
             return value;
         }
@@ -183,11 +183,11 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Utils
         internal static string EscapeDimensionValue(string value)
         {
             // escape characters matched by regex with backslash. $1 inserts the matched character.
-            var escaped = reDvCharactersToEscape.Replace(value, "\\$1");
+            var escaped = ReDvCharactersToEscape.Replace(value, "\\$1");
             if (escaped.Length > MaxLengthDimensionValue)
             {
                 escaped = escaped.Substring(0, MaxLengthDimensionValue);
-                if (reDvHasOddNumberOfTrailingBackslashes.IsMatch(escaped))
+                if (ReDvHasOddNumberOfTrailingBackslashes.IsMatch(escaped))
                 {
                     // string has trailing backslashes. Since every backslash must be escaped, there must be an
                     // even number of backslashes, otherwise the substring operation cut an escaped character
@@ -204,12 +204,12 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Utils
 
         internal static IEnumerable<KeyValuePair<string, string>> DimensionList(IEnumerable<KeyValuePair<string, string>> dimensions)
         {
+            var targetList = new List<KeyValuePair<string, string>>();
             if (dimensions == null)
             {
-                return null;
+                return targetList;
             }
 
-            var targetList = new List<KeyValuePair<string, string>>();
             foreach (var dimension in dimensions)
             {
 

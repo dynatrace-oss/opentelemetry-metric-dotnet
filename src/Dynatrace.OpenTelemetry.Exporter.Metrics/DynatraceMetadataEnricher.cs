@@ -30,10 +30,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 
         private const string OneAgentIndirectionFileName = "dt_metadata_e617c525669e072eebe3d0f08212e8f2.properties";
 
-        public DynatraceMetadataEnricher(ILogger<DynatraceMetricsExporter> logger) : this(logger, new DefaultFileReader())
-        {
-            this._logger = logger;
-        }
+        public DynatraceMetadataEnricher(ILogger<DynatraceMetricsExporter> logger) : this(logger, new DefaultFileReader()) { }
 
         // Allows mocking of File.ReadAllText and File.ReadAllLines methods. When using the public constructor,
         // the used FileReader passes the calls through to the System.IO methods.
