@@ -81,12 +81,10 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 			await exporter.ExportAsync(new List<Metric> { CreateMetric() }, CancellationToken.None);
 			mockMessageHandler.Protected().Verify("SendAsync", Times.Exactly(1), ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>());
 			Assert.Equal("http://my.url/", req.RequestUri.AbsoluteUri);
-
-			mockMessageHandler.Protected().Verify("SendAsync", Times.Exactly(1), ItExpr.Is<HttpRequestMessage>(req => req.RequestUri.AbsoluteUri == "http://my.url/"), ItExpr.IsAny<CancellationToken>());
-			mockMessageHandler.Protected().Verify("SendAsync", Times.Exactly(1), ItExpr.Is<HttpRequestMessage>(req => req.Headers.Contains("Authorization")), ItExpr.IsAny<CancellationToken>());
-			mockMessageHandler.Protected().Verify("SendAsync", Times.Exactly(1), ItExpr.Is<HttpRequestMessage>(req => req.Headers.GetValues("Authorization").Count() == 1), ItExpr.IsAny<CancellationToken>());
-			mockMessageHandler.Protected().Verify("SendAsync", Times.Exactly(1), ItExpr.Is<HttpRequestMessage>(req => req.Headers.GetValues("Authorization").First() == "Api-Token test-token"), ItExpr.IsAny<CancellationToken>());
-			mockMessageHandler.Protected().Verify("SendAsync", Times.Exactly(1), ItExpr.Is<HttpRequestMessage>(req => req.Content.ReadAsStringAsync().Result == "namespace1.metric1,label1=value1,label2=value2,dt.metrics.source=opentelemetry count,delta=100 1604660628881" + Environment.NewLine), ItExpr.IsAny<CancellationToken>());
+			Assert.True(req.Headers.Contains("Authorization"));
+			Assert.Single(req.Headers.GetValues("Authorization"));
+			Assert.Equal("Api-Token test-token", req.Headers.GetValues("Authorization").First());
+			Assert.Equal("namespace1.metric1,label1=value1,label2=value2,dt.metrics.source=opentelemetry count,delta=100 1604660628881" + Environment.NewLine, req.Content.ReadAsStringAsync().Result);
 		}
 
 		[Fact]
@@ -118,13 +116,16 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 		public async void TestExportMultipleWithPrefix()
 		{
 			var mockMessageHandler = new Mock<HttpMessageHandler>();
+			HttpRequestMessage req = null;
+
 			mockMessageHandler.Protected()
 			.Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
 			.ReturnsAsync(new HttpResponseMessage
 			{
 				StatusCode = HttpStatusCode.OK,
 				Content = new StringContent("test")
-			});
+			})
+			.Callback((HttpRequestMessage r, CancellationToken _) => req = r);
 
 			var exporter = new DynatraceMetricsExporter(new DynatraceExporterOptions { Prefix = "my.prefix" }, null, new HttpClient(mockMessageHandler.Object));
 
@@ -132,9 +133,9 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 			var expectedString = "my.prefix.namespace1.metric1,dt.metrics.source=opentelemetry count,delta=100 1604660628881" + Environment.NewLine + "my.prefix.namespace2.metric2,dt.metrics.source=opentelemetry count,delta=200 1604660628881" + Environment.NewLine;
 
 			mockMessageHandler.Protected().Verify("SendAsync", Times.Exactly(1), ItExpr.Is<HttpRequestMessage>(req => req.Method == HttpMethod.Post), ItExpr.IsAny<CancellationToken>());
-			mockMessageHandler.Protected().Verify("SendAsync", Times.Exactly(1), ItExpr.Is<HttpRequestMessage>(req => req.RequestUri.AbsoluteUri == DynatraceMetricApiConstants.DefaultOneAgentEndpoint), ItExpr.IsAny<CancellationToken>());
-			mockMessageHandler.Protected().Verify("SendAsync", Times.Exactly(1), ItExpr.Is<HttpRequestMessage>(req => !req.Headers.Contains("Api-Token")), ItExpr.IsAny<CancellationToken>());
-			mockMessageHandler.Protected().Verify("SendAsync", Times.Exactly(1), ItExpr.Is<HttpRequestMessage>(req => req.Content.ReadAsStringAsync().Result == expectedString), ItExpr.IsAny<CancellationToken>());
+			Assert.Equal(DynatraceMetricApiConstants.DefaultOneAgentEndpoint, req.RequestUri.AbsoluteUri);
+			Assert.False(req.Headers.Contains("Api-Token"));
+			Assert.Equal(expectedString, req.Content.ReadAsStringAsync().Result);
 		}
 
 		private List<Metric> CreateMetrics()

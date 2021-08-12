@@ -97,7 +97,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 				catch (Exception e)
 				{
 					_logger.LogError("Error sending metrics: {Error}", e.Message);
-					throw e;
+					throw;
 				}
 			}
 
