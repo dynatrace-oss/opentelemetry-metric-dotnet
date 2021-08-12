@@ -16,25 +16,25 @@
 
 namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 {
-    public static class DynatraceMetricApiConstants
-    {
-        private const string defaultOneAgentEndpoint = "http://localhost:14499/metrics/ingest";
-        private const int payloadLinesLimit = 1000;
-        private const int maxDimensions = 50;
+	public static class DynatraceMetricApiConstants
+	{
+		private const string _defaultOneAgentEndpoint = "http://localhost:14499/metrics/ingest";
+		private const int _payloadLinesLimit = 1000;
+		private const int _maxDimensions = 50;
 
-        public static string DefaultOneAgentEndpoint
-        {
-            get { return defaultOneAgentEndpoint; }
-        }
+		public static string DefaultOneAgentEndpoint
+		{
+			get { return _defaultOneAgentEndpoint; }
+		}
 
-        public static int PayloadLinesLimit
-        {
-            get { return payloadLinesLimit; }
-        }
+		public static int PayloadLinesLimit
+		{
+			get { return _payloadLinesLimit; }
+		}
 
-        public static int MaxDimensions
-        {
-            get { return maxDimensions; }
-        }
-    }
+		public static int MaxDimensions
+		{
+			get { return _maxDimensions; }
+		}
+	}
 }
