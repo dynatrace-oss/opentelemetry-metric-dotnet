@@ -84,7 +84,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 
 				// default dimensions and static dimensions are normalized once upon serializer creation.
 				// the labels from opentelemetry are normalized here, then all dimensions are merged.
-				var normalizedDimensions = MergeDimensions(this._defaultDimensions, Normalize.DimensionList(metricData.Labels), this._staticDimensions);
+				var normalizedDimensions = MergeDimensions(_defaultDimensions, Normalize.DimensionList(metricData.Labels), _staticDimensions);
 
 				// merged dimensions are normalized and escaped since we called Normalize.DimensionList on each of the sublists.
 				WriteDimensions(sb, normalizedDimensions);
@@ -95,7 +95,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 						{
 							var sum = metricData as DoubleSumData;
 							var sumValue = sum.Sum;
-							this.WriteSum(sb, sumValue);
+							WriteSum(sb, sumValue);
 							break;
 						}
 
@@ -103,7 +103,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 						{
 							var sum = metricData as Int64SumData;
 							var sumValue = sum.Sum;
-							this.WriteSum(sb, sumValue);
+							WriteSum(sb, sumValue);
 							break;
 						}
 
@@ -114,7 +114,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 							var sum = summary.Sum;
 							var min = summary.Min;
 							var max = summary.Max;
-							this.WriteSummary(sb, sum, count, min, max);
+							WriteSummary(sb, sum, count, min, max);
 							break;
 						}
 
@@ -125,12 +125,12 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 							var sum = summary.Sum;
 							var min = summary.Min;
 							var max = summary.Max;
-							this.WriteSummary(sb, sum, count, min, max);
+							WriteSummary(sb, sum, count, min, max);
 							break;
 						}
 				}
 
-				this.WriteTimestamp(sb, metricData.Timestamp);
+				WriteTimestamp(sb, metricData.Timestamp);
 				sb.AppendLine();
 			}
 		}

@@ -44,16 +44,16 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 
         internal DynatraceMetricsExporter(DynatraceExporterOptions options, ILogger<DynatraceMetricsExporter> logger, HttpClient client)
         {
-            this._options = options ?? new DynatraceExporterOptions();
-            this._logger = logger ?? NullLogger<DynatraceMetricsExporter>.Instance;
-            this._logger.LogDebug("Dynatrace Metrics Url: {Url}", this._options.Url);
-            this._httpClient = client;
-            if (!string.IsNullOrEmpty(this._options.ApiToken))
+            _options = options ?? new DynatraceExporterOptions();
+            _logger = logger ?? NullLogger<DynatraceMetricsExporter>.Instance;
+            _logger.LogDebug("Dynatrace Metrics Url: {Url}", _options.Url);
+            _httpClient = client;
+            if (!string.IsNullOrEmpty(_options.ApiToken))
             {
-                this._httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Api-Token", this._options.ApiToken);
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Api-Token", _options.ApiToken);
             }
-            this._httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue(new ProductHeaderValue("opentelemetry-metric-dotnet")));
-            this._serializer = new DynatraceMetricSerializer(this._logger, this._options.Prefix, this._options.DefaultDimensions, this._options.EnrichWithDynatraceMetadata);
+            _httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue(new ProductHeaderValue("opentelemetry-metric-dotnet")));
+            _serializer = new DynatraceMetricSerializer(_logger, _options.Prefix, _options.DefaultDimensions, _options.EnrichWithDynatraceMetadata);
         }
 
         public override async Task<ExportResult> ExportAsync(IEnumerable<Metric> metrics, CancellationToken cancellationToken)
@@ -68,7 +68,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 
             foreach (var chunk in chunked)
             {
-                var httpRequest = new HttpRequestMessage(HttpMethod.Post, this._options.Url);
+                var httpRequest = new HttpRequestMessage(HttpMethod.Post, _options.Url);
                 var sb = new StringBuilder();
 
                 foreach (var metric in chunk)
@@ -81,7 +81,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
                 httpRequest.Content = new StringContent(metricLines);
                 try
                 {
-                    var response = await this._httpClient.SendAsync(httpRequest);
+                    var response = await _httpClient.SendAsync(httpRequest);
                     if (response.IsSuccessStatusCode)
                     {
                         _logger.LogDebug("StatusCode: {StatusCode}", response.StatusCode);
