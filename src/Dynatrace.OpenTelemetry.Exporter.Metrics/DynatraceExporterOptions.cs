@@ -44,17 +44,17 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 		public string ApiToken { get; set; }
 
 		/// <summary>
-		/// Gets automatically prefixed to all metric keys.
+		/// Gets or sets the prefix that is added to all metrics automatically.
 		/// </summary>
 		public string Prefix { get; set; }
 
 		/// <summary>
-		/// Gets added as metric dimensions automatically.
+		/// Gets or sets the default dimensions that are added to all metrics automatically.
 		/// </summary>
 		public IEnumerable<KeyValuePair<string, string>> DefaultDimensions { get; set; }
 
 		/// <summary>
-		/// Automatically adds Dynatrace metadata as metric labels.
+		/// Indicates whether metrics should be enriched with Dynatrace metadata as labels.
 		/// </summary>
 		public bool EnrichWithDynatraceMetadata { get; set; } = true;
 	}
