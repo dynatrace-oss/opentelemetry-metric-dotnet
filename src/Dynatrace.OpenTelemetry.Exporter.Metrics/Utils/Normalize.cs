@@ -20,7 +20,7 @@ using System.Text.RegularExpressions;
 
 namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Utils
 {
-	public class Normalize
+	class Normalize
 	{
 		private const int MaxLengthMetricKey = 250;
 		private const int MaxLengthDimensionKey = 100;

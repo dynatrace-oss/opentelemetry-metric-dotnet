@@ -23,7 +23,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 	/// <summary>
 	/// Queries Dynatrace metadata, and provides it as key-value pairs.
 	/// </summary>
-	internal class DynatraceMetadataEnricher
+	class DynatraceMetadataEnricher
 	{
 		private readonly ILogger<DynatraceMetricsExporter> _logger;
 		private readonly IFileReader _fileReader;

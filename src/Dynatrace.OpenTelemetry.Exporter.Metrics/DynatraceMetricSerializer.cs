@@ -26,7 +26,7 @@ using OpenTelemetry.Metrics.Export;
 
 namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 {
-	public class DynatraceMetricSerializer
+	class DynatraceMetricSerializer
 	{
 		private readonly ILogger<DynatraceMetricsExporter> _logger;
 		private readonly string _prefix;
