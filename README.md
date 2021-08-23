@@ -129,7 +129,8 @@ Note the `--` separating the dotnet command and the parameters passed to the app
 If no local OneAgent is available, the app can be configured with [an endpoint](#dynatrace-api-endpoint) and [a metrics ingest token](#dynatrace-api-token) like this:
 
 ```sh
-dotnet run --project src/Examples.Console/Examples.Console.csproj -- -u "https://{your-environment-id}.live.dynatrace.com/api/v2/metrics/ingest" -t "YOUR_API_TOKEN"
+cd src/Examples.Console
+dotnet run -- -u "https://{your-environment-id}.live.dynatrace.com/api/v2/metrics/ingest" -t "YOUR_API_TOKEN"
 ```
 
 ## Configuration
