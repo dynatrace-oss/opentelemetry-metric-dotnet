@@ -14,32 +14,27 @@
 // limitations under the License.
 // </copyright>
 
-using System.IO;
-
 namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 {
-	/// <summary>
-	/// Provides specific file reading operations, which are passed through to the
-	/// respective methods on <c>System.IO.File</c>
-	/// </summary>
-	internal interface IFileReader
+	static class DynatraceMetricApiConstants
 	{
-		string ReadAllText(string filename);
-		string[] ReadAllLines(string filename);
-	}
+		private const string _defaultOneAgentEndpoint = "http://localhost:14499/metrics/ingest";
+		private const int _payloadLinesLimit = 1000;
+		private const int _maxDimensions = 50;
 
-	internal class DefaultFileReader : IFileReader
-	{
-		/// <summary>Returns the result of File.ReadAllLines(filename).</summary>
-		public string[] ReadAllLines(string filename)
+		public static string DefaultOneAgentEndpoint
 		{
-			return File.ReadAllLines(filename);
+			get { return _defaultOneAgentEndpoint; }
 		}
 
-		/// <summary>Returns the result of File.ReadAllText(filename).</summary>
-		public string ReadAllText(string filename)
+		public static int PayloadLinesLimit
 		{
-			return File.ReadAllText(filename);
+			get { return _payloadLinesLimit; }
+		}
+
+		public static int MaxDimensions
+		{
+			get { return _maxDimensions; }
 		}
 	}
 }

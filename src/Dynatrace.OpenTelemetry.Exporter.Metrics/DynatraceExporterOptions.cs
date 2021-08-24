@@ -18,44 +18,44 @@ using System.Collections.Generic;
 
 namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 {
-    /// <summary>
-    /// Options to run dynatrace exporter.
-    /// </summary>
-    public class DynatraceExporterOptions
-    {
-        /// <summary>
-        /// Gets or sets the dynatrace endpoint to send data to.
-        ///
-        /// For example:
-        ///     Local OneAgent: http://127.0.0.1:14499/metrics/ingest (api-token NOT required)
-        ///     Dynatrace Cluster: https://my-cluster/api/v2/metrics/ingest
-        ///
-        /// https://www.dynatrace.com/support/help/dynatrace-api/environment-api/metric-v2/post-ingest-metrics
-        /// </summary>
-        public string Url { get; set; } = "http://localhost:14499/metrics/ingest";
+	/// <summary>
+	/// Options to run dynatrace exporter.
+	/// </summary>
+	public class DynatraceExporterOptions
+	{
+		/// <summary>
+		/// Gets or sets the dynatrace endpoint to send data to.
+		///
+		/// For example:
+		///     Local OneAgent: http://localhost:14499/metrics/ingest (api-token NOT required)
+		///     Dynatrace Cluster: https://my-cluster/api/v2/metrics/ingest
+		///
+		/// https://www.dynatrace.com/support/help/dynatrace-api/environment-api/metric-v2/post-ingest-metrics
+		/// </summary>
+		public string Url { get; set; } = DynatraceMetricApiConstants.DefaultOneAgentEndpoint;
 
-        /// <summary>
-        /// Gets or sets the dynatrace api-token for authentication.
-        ///
-        /// How to acquire an api-token: https://www.dynatrace.com/support/help/dynatrace-api/basics/dynatrace-api-authentication/
-        ///
-        /// "metrics.ingest" permission is required for the api-token.
-        /// </summary>
-        public string ApiToken { get; set; }
+		/// <summary>
+		/// Gets or sets the Dynatrace API token for authentication.
+		///
+		/// How to acquire an api-token: https://www.dynatrace.com/support/help/dynatrace-api/basics/dynatrace-api-authentication/
+		///
+		/// "metrics.ingest" permission is required for the api-token.
+		/// </summary>
+		public string ApiToken { get; set; }
 
-        /// <summary>
-        /// Gets automatically prefixed to a metric name.
-        /// </summary>
-        public string Prefix { get; set; }
+		/// <summary>
+		/// Gets or sets the prefix that is added to all metrics automatically.
+		/// </summary>
+		public string Prefix { get; set; }
 
-        /// <summary>
-        /// Gets automatically added as metric dimensions.
-        /// </summary>
-        public IEnumerable<KeyValuePair<string, string>> DefaultDimensions { get; set; }
+		/// <summary>
+		/// Gets or sets the default dimensions that are added to all metrics automatically.
+		/// </summary>
+		public IEnumerable<KeyValuePair<string, string>> DefaultDimensions { get; set; }
 
-        /// <summary>
-        /// Automatically adds host and process metadata retrieved from the OneAgent as metric labels.
-        /// </summary>
-        public bool OneAgentMetadataEnrichment { get; set; } = true;
-    }
+		/// <summary>
+		/// Indicates whether metrics should be enriched with Dynatrace metadata as labels.
+		/// </summary>
+		public bool EnrichWithDynatraceMetadata { get; set; } = true;
+	}
 }

@@ -19,35 +19,34 @@ using System.Threading.Tasks;
 
 namespace Examples.Console
 {
-    public class Program
-    {
-        public static async Task Main(string[] args)
-        {
-            await Parser.Default.ParseArguments<DynatraceOptions>(args)
-                .MapResult(
-                    (DynatraceOptions options) => TestDynatraceExporter.RunAsync(options.Url, options.ApiToken, options.PushIntervalInSecs, options.DurationInMins, options.OneAgentMetadataEnrichment),
-                    errs => Task.FromResult(0));
+	public class Program
+	{
+		public static async Task Main(string[] args)
+		{
+			await Parser.Default.ParseArguments<DynatraceOptions>(args)
+			.MapResult(
+				(DynatraceOptions options) => DynatraceExporterExample.RunAsync(options.Url, options.ApiToken, options.PushIntervalInSecs, options.DurationInMins, !options.DisableDynatraceMetadataEnrichment),
+				errs => Task.FromResult(0));
 
-            System.Console.ReadLine();
-        }
-    }
+		}
+	}
 
-    [Verb("dynatrace", HelpText = "Specify the options required to test Dynatrace")]
-    internal class DynatraceOptions
-    {
-        [Option('i', "pushIntervalInSecs", Default = 15, HelpText = "The interval at which Push controller pushes metrics.", Required = false)]
-        public int PushIntervalInSecs { get; set; }
+	[Verb("dynatrace", HelpText = "Specify the options required to test Dynatrace")]
+	internal class DynatraceOptions
+	{
+		[Option('i', "pushIntervalInSecs", Default = 15, HelpText = "The interval at which metrics are pushed to Dynatrace.", Required = false)]
+		public int PushIntervalInSecs { get; set; }
 
-        [Option('d', "duration", Default = 2, HelpText = "Total duration in minutes to run the demo. Run atleast for a min to see metrics flowing.", Required = false)]
-        public int DurationInMins { get; set; }
+		[Option('d', "duration", Default = 2, HelpText = "Total duration in minutes to run the demo. Run at least for one minute to see metrics flowing.", Required = false)]
+		public int DurationInMins { get; set; }
 
-        [Option('u', "url", HelpText = "Dynatrace metrics ingest API URL.", Required = false)]
-        public string Url { get; set; }
+		[Option('u', "url", HelpText = "Dynatrace metrics ingest API URL, including the '/api/v2/metrics/ingest' suffix. If not specified, the local OneAgent endpoint will be used.", Required = false)]
+		public string Url { get; set; }
 
-        [Option('a', "apiToken", Default = "", HelpText = "Dynatrace API authentication token.", Required = false)]
-        public string ApiToken { get; set; }
+		[Option('t', "token", HelpText = "Dynatrace API authentication token with the 'metrics.ingest' permission.", Required = false)]
+		public string ApiToken { get; set; }
 
-        [Option('o', "oneAgentMetadataEnrichment", Default = true, HelpText = "Automatic label enrichment via OneAgent metadata.", Required = false)]
-        public bool OneAgentMetadataEnrichment { get; set; }
-    }
+		[Option('n', "noDynatraceMetadataEnrichment", HelpText = "Disable automatic label enrichment via Dynatrace metadata.", Required = false)]
+		public bool DisableDynatraceMetadataEnrichment { get; set; } = false;
+	}
 }
