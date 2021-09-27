@@ -38,6 +38,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 		private readonly ILogger<DynatraceMetricsExporter> _logger;
 		private readonly HttpClient _httpClient;
 		private readonly DynatraceMetricSerializer _serializer;
+		private readonly Dynatrace.MetricUtils.MetricsSerializer _metricsSerializer;
 
 		public DynatraceMetricsExporter(DynatraceExporterOptions options = null, ILogger<DynatraceMetricsExporter> logger = null)
 		: this(options, logger, new HttpClient()) { }
@@ -54,6 +55,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 			}
 			_httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue(new ProductHeaderValue("opentelemetry-metric-dotnet")));
 			_serializer = new DynatraceMetricSerializer(_logger, _options.Prefix, _options.DefaultDimensions, _options.EnrichWithDynatraceMetadata);
+			_metricsSerializer = new Dynatrace.MetricUtils.MetricsSerializer(_logger, _options.Prefix, _options.DefaultDimensions, metricsSource: "opentelemetry",enrichWithDynatraceMetadata: _options.EnrichWithDynatraceMetadata);
 		}
 
 		public override async Task<ExportResult> ExportAsync(IEnumerable<Metric> metrics, CancellationToken cancellationToken)
@@ -73,7 +75,10 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 
 				foreach (var metric in chunk)
 				{
-					_serializer.SerializeMetric(sb, metric);
+					foreach(var dynatraceMetric in DynatraceMetricsMapper.ToDynatraceMetric(metric))
+					{
+						sb.AppendLine(_metricsSerializer.SerializeMetric(dynatraceMetric));
+					}
 				}
 
 				var metricLines = sb.ToString();
