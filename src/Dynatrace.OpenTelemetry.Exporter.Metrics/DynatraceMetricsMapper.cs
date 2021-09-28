@@ -20,7 +20,7 @@ using DynatraceMetric = Dynatrace.MetricUtils.Metric;
 using DynatraceMetricFactory = Dynatrace.MetricUtils.MetricsFactory;
 using System.Text;
 
-public class DynatraceMetricsMapper
+internal static class DynatraceMetricsMapper
 {
 
 	/// <summary>
@@ -38,7 +38,7 @@ public class DynatraceMetricsMapper
 		return keyBuilder.ToString();
 	}
 
-	public static IEnumerable<DynatraceMetric> ToDynatraceMetric(Metric metric)
+	internal static IEnumerable<DynatraceMetric> ToDynatraceMetric(Metric metric)
 	{
 		var metricName = CreateMetricKey(metric);
 		foreach (var metricData in metric.Data)
