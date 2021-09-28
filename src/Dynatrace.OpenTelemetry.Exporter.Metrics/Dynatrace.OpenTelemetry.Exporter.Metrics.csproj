@@ -18,8 +18,8 @@
 
   <ItemGroup>
     <!-- Need to use a version < 1.0.0 since metrics is not included in the v1.0.0 release -->
-    <PackageReference Include="Dynatrace.MetricUtils" Version="0.0.1-beta" />
     <PackageReference Include="OpenTelemetry" Version="0.8.0-beta.1" />
+    <PackageReference Include="Dynatrace.MetricUtils" Version="0.0.1-beta" />
   </ItemGroup>
 
   <ItemGroup>
