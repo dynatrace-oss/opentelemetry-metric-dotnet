@@ -81,6 +81,13 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 
 				var metricLines = sb.ToString();
 				_logger.LogDebug(metricLines);
+
+				// If there are no metric lines, we do not need to send a request.
+				if(metricLines.Length == 0)
+				{
+					return ExportResult.Success;
+				}
+
 				httpRequest.Content = new StringContent(metricLines);
 				try
 				{

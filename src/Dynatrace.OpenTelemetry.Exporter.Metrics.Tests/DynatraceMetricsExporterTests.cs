@@ -207,10 +207,8 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 			var exporter = new DynatraceMetricsExporter(null, mockLogger.Object, new HttpClient(mockMessageHandler.Object));
 
 			await exporter.ExportAsync(new List<Metric> { metric }, CancellationToken.None);
-			var expectedString = String.Empty;
 
-			mockMessageHandler.Protected().Verify("SendAsync", Times.Exactly(1), ItExpr.Is<HttpRequestMessage>(req => req.Method == HttpMethod.Post), ItExpr.IsAny<CancellationToken>());
-			Assert.Equal(expectedString, req.Content.ReadAsStringAsync().Result);
+			mockMessageHandler.Protected().Verify("SendAsync", Times.Never(), ItExpr.Is<HttpRequestMessage>(req => req.Method == HttpMethod.Post), ItExpr.IsAny<CancellationToken>());
 			mockLogger.Verify(x => x.Log(It.Is<LogLevel>(level => level == LogLevel.Warning),
 										 It.IsAny<EventId>(),
 										 It.Is<It.IsAnyType>((value, type) => value.ToString().Contains("Mapping")),
@@ -251,17 +249,15 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 			var exporter = new DynatraceMetricsExporter(null, mockLogger.Object, new HttpClient(mockMessageHandler.Object));
 
 			await exporter.ExportAsync(new List<Metric> { metric }, CancellationToken.None);
-			var expectedString = String.Empty;
 
-			mockMessageHandler.Protected().Verify("SendAsync", Times.Exactly(1), ItExpr.Is<HttpRequestMessage>(req => req.Method == HttpMethod.Post), ItExpr.IsAny<CancellationToken>());
-			Assert.Equal(expectedString, req.Content.ReadAsStringAsync().Result);
+			mockMessageHandler.Protected().Verify("SendAsync", Times.Never(), ItExpr.Is<HttpRequestMessage>(req => req.Method == HttpMethod.Post), ItExpr.IsAny<CancellationToken>());
 			mockLogger.Verify(x => x.Log(It.Is<LogLevel>(level => level == LogLevel.Warning),
 										 It.IsAny<EventId>(),
 										 It.Is<It.IsAnyType>((value, type) => value.ToString().Contains("Serialization")),
 										 It.IsAny<Exception>(),
 										 It.IsAny<Func<It.IsAnyType, Exception, string>>()), Times.Exactly(1));
 		}
-		
+
 		private List<Metric> CreateMetrics()
 		{
 			var metrics = new List<Metric>();

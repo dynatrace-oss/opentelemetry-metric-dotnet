@@ -51,46 +51,50 @@ internal static class DynatraceMetricsMapper
 				case AggregationType.DoubleSum:
 					{
 						var sum = metricData as DoubleSumData;
-						var dynatraceMetric = DynatraceMetricFactory.CreateDoubleCounterDelta(metricName: metricName,
-																							  value: sum.Sum,
-																							  dimensions: dimensions,
-																							  timestamp: timestamp);
+						var dynatraceMetric = DynatraceMetricFactory.CreateDoubleCounterDelta(
+																								metricName: metricName,
+																								value: sum.Sum,
+																								dimensions: dimensions,
+																								timestamp: timestamp);
 						yield return dynatraceMetric;
 						break;
 					}
 				case AggregationType.LongSum:
 					{
 						var sum = metricData as Int64SumData;
-						var dynatraceMetric = DynatraceMetricFactory.CreateLongCounterDelta(metricName: metricName,
-																							value: sum.Sum,
-																							dimensions: dimensions,
-																							timestamp: timestamp);
+						var dynatraceMetric = DynatraceMetricFactory.CreateLongCounterDelta(
+																								metricName: metricName,
+																								value: sum.Sum,
+																								dimensions: dimensions,
+																								timestamp: timestamp);
 						yield return dynatraceMetric;
 						break;
 					}
 				case AggregationType.DoubleSummary:
 					{
 						var summary = metricData as DoubleSummaryData;
-						var dynatraceMetric = DynatraceMetricFactory.CreateDoubleSummary(metricName: metricName,
-																						 min: summary.Min,
-																						 max: summary.Max,
-																						 sum: summary.Sum,
-																						 count: summary.Count,
-																						 dimensions: dimensions,
-																						 timestamp: timestamp);
+						var dynatraceMetric = DynatraceMetricFactory.CreateDoubleSummary(	
+																							metricName: metricName,
+																							min: summary.Min,
+																							max: summary.Max,
+																							sum: summary.Sum,
+																							count: summary.Count,
+																							dimensions: dimensions,
+																							timestamp: timestamp);
 						yield return dynatraceMetric;
 						break;
 					}
 				case AggregationType.Int64Summary:
 					{
 						var summary = metricData as Int64SummaryData;
-						var dynatraceMetric = DynatraceMetricFactory.CreateLongSummary(metricName: metricName,
-																					   min: summary.Min,
-																					   max: summary.Max,
-																					   sum: summary.Sum,
-																					   count: summary.Count,
-																					   dimensions: dimensions,
-																					   timestamp: timestamp);
+						var dynatraceMetric = DynatraceMetricFactory.CreateLongSummary( 
+																						metricName: metricName,
+																						min: summary.Min,
+																						max: summary.Max,
+																						sum: summary.Sum,
+																						count: summary.Count,
+																						dimensions: dimensions,
+																						timestamp: timestamp);
 						yield return dynatraceMetric;
 						break;
 					}
