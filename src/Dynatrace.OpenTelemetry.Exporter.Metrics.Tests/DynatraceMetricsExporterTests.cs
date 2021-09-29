@@ -22,6 +22,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Moq.Protected;
 using OpenTelemetry.Metrics.Export;
@@ -138,6 +139,129 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 			Assert.Equal(expectedString, req.Content.ReadAsStringAsync().Result);
 		}
 
+		[Fact]
+		public async void TestExportMultiDataMetric()
+		{
+			var timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1604660628881).UtcDateTime;
+
+			var metric = new Metric("namespace1", "metric1", "Description", AggregationType.LongSum);
+			metric.Data.Add(new Int64SumData
+			{
+				Sum = 100,
+				Timestamp = timestamp
+			});
+			metric.Data.Add(new Int64SumData
+			{
+				Sum = 101,
+				Timestamp = timestamp
+			});
+
+			var mockMessageHandler = new Mock<HttpMessageHandler>();
+			HttpRequestMessage req = null;
+
+			mockMessageHandler.Protected()
+			.Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
+			.ReturnsAsync(new HttpResponseMessage
+			{
+				StatusCode = HttpStatusCode.OK,
+				Content = new StringContent("test")
+			})
+			.Callback((HttpRequestMessage r, CancellationToken _) => req = r);
+
+			var exporter = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
+
+			await exporter.ExportAsync(new List<Metric> { metric }, CancellationToken.None);
+			var expectedString = "namespace1.metric1,dt.metrics.source=opentelemetry count,delta=100 1604660628881" + Environment.NewLine +
+								 "namespace1.metric1,dt.metrics.source=opentelemetry count,delta=101 1604660628881" + Environment.NewLine;
+
+			mockMessageHandler.Protected().Verify("SendAsync", Times.Exactly(1), ItExpr.Is<HttpRequestMessage>(req => req.Method == HttpMethod.Post), ItExpr.IsAny<CancellationToken>());
+			Assert.Equal(expectedString, req.Content.ReadAsStringAsync().Result);
+		}
+
+		[Fact]
+		public async void TestExportNullNameMetric()
+		{
+			var timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1604660628881).UtcDateTime;
+
+			var metric = new Metric(null, null, null, AggregationType.LongSum);
+			metric.Data.Add(new Int64SumData
+			{
+				Sum = 100,
+				Timestamp = timestamp
+			});
+
+			var mockMessageHandler = new Mock<HttpMessageHandler>();
+			HttpRequestMessage req = null;
+
+			mockMessageHandler.Protected()
+			.Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
+			.ReturnsAsync(new HttpResponseMessage
+			{
+				StatusCode = HttpStatusCode.OK,
+				Content = new StringContent("test")
+			})
+			.Callback((HttpRequestMessage r, CancellationToken _) => req = r);
+
+			var mockLogger = new Mock<ILogger<DynatraceMetricsExporter>>();
+
+			var exporter = new DynatraceMetricsExporter(null, mockLogger.Object, new HttpClient(mockMessageHandler.Object));
+
+			await exporter.ExportAsync(new List<Metric> { metric }, CancellationToken.None);
+			var expectedString = String.Empty;
+
+			mockMessageHandler.Protected().Verify("SendAsync", Times.Exactly(1), ItExpr.Is<HttpRequestMessage>(req => req.Method == HttpMethod.Post), ItExpr.IsAny<CancellationToken>());
+			Assert.Equal(expectedString, req.Content.ReadAsStringAsync().Result);
+			mockLogger.Verify(x => x.Log(It.Is<LogLevel>(level => level == LogLevel.Warning),
+										 It.IsAny<EventId>(),
+										 It.Is<It.IsAnyType>((value, type) => value.ToString().Contains("Mapping")),
+										 It.IsAny<Exception>(),
+										 It.IsAny<Func<It.IsAnyType, Exception, string>>()), Times.Exactly(1));
+		}
+
+		[Fact]
+		public async void TestExportLargeMetric()
+		{
+			var timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1604660628881).UtcDateTime;
+
+			var dimensions = new List<KeyValuePair<string, string>>();
+			// 20 dimensions of ~ 100 characters should result in lines with more than 2000 characters
+			for (var i = 0; i < 20; i++)
+			{
+				// creates a dimension that takes up a little more than 100 characters
+				dimensions.Add(new KeyValuePair<string, string>(new string('a', 50) + i, new string('b', 50) + i));
+			}
+
+			var metric = CreateMetric();
+			metric.Data[0].Labels = dimensions;
+
+			var mockMessageHandler = new Mock<HttpMessageHandler>();
+			HttpRequestMessage req = null;
+
+			mockMessageHandler.Protected()
+			.Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
+			.ReturnsAsync(new HttpResponseMessage
+			{
+				StatusCode = HttpStatusCode.OK,
+				Content = new StringContent("test")
+			})
+			.Callback((HttpRequestMessage r, CancellationToken _) => req = r);
+
+			var mockLogger = new Mock<ILogger<DynatraceMetricsExporter>>();
+
+			var exporter = new DynatraceMetricsExporter(null, mockLogger.Object, new HttpClient(mockMessageHandler.Object));
+
+			await exporter.ExportAsync(new List<Metric> { metric }, CancellationToken.None);
+			var expectedString = String.Empty;
+
+			mockMessageHandler.Protected().Verify("SendAsync", Times.Exactly(1), ItExpr.Is<HttpRequestMessage>(req => req.Method == HttpMethod.Post), ItExpr.IsAny<CancellationToken>());
+			Assert.Equal(expectedString, req.Content.ReadAsStringAsync().Result);
+			mockLogger.Verify(x => x.Log(It.Is<LogLevel>(level => level == LogLevel.Warning),
+										 It.IsAny<EventId>(),
+										 It.Is<It.IsAnyType>((value, type) => value.ToString().Contains("Serialization")),
+										 It.IsAny<Exception>(),
+										 It.IsAny<Func<It.IsAnyType, Exception, string>>()), Times.Exactly(1));
+		}
+
 		private List<Metric> CreateMetrics()
 		{
 			var metrics = new List<Metric>();
@@ -162,7 +286,6 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 			metrics.Add(metric2);
 
 			return metrics;
-
 		}
 
 		private Metric CreateMetric()
@@ -183,6 +306,5 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 
 			return metric;
 		}
-
 	}
 }

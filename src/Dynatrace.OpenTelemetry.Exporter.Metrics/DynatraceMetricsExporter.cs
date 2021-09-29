@@ -25,6 +25,9 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using OpenTelemetry.Metrics.Export;
+using DynatraceMetric = Dynatrace.MetricUtils.Metric;
+using DynatraceMetricSerializer = Dynatrace.MetricUtils.MetricsSerializer;
+using DynatraceMetricException = Dynatrace.MetricUtils.MetricException;
 
 namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 {
@@ -53,7 +56,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 				_httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Api-Token", _options.ApiToken);
 			}
 			_httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue(new ProductHeaderValue("opentelemetry-metric-dotnet")));
-			_serializer = new Dynatrace.MetricUtils.MetricsSerializer(_logger, _options.Prefix, _options.DefaultDimensions, metricsSource: "opentelemetry",enrichWithDynatraceMetadata: _options.EnrichWithDynatraceMetadata);
+			_serializer = new DynatraceMetricSerializer(_logger, _options.Prefix, _options.DefaultDimensions, metricsSource: "opentelemetry", enrichWithDynatraceMetadata: _options.EnrichWithDynatraceMetadata);
 		}
 
 		public override async Task<ExportResult> ExportAsync(IEnumerable<Metric> metrics, CancellationToken cancellationToken)
@@ -73,10 +76,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 
 				foreach (var metric in chunk)
 				{
-					foreach(var dynatraceMetric in DynatraceMetricsMapper.ToDynatraceMetric(metric))
-					{
-						sb.AppendLine(_serializer.SerializeMetric(dynatraceMetric));
-					}
+					SerializeMetric(sb, metric);
 				}
 
 				var metricLines = sb.ToString();
@@ -106,6 +106,37 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 
 			// if all chunks were exported successfully, return success, otherwise failed.
 			return exportResults.All(x => x == ExportResult.Success) ? ExportResult.Success : ExportResult.FailedNotRetryable;
+		}
+
+		private void SerializeMetric(StringBuilder sb, Metric metric)
+		{
+			IEnumerable<DynatraceMetric> dynatraceMetrics = DynatraceMetricsMapper.ToDynatraceMetric(metric);
+			using (var metricsEnumerator = dynatraceMetrics.GetEnumerator())
+			{
+				var moveNext = false;
+				do
+				{
+					try
+					{
+						moveNext = metricsEnumerator.MoveNext();
+					}
+					catch (DynatraceMetricException e)
+					{
+						_logger.LogWarning("Skipping metric with the original name '{}'. Mapping failed with message: {}", metric.MetricName, e.Message);
+					}
+					if (moveNext)
+					{
+						try
+						{
+							sb.AppendLine(_serializer.SerializeMetric(metricsEnumerator.Current));
+						}
+						catch (DynatraceMetricException e)
+						{
+							_logger.LogWarning("Skipping metric with the original name '{}'. Serialization failed with message: {}", metric.MetricName, e.Message);
+						}
+					}
+				} while (moveNext);
+			}
 		}
 	}
 }
