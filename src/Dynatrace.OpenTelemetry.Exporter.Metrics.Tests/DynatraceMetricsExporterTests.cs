@@ -261,7 +261,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 										 It.IsAny<Exception>(),
 										 It.IsAny<Func<It.IsAnyType, Exception, string>>()), Times.Exactly(1));
 		}
-
+		
 		private List<Metric> CreateMetrics()
 		{
 			var metrics = new List<Metric>();

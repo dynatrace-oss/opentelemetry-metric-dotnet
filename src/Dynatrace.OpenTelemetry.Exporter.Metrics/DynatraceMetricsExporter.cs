@@ -113,8 +113,8 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 			IEnumerable<DynatraceMetric> dynatraceMetrics = DynatraceMetricsMapper.ToDynatraceMetric(metric);
 			using (var metricsEnumerator = dynatraceMetrics.GetEnumerator())
 			{
-				var moveNext = false;
-				do
+				var moveNext = true;
+				while(moveNext)
 				{
 					try
 					{
@@ -123,6 +123,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 					catch (DynatraceMetricException e)
 					{
 						_logger.LogWarning("Skipping metric with the original name '{}'. Mapping failed with message: {}", metric.MetricName, e.Message);
+						continue;
 					}
 					if (moveNext)
 					{
@@ -135,7 +136,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 							_logger.LogWarning("Skipping metric with the original name '{}'. Serialization failed with message: {}", metric.MetricName, e.Message);
 						}
 					}
-				} while (moveNext);
+				}
 			}
 		}
 	}
