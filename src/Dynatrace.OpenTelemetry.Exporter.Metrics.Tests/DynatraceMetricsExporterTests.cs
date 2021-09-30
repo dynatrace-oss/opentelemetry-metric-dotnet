@@ -33,7 +33,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 	public class DynatraceMetricsExporterTests
 	{
 		[Fact]
-		public async void TestDefaultOptions()
+		public async Task TestDefaultOptions()
 		{
 			var mockMessageHandler = new Mock<HttpMessageHandler>();
 			// this var will hold the actual passed in params
@@ -68,7 +68,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 		}
 
 		[Fact]
-		public async void TestUriAndToken()
+		public async Task TestUriAndToken()
 		{
 			var mockMessageHandler = new Mock<HttpMessageHandler>();
 			HttpRequestMessage req = null;
@@ -100,7 +100,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 		}
 
 		[Fact]
-		public async void TestSendInBatches()
+		public async Task TestSendInBatches()
 		{
 			var mockMessageHandler = new Mock<HttpMessageHandler>();
 			mockMessageHandler.Protected()
@@ -129,7 +129,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 		}
 
 		[Fact]
-		public async void TestExportMultipleWithPrefix()
+		public async Task TestExportMultipleWithPrefix()
 		{
 			var mockMessageHandler = new Mock<HttpMessageHandler>();
 			HttpRequestMessage req = null;
@@ -160,7 +160,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 		}
 
 		[Fact]
-		public async void TestExportMultiDataMetric()
+		public async Task TestExportMultiDataMetric()
 		{
 			var timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1604660628881).UtcDateTime;
 
@@ -205,7 +205,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 		}
 
 		[Fact]
-		public async void TestExportNullNameMetric()
+		public async Task TestExportNullNameMetric()
 		{
 			var timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1604660628881).UtcDateTime;
 
@@ -249,7 +249,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 		}
 
 		[Fact]
-		public async void TestExportLargeMetric()
+		public async Task TestExportLargeMetric()
 		{
 			var timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1604660628881).UtcDateTime;
 
