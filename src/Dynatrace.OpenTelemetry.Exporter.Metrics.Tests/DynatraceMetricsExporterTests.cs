@@ -59,7 +59,8 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 			Assert.True(actualRequestMessage.Headers.Contains("User-Agent"));
 			Assert.Single(actualRequestMessage.Headers.GetValues("User-Agent"));
 			Assert.Equal("opentelemetry-metric-dotnet", actualRequestMessage.Headers.GetValues("User-Agent").First());
-			Assert.Equal("namespace1.metric1,label1=value1,label2=value2,dt.metrics.source=opentelemetry count,delta=100 1604660628881" + Environment.NewLine, actualRequestMessage.Content.ReadAsStringAsync().Result);
+			var actualMetricString = await actualRequestMessage.Content.ReadAsStringAsync();
+			Assert.Equal("namespace1.metric1,label1=value1,label2=value2,dt.metrics.source=opentelemetry count,delta=100 1604660628881" + Environment.NewLine, actualMetricString);
 		}
 
 		[Fact]
@@ -85,7 +86,8 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 			Assert.True(req.Headers.Contains("Authorization"));
 			Assert.Single(req.Headers.GetValues("Authorization"));
 			Assert.Equal("Api-Token test-token", req.Headers.GetValues("Authorization").First());
-			Assert.Equal("namespace1.metric1,label1=value1,label2=value2,dt.metrics.source=opentelemetry count,delta=100 1604660628881" + Environment.NewLine, req.Content.ReadAsStringAsync().Result);
+			var actualMetricString = await req.Content.ReadAsStringAsync();
+			Assert.Equal("namespace1.metric1,label1=value1,label2=value2,dt.metrics.source=opentelemetry count,delta=100 1604660628881" + Environment.NewLine, actualMetricString);
 		}
 
 		[Fact]
@@ -131,12 +133,13 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 			var exporter = new DynatraceMetricsExporter(new DynatraceExporterOptions { Prefix = "my.prefix" }, null, new HttpClient(mockMessageHandler.Object));
 
 			await exporter.ExportAsync(CreateMetrics(), CancellationToken.None);
-			var expectedString = "my.prefix.namespace1.metric1,dt.metrics.source=opentelemetry count,delta=100 1604660628881" + Environment.NewLine + "my.prefix.namespace2.metric2,dt.metrics.source=opentelemetry count,delta=200 1604660628881" + Environment.NewLine;
+			var expectedMetricString = "my.prefix.namespace1.metric1,dt.metrics.source=opentelemetry count,delta=100 1604660628881" + Environment.NewLine + "my.prefix.namespace2.metric2,dt.metrics.source=opentelemetry count,delta=200 1604660628881" + Environment.NewLine;
 
 			mockMessageHandler.Protected().Verify("SendAsync", Times.Exactly(1), ItExpr.Is<HttpRequestMessage>(req => req.Method == HttpMethod.Post), ItExpr.IsAny<CancellationToken>());
 			Assert.Equal(DynatraceMetricApiConstants.DefaultOneAgentEndpoint, req.RequestUri.AbsoluteUri);
 			Assert.False(req.Headers.Contains("Api-Token"));
-			Assert.Equal(expectedString, req.Content.ReadAsStringAsync().Result);
+			var actualMetricString = await req.Content.ReadAsStringAsync();
+			Assert.Equal(expectedMetricString, actualMetricString);
 		}
 
 		[Fact]
@@ -171,11 +174,12 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 			var exporter = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
 
 			await exporter.ExportAsync(new List<Metric> { metric }, CancellationToken.None);
-			var expectedString = "namespace1.metric1,dt.metrics.source=opentelemetry count,delta=100 1604660628881" + Environment.NewLine +
+			var expectedMetricString = "namespace1.metric1,dt.metrics.source=opentelemetry count,delta=100 1604660628881" + Environment.NewLine +
 								 "namespace1.metric1,dt.metrics.source=opentelemetry count,delta=101 1604660628881" + Environment.NewLine;
 
 			mockMessageHandler.Protected().Verify("SendAsync", Times.Exactly(1), ItExpr.Is<HttpRequestMessage>(req => req.Method == HttpMethod.Post), ItExpr.IsAny<CancellationToken>());
-			Assert.Equal(expectedString, req.Content.ReadAsStringAsync().Result);
+			var actualMetricString = await req.Content.ReadAsStringAsync();
+			Assert.Equal(expectedMetricString, actualMetricString);
 		}
 
 		[Fact]
@@ -260,7 +264,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 				It.IsAny<Func<It.IsAnyType, Exception, string>>()), Times.Exactly(1));
 		}
 
-		private List<Metric> CreateMetrics()
+		private static List<Metric> CreateMetrics()
 		{
 			var metrics = new List<Metric>();
 
@@ -286,7 +290,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 			return metrics;
 		}
 
-		private Metric CreateMetric()
+		private static Metric CreateMetric()
 		{
 			var timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1604660628881).UtcDateTime;
 
