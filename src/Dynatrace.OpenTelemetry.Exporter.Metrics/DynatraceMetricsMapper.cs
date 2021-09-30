@@ -24,7 +24,6 @@ using Microsoft.Extensions.Logging;
 
 internal static class DynatraceMetricsMapper
 {
-
 	/// <summary>
 	/// Combines metric namespace and key into a single key for use in <see cref="Dynatrace.MetricUtils.Metric">.
 	/// </summary>
@@ -46,66 +45,65 @@ internal static class DynatraceMetricsMapper
 		foreach (var metricData in metric.Data)
 		{
 			DynatraceMetric dynatraceMetric = null;
-			var timestamp = metricData.Timestamp;
-			var dimensions = metricData.Labels;
 			try
 			{
-				switch (metric.AggregationType)
+				switch (metricData)
 				{
-					case AggregationType.DoubleSum:
+					case DoubleSumData sum:
 						{
-							var sum = metricData as DoubleSumData;
 							dynatraceMetric = DynatraceMetricFactory.CreateDoubleCounterDelta(
 								metricName: metricName,
 								value: sum.Sum,
-								dimensions: dimensions,
-								timestamp: timestamp);
+								dimensions: metricData.Labels,
+								timestamp: metricData.Timestamp);
 							break;
 						}
-					case AggregationType.LongSum:
+					case Int64SumData sum:
 						{
-							var sum = metricData as Int64SumData;
 							dynatraceMetric = DynatraceMetricFactory.CreateLongCounterDelta(
 								metricName: metricName,
 								value: sum.Sum,
-								dimensions: dimensions,
-								timestamp: timestamp);
+								dimensions: metricData.Labels,
+								timestamp: metricData.Timestamp);
 							break;
 						}
-					case AggregationType.DoubleSummary:
+					case DoubleSummaryData summary:
 						{
-							var summary = metricData as DoubleSummaryData;
 							dynatraceMetric = DynatraceMetricFactory.CreateDoubleSummary(
 								metricName: metricName,
 								min: summary.Min,
 								max: summary.Max,
 								sum: summary.Sum,
 								count: summary.Count,
-								dimensions: dimensions,
-								timestamp: timestamp);
+								dimensions: metricData.Labels,
+								timestamp: metricData.Timestamp);
 							break;
 						}
-					case AggregationType.Int64Summary:
+					case Int64SummaryData summary:
 						{
-							var summary = metricData as Int64SummaryData;
 							dynatraceMetric = DynatraceMetricFactory.CreateLongSummary(
 								metricName: metricName,
 								min: summary.Min,
 								max: summary.Max,
 								sum: summary.Sum,
 								count: summary.Count,
-								dimensions: dimensions,
-								timestamp: timestamp);
+								dimensions: metricData.Labels,
+								timestamp: metricData.Timestamp);
+							break;
+						}
+					default:
+						{
+							logger.LogWarning("Skipping metric with the original name '{MetricName}'. Mapping of {MetricDataType} is not yet supported.", metric.MetricName, metricData.GetType().FullName);
 							break;
 						}
 				}
 			}
 			catch (DynatraceMetricException e)
 			{
-				logger.LogWarning("Skipping metric with the original name '{}'. Mapping failed with message: {}", metric.MetricName, e.Message);
+				logger.LogWarning("Skipping metric with the original name '{MetricName}'. Mapping failed with message: {Message}", metric.MetricName, e.Message);
 			}
 
-			if(dynatraceMetric != null)
+			if (dynatraceMetric != null)
 			{
 				yield return dynatraceMetric;
 			}
