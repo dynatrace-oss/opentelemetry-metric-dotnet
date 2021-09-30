@@ -22,7 +22,7 @@ using DynatraceMetricException = Dynatrace.MetricUtils.MetricException;
 using System.Text;
 using Microsoft.Extensions.Logging;
 
-internal static class DynatraceMetricsMapper
+internal static class DynatraceMetricsExtensions
 {
 	/// <summary>
 	/// Combines metric namespace and key into a single key for use in <see cref="Dynatrace.MetricUtils.Metric">.
@@ -36,12 +36,12 @@ internal static class DynatraceMetricsMapper
 		{
 			keyBuilder.Append($"{metric.MetricNamespace}.");
 		}
-		
+
 		keyBuilder.Append(metric.MetricName);
 		return keyBuilder.ToString();
 	}
 
-	internal static IEnumerable<DynatraceMetric> ToDynatraceMetric(Metric metric, ILogger logger)
+	internal static IEnumerable<DynatraceMetric> ToDynatraceMetrics(this Metric metric, ILogger logger)
 	{
 		var metricName = CreateMetricKey(metric);
 		foreach (var metricData in metric.Data)

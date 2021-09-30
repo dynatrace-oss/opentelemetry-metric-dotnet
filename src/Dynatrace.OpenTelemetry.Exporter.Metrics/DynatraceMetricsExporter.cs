@@ -121,7 +121,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 
 		private void SerializeMetric(StringBuilder sb, Metric metric)
 		{
-			foreach(var dynatraceMetric in DynatraceMetricsMapper.ToDynatraceMetric(metric, _logger))
+			foreach(var dynatraceMetric in metric.ToDynatraceMetrics(_logger))
 			{
 				try
 				{
