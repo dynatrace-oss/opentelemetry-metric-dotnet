@@ -209,11 +209,12 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 			await exporter.ExportAsync(new List<Metric> { metric }, CancellationToken.None);
 
 			mockMessageHandler.Protected().Verify("SendAsync", Times.Never(), ItExpr.Is<HttpRequestMessage>(req => req.Method == HttpMethod.Post), ItExpr.IsAny<CancellationToken>());
-			mockLogger.Verify(x => x.Log(It.Is<LogLevel>(level => level == LogLevel.Warning),
-										 It.IsAny<EventId>(),
-										 It.Is<It.IsAnyType>((value, type) => value.ToString().Contains("Mapping")),
-										 It.IsAny<Exception>(),
-										 It.IsAny<Func<It.IsAnyType, Exception, string>>()), Times.Exactly(1));
+			mockLogger.Verify(x => x.Log(
+				It.Is<LogLevel>(level => level == LogLevel.Warning),
+				It.IsAny<EventId>(),
+				It.Is<It.IsAnyType>((value, type) => value.ToString().Contains("Mapping")),
+				It.IsAny<Exception>(),
+				It.IsAny<Func<It.IsAnyType, Exception, string>>()), Times.Exactly(1));
 		}
 
 		[Fact]
@@ -251,11 +252,12 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 			await exporter.ExportAsync(new List<Metric> { metric }, CancellationToken.None);
 
 			mockMessageHandler.Protected().Verify("SendAsync", Times.Never(), ItExpr.Is<HttpRequestMessage>(req => req.Method == HttpMethod.Post), ItExpr.IsAny<CancellationToken>());
-			mockLogger.Verify(x => x.Log(It.Is<LogLevel>(level => level == LogLevel.Warning),
-										 It.IsAny<EventId>(),
-										 It.Is<It.IsAnyType>((value, type) => value.ToString().Contains("Serialization")),
-										 It.IsAny<Exception>(),
-										 It.IsAny<Func<It.IsAnyType, Exception, string>>()), Times.Exactly(1));
+			mockLogger.Verify(x => x.Log(
+				It.Is<LogLevel>(level => level == LogLevel.Warning),
+				It.IsAny<EventId>(),
+				It.Is<It.IsAnyType>((value, type) => value.ToString().Contains("Serialization")),
+				It.IsAny<Exception>(),
+				It.IsAny<Func<It.IsAnyType, Exception, string>>()), Times.Exactly(1));
 		}
 
 		private List<Metric> CreateMetrics()

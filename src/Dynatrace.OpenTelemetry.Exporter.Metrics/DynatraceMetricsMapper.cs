@@ -18,7 +18,9 @@ using System.Collections.Generic;
 using OpenTelemetry.Metrics.Export;
 using DynatraceMetric = Dynatrace.MetricUtils.Metric;
 using DynatraceMetricFactory = Dynatrace.MetricUtils.MetricsFactory;
+using DynatraceMetricException = Dynatrace.MetricUtils.MetricException;
 using System.Text;
+using Microsoft.Extensions.Logging;
 
 internal static class DynatraceMetricsMapper
 {
@@ -38,66 +40,74 @@ internal static class DynatraceMetricsMapper
 		return keyBuilder.ToString();
 	}
 
-	internal static IEnumerable<DynatraceMetric> ToDynatraceMetric(Metric metric)
+	internal static IEnumerable<DynatraceMetric> ToDynatraceMetric(Metric metric, ILogger logger)
 	{
 		var metricName = CreateMetricKey(metric);
 		foreach (var metricData in metric.Data)
 		{
+			DynatraceMetric dynatraceMetric = null;
 			var timestamp = metricData.Timestamp;
 			var dimensions = metricData.Labels;
-
-			switch (metric.AggregationType)
+			try
 			{
-				case AggregationType.DoubleSum:
-					{
-						var sum = metricData as DoubleSumData;
-						var dynatraceMetric = DynatraceMetricFactory.CreateDoubleCounterDelta(
-																								metricName: metricName,
-																								value: sum.Sum,
-																								dimensions: dimensions,
-																								timestamp: timestamp);
-						yield return dynatraceMetric;
-						break;
-					}
-				case AggregationType.LongSum:
-					{
-						var sum = metricData as Int64SumData;
-						var dynatraceMetric = DynatraceMetricFactory.CreateLongCounterDelta(
-																								metricName: metricName,
-																								value: sum.Sum,
-																								dimensions: dimensions,
-																								timestamp: timestamp);
-						yield return dynatraceMetric;
-						break;
-					}
-				case AggregationType.DoubleSummary:
-					{
-						var summary = metricData as DoubleSummaryData;
-						var dynatraceMetric = DynatraceMetricFactory.CreateDoubleSummary(	
-																							metricName: metricName,
-																							min: summary.Min,
-																							max: summary.Max,
-																							sum: summary.Sum,
-																							count: summary.Count,
-																							dimensions: dimensions,
-																							timestamp: timestamp);
-						yield return dynatraceMetric;
-						break;
-					}
-				case AggregationType.Int64Summary:
-					{
-						var summary = metricData as Int64SummaryData;
-						var dynatraceMetric = DynatraceMetricFactory.CreateLongSummary( 
-																						metricName: metricName,
-																						min: summary.Min,
-																						max: summary.Max,
-																						sum: summary.Sum,
-																						count: summary.Count,
-																						dimensions: dimensions,
-																						timestamp: timestamp);
-						yield return dynatraceMetric;
-						break;
-					}
+				switch (metric.AggregationType)
+				{
+					case AggregationType.DoubleSum:
+						{
+							var sum = metricData as DoubleSumData;
+							dynatraceMetric = DynatraceMetricFactory.CreateDoubleCounterDelta(
+								metricName: metricName,
+								value: sum.Sum,
+								dimensions: dimensions,
+								timestamp: timestamp);
+							break;
+						}
+					case AggregationType.LongSum:
+						{
+							var sum = metricData as Int64SumData;
+							dynatraceMetric = DynatraceMetricFactory.CreateLongCounterDelta(
+								metricName: metricName,
+								value: sum.Sum,
+								dimensions: dimensions,
+								timestamp: timestamp);
+							break;
+						}
+					case AggregationType.DoubleSummary:
+						{
+							var summary = metricData as DoubleSummaryData;
+							dynatraceMetric = DynatraceMetricFactory.CreateDoubleSummary(
+								metricName: metricName,
+								min: summary.Min,
+								max: summary.Max,
+								sum: summary.Sum,
+								count: summary.Count,
+								dimensions: dimensions,
+								timestamp: timestamp);
+							break;
+						}
+					case AggregationType.Int64Summary:
+						{
+							var summary = metricData as Int64SummaryData;
+							dynatraceMetric = DynatraceMetricFactory.CreateLongSummary(
+								metricName: metricName,
+								min: summary.Min,
+								max: summary.Max,
+								sum: summary.Sum,
+								count: summary.Count,
+								dimensions: dimensions,
+								timestamp: timestamp);
+							break;
+						}
+				}
+			}
+			catch (DynatraceMetricException e)
+			{
+				logger.LogWarning("Skipping metric with the original name '{}'. Mapping failed with message: {}", metric.MetricName, e.Message);
+			}
+
+			if(dynatraceMetric != null)
+			{
+				yield return dynatraceMetric;
 			}
 		}
 	}
