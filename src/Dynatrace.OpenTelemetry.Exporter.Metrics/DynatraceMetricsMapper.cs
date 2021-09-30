@@ -31,10 +31,12 @@ internal static class DynatraceMetricsMapper
 	private static string CreateMetricKey(Metric metric)
 	{
 		var keyBuilder = new StringBuilder();
+
 		if (!string.IsNullOrEmpty(metric.MetricNamespace))
 		{
 			keyBuilder.Append($"{metric.MetricNamespace}.");
 		}
+		
 		keyBuilder.Append(metric.MetricName);
 		return keyBuilder.ToString();
 	}
