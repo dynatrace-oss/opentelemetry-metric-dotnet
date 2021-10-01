@@ -94,7 +94,7 @@ internal static class DynatraceMetricsExtensions
 			}
 		}
 	}
-	
+
 	/// <summary>
 	/// Combines metric namespace and key into a single key for use in <see cref="Dynatrace.MetricUtils.Metric">.
 	/// </summary>
