@@ -33,7 +33,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 	public class DynatraceMetricsExporterTests
 	{
 		[Fact]
-		public async Task TestDefaultOptions()
+		public async Task ExportAsync_WithDefaultOptions_ShouldSendRequestToOneAgent()
 		{
 			var mockMessageHandler = new Mock<HttpMessageHandler>();
 			// this var will hold the actual passed in params
@@ -68,7 +68,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 		}
 
 		[Fact]
-		public async Task TestUriAndToken()
+		public async Task ExportAsync_WithUriAndTokenOptions_ShouldSendReqeustToUrlWithToken()
 		{
 			var mockMessageHandler = new Mock<HttpMessageHandler>();
 			HttpRequestMessage req = null;
@@ -100,7 +100,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 		}
 
 		[Fact]
-		public async Task TestSendInBatches()
+		public async Task ExportAsync_WithMoreThan1000Metrics_ShouldSendMoreThanOneRequest()
 		{
 			var mockMessageHandler = new Mock<HttpMessageHandler>();
 			mockMessageHandler.Protected()
@@ -129,7 +129,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 		}
 
 		[Fact]
-		public async Task TestExportMultipleWithPrefix()
+		public async Task ExportAsync_WithPrefixOptions_ShouldAppendPrefixToMetrics()
 		{
 			var mockMessageHandler = new Mock<HttpMessageHandler>();
 			HttpRequestMessage req = null;
