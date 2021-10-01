@@ -27,6 +27,7 @@ using Moq;
 using Moq.Protected;
 using OpenTelemetry.Metrics.Export;
 using Xunit;
+using static System.Threading.CancellationToken;
 
 namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 {
@@ -50,7 +51,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 
 			var exporter = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
 
-			await exporter.ExportAsync(new List<Metric> { CreateMetric() }, CancellationToken.None);
+			await exporter.ExportAsync(new List<Metric> { CreateMetric() }, None);
 			mockMessageHandler.Protected().Verify(
 				"SendAsync",
 				Times.Exactly(1),
@@ -84,7 +85,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 
 			var exporter = new DynatraceMetricsExporter(new DynatraceExporterOptions { Url = "http://my.url", ApiToken = "test-token" }, null, new HttpClient(mockMessageHandler.Object));
 
-			await exporter.ExportAsync(new List<Metric> { CreateMetric() }, CancellationToken.None);
+			await exporter.ExportAsync(new List<Metric> { CreateMetric() }, None);
 			mockMessageHandler.Protected().Verify(
 				"SendAsync", 
 				Times.Exactly(1),
@@ -118,7 +119,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 				metrics.Add(CreateMetric());
 			}
 
-			await exporter.ExportAsync(metrics, CancellationToken.None);
+			await exporter.ExportAsync(metrics, None);
 
 			// for more than 1000 lines, SendAsync is called twice.
 			mockMessageHandler.Protected().Verify(
@@ -145,7 +146,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 
 			var exporter = new DynatraceMetricsExporter(new DynatraceExporterOptions { Prefix = "my.prefix" }, null, new HttpClient(mockMessageHandler.Object));
 
-			await exporter.ExportAsync(CreateMetrics(), CancellationToken.None);
+			await exporter.ExportAsync(CreateMetrics(), None);
 			var expectedMetricString = 
 			"my.prefix.namespace1.metric1,dt.metrics.source=opentelemetry count,delta=100 1604660628881" + Environment.NewLine + 
 			"my.prefix.namespace2.metric2,dt.metrics.source=opentelemetry count,delta=200 1604660628881" + Environment.NewLine;
@@ -192,7 +193,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 
 			var exporter = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
 
-			await exporter.ExportAsync(new List<Metric> { metric }, CancellationToken.None);
+			await exporter.ExportAsync(new List<Metric> { metric }, None);
 			var expectedMetricString = 
 			"namespace1.metric1,dt.metrics.source=opentelemetry count,delta=100 1604660628881" + Environment.NewLine +
 			"namespace1.metric1,dt.metrics.source=opentelemetry count,delta=101 1604660628881" + Environment.NewLine;
@@ -235,7 +236,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 
 			var exporter = new DynatraceMetricsExporter(null, mockLogger.Object, new HttpClient(mockMessageHandler.Object));
 
-			await exporter.ExportAsync(new List<Metric> { metric }, CancellationToken.None);
+			await exporter.ExportAsync(new List<Metric> { metric }, None);
 
 			mockMessageHandler.Protected().Verify(
 				"SendAsync",
@@ -282,7 +283,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 			var mockLogger = new Mock<ILogger<DynatraceMetricsExporter>>();
 			var exporter = new DynatraceMetricsExporter(null, mockLogger.Object, new HttpClient(mockMessageHandler.Object));
 
-			await exporter.ExportAsync(new List<Metric> { metric }, CancellationToken.None);
+			await exporter.ExportAsync(new List<Metric> { metric }, None);
 
 			mockMessageHandler.Protected().Verify(
 				"SendAsync",
