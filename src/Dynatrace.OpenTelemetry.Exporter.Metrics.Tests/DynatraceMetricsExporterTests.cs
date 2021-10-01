@@ -146,7 +146,9 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 			var exporter = new DynatraceMetricsExporter(new DynatraceExporterOptions { Prefix = "my.prefix" }, null, new HttpClient(mockMessageHandler.Object));
 
 			await exporter.ExportAsync(CreateMetrics(), CancellationToken.None);
-			var expectedMetricString = "my.prefix.namespace1.metric1,dt.metrics.source=opentelemetry count,delta=100 1604660628881" + Environment.NewLine + "my.prefix.namespace2.metric2,dt.metrics.source=opentelemetry count,delta=200 1604660628881" + Environment.NewLine;
+			var expectedMetricString = 
+			"my.prefix.namespace1.metric1,dt.metrics.source=opentelemetry count,delta=100 1604660628881" + Environment.NewLine + 
+			"my.prefix.namespace2.metric2,dt.metrics.source=opentelemetry count,delta=200 1604660628881" + Environment.NewLine;
 
 			mockMessageHandler.Protected().Verify(
 				"SendAsync",
@@ -160,7 +162,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 		}
 
 		[Fact]
-		public async Task TestExportMultiDataMetric()
+		public async Task ExportAsync_WithMultiDataMetric_ShouldSendRequestWithMultipleLines()
 		{
 			var timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1604660628881).UtcDateTime;
 
@@ -191,8 +193,9 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 			var exporter = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
 
 			await exporter.ExportAsync(new List<Metric> { metric }, CancellationToken.None);
-			var expectedMetricString = "namespace1.metric1,dt.metrics.source=opentelemetry count,delta=100 1604660628881" + Environment.NewLine +
-								 "namespace1.metric1,dt.metrics.source=opentelemetry count,delta=101 1604660628881" + Environment.NewLine;
+			var expectedMetricString = 
+			"namespace1.metric1,dt.metrics.source=opentelemetry count,delta=100 1604660628881" + Environment.NewLine +
+			"namespace1.metric1,dt.metrics.source=opentelemetry count,delta=101 1604660628881" + Environment.NewLine;
 
 			mockMessageHandler.Protected().Verify(
 				"SendAsync",
@@ -205,7 +208,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 		}
 
 		[Fact]
-		public async Task TestExportNullNameMetric()
+		public async Task ExportAsync_WithNullNameMetric_ShouldNotSendRequestAndLogError()
 		{
 			var timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1604660628881).UtcDateTime;
 
@@ -249,7 +252,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 		}
 
 		[Fact]
-		public async Task TestExportLargeMetric()
+		public async Task ExportAsync_WithTooLargeMetric_ShouldNotSendRequest()
 		{
 			var timestamp = DateTimeOffset.FromUnixTimeMilliseconds(1604660628881).UtcDateTime;
 
