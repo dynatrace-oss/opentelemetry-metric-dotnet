@@ -1,4 +1,3 @@
-
 // <copyright company="Dynatrace LLC">
 // Copyright 2021 Dynatrace LLC
 //
@@ -87,11 +86,11 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 
 			await exporter.ExportAsync(new List<Metric> { CreateMetric() }, None);
 			mockMessageHandler.Protected().Verify(
-				"SendAsync", 
+				"SendAsync",
 				Times.Exactly(1),
 				ItExpr.IsAny<HttpRequestMessage>(),
 				ItExpr.IsAny<CancellationToken>());
-			
+
 			Assert.Equal("http://my.url/", req.RequestUri.AbsoluteUri);
 			Assert.True(req.Headers.Contains("Authorization"));
 			Assert.Single(req.Headers.GetValues("Authorization"));
@@ -147,8 +146,8 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 			var exporter = new DynatraceMetricsExporter(new DynatraceExporterOptions { Prefix = "my.prefix" }, null, new HttpClient(mockMessageHandler.Object));
 
 			await exporter.ExportAsync(CreateMetrics(), None);
-			var expectedMetricString = 
-			"my.prefix.namespace1.metric1,dt.metrics.source=opentelemetry count,delta=100 1604660628881" + Environment.NewLine + 
+			var expectedMetricString =
+			"my.prefix.namespace1.metric1,dt.metrics.source=opentelemetry count,delta=100 1604660628881" + Environment.NewLine +
 			"my.prefix.namespace2.metric2,dt.metrics.source=opentelemetry count,delta=200 1604660628881" + Environment.NewLine;
 
 			mockMessageHandler.Protected().Verify(
@@ -194,7 +193,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 			var exporter = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
 
 			await exporter.ExportAsync(new List<Metric> { metric }, None);
-			var expectedMetricString = 
+			var expectedMetricString =
 			"namespace1.metric1,dt.metrics.source=opentelemetry count,delta=100 1604660628881" + Environment.NewLine +
 			"namespace1.metric1,dt.metrics.source=opentelemetry count,delta=101 1604660628881" + Environment.NewLine;
 
@@ -203,7 +202,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 				Times.Exactly(1),
 				ItExpr.Is<HttpRequestMessage>(req => req.Method == HttpMethod.Post),
 				ItExpr.IsAny<CancellationToken>());
-			
+
 			var actualMetricString = await req.Content.ReadAsStringAsync();
 			Assert.Equal(expectedMetricString, actualMetricString);
 		}
@@ -243,7 +242,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 				Times.Never(),
 				ItExpr.Is<HttpRequestMessage>(req => req.Method == HttpMethod.Post),
 				ItExpr.IsAny<CancellationToken>());
-			
+
 			mockLogger.Verify(x => x.Log(
 				It.Is<LogLevel>(level => level == LogLevel.Warning),
 				It.IsAny<EventId>(),
@@ -290,7 +289,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 				Times.Never(),
 				ItExpr.Is<HttpRequestMessage>(req => req.Method == HttpMethod.Post),
 				ItExpr.IsAny<CancellationToken>());
-			
+
 			mockLogger.Verify(x => x.Log(
 				It.Is<LogLevel>(level => level == LogLevel.Warning),
 				It.IsAny<EventId>(),
