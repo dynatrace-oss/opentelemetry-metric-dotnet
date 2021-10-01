@@ -87,7 +87,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 				_logger.LogDebug(metricLines);
 
 				// If there are no metric lines, we do not need to send a request.
-				if(metricLines.Length == 0)
+				if (metricLines.Length == 0)
 				{
 					return ExportResult.Success;
 				}
@@ -121,7 +121,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 
 		private void SerializeMetric(StringBuilder sb, Metric metric)
 		{
-			foreach(var dynatraceMetric in metric.ToDynatraceMetrics(_logger))
+			foreach (var dynatraceMetric in metric.ToDynatraceMetrics(_logger))
 			{
 				try
 				{
