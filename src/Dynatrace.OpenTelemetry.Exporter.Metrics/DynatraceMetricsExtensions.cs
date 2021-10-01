@@ -24,23 +24,6 @@ using Microsoft.Extensions.Logging;
 
 internal static class DynatraceMetricsExtensions
 {
-	/// <summary>
-	/// Combines metric namespace and key into a single key for use in <see cref="Dynatrace.MetricUtils.Metric">.
-	/// </summary>
-	/// <returns>A metric key in the form {MetricNamespace}.{MetricKey}</returns>
-	private static string CreateMetricKey(Metric metric)
-	{
-		var keyBuilder = new StringBuilder();
-
-		if (!string.IsNullOrEmpty(metric.MetricNamespace))
-		{
-			keyBuilder.Append($"{metric.MetricNamespace}.");
-		}
-
-		keyBuilder.Append(metric.MetricName);
-		return keyBuilder.ToString();
-	}
-
 	internal static IEnumerable<DynatraceMetric> ToDynatraceMetrics(this Metric metric, ILogger logger)
 	{
 		var metricName = CreateMetricKey(metric);
@@ -110,5 +93,22 @@ internal static class DynatraceMetricsExtensions
 				yield return dynatraceMetric;
 			}
 		}
+	}
+	
+	/// <summary>
+	/// Combines metric namespace and key into a single key for use in <see cref="Dynatrace.MetricUtils.Metric">.
+	/// </summary>
+	/// <returns>A metric key in the form {MetricNamespace}.{MetricKey}</returns>
+	private static string CreateMetricKey(Metric metric)
+	{
+		var keyBuilder = new StringBuilder();
+
+		if (!string.IsNullOrEmpty(metric.MetricNamespace))
+		{
+			keyBuilder.Append($"{metric.MetricNamespace}.");
+		}
+
+		keyBuilder.Append(metric.MetricName);
+		return keyBuilder.ToString();
 	}
 }
