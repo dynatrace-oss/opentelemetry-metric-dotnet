@@ -16,11 +16,9 @@
 
 using System.Collections.Generic;
 using OpenTelemetry.Metrics.Export;
-using DynatraceMetric = Dynatrace.MetricUtils.Metric;
-using DynatraceMetricFactory = Dynatrace.MetricUtils.MetricsFactory;
-using DynatraceMetricException = Dynatrace.MetricUtils.MetricException;
 using System.Text;
 using Microsoft.Extensions.Logging;
+using Dynatrace.MetricUtils;
 
 internal static class DynatraceMetricsExtensions
 {
@@ -36,7 +34,7 @@ internal static class DynatraceMetricsExtensions
 				{
 					case DoubleSumData sum:
 						{
-							dynatraceMetric = DynatraceMetricFactory.CreateDoubleCounterDelta(
+							dynatraceMetric = DynatraceMetricsFactory.CreateDoubleCounterDelta(
 								metricName: metricName,
 								value: sum.Sum,
 								dimensions: metricData.Labels,
@@ -45,7 +43,7 @@ internal static class DynatraceMetricsExtensions
 						}
 					case Int64SumData sum:
 						{
-							dynatraceMetric = DynatraceMetricFactory.CreateLongCounterDelta(
+							dynatraceMetric = DynatraceMetricsFactory.CreateLongCounterDelta(
 								metricName: metricName,
 								value: sum.Sum,
 								dimensions: metricData.Labels,
@@ -54,7 +52,7 @@ internal static class DynatraceMetricsExtensions
 						}
 					case DoubleSummaryData summary:
 						{
-							dynatraceMetric = DynatraceMetricFactory.CreateDoubleSummary(
+							dynatraceMetric = DynatraceMetricsFactory.CreateDoubleSummary(
 								metricName: metricName,
 								min: summary.Min,
 								max: summary.Max,
@@ -66,7 +64,7 @@ internal static class DynatraceMetricsExtensions
 						}
 					case Int64SummaryData summary:
 						{
-							dynatraceMetric = DynatraceMetricFactory.CreateLongSummary(
+							dynatraceMetric = DynatraceMetricsFactory.CreateLongSummary(
 								metricName: metricName,
 								min: summary.Min,
 								max: summary.Max,

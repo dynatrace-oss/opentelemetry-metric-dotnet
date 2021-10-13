@@ -25,8 +25,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using OpenTelemetry.Metrics.Export;
-using DynatraceMetricSerializer = Dynatrace.MetricUtils.MetricsSerializer;
-using DynatraceMetricException = Dynatrace.MetricUtils.MetricException;
+using Dynatrace.MetricUtils;
 
 namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 {
@@ -39,7 +38,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 		private readonly DynatraceExporterOptions _options;
 		private readonly ILogger<DynatraceMetricsExporter> _logger;
 		private readonly HttpClient _httpClient;
-		private readonly DynatraceMetricSerializer _serializer;
+		private readonly DynatraceMetricsSerializer _serializer;
 
 		public DynatraceMetricsExporter(DynatraceExporterOptions options = null, ILogger<DynatraceMetricsExporter> logger = null)
 		: this(options, logger, new HttpClient()) { }
@@ -55,7 +54,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 				_httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Api-Token", _options.ApiToken);
 			}
 			_httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue(new ProductHeaderValue("opentelemetry-metric-dotnet")));
-			_serializer = new DynatraceMetricSerializer(
+			_serializer = new DynatraceMetricsSerializer(
 				_logger,
 				_options.Prefix,
 				_options.DefaultDimensions,
