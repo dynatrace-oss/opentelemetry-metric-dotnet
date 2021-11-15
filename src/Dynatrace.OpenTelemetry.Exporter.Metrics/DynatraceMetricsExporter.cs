@@ -150,7 +150,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 							dtMetric = metric.ToLongCounterDelta(metricPoint, _logger);
 							break;
 						case MetricType.DoubleSum:
-							dtMetric = metric.ToLongCounterDelta(metricPoint, _logger);
+							dtMetric = metric.ToDoubleCounterDelta(metricPoint, _logger);
 							break;
 						case MetricType.LongGauge:
 							dtMetric = metric.ToLongGauge(metricPoint, _logger);

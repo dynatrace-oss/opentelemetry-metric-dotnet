@@ -19,7 +19,7 @@ using System.Runtime.CompilerServices;
 
 namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 {
-	internal class Utils
+	internal class TestUtils
 	{
 		[MethodImpl(MethodImplOptions.NoInlining)]
 		public static string GetCurrentMethodName()

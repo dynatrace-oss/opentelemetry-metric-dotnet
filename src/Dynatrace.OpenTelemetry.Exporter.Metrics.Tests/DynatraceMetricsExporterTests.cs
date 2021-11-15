@@ -22,6 +22,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Dynatrace.OpenTelemetry.Exporter.Metrics.Tests.Utils;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Moq.Protected;
@@ -39,10 +40,10 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 		};
 
 		[Fact]
-		public async Task ExportAsync_WithDefaultOptions_ShouldSendRequestToOneAgent()
+		public async Task Export_WithDefaultOptions_ShouldSendRequestToOneAgent()
 		{
 			// Arrange
-			using var meter = new Meter(Utils.GetCurrentMethodName(), "0.0.1");
+			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
 
 			HttpRequestMessage actualRequestMessage = null!;
 			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
@@ -79,10 +80,10 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 		}
 
 		[Fact]
-		public void ExportAsync_FailedExport_ReturnsFailedExportResult()
+		public void Export_FailedExport_ReturnsFailedExportResult()
 		{
 			// Arrange
-			using var meter = new Meter(Utils.GetCurrentMethodName(), "0.0.1");
+			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
 
 			HttpRequestMessage actualRequestMessage = null!;
 			var mockMessageHandler = SetupHttpMock(
@@ -116,10 +117,10 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 		}
 
 		[Fact]
-		public async Task ExportAsync_WithUriAndTokenOptions_ShouldSendReqeustToUrlWithToken()
+		public async Task Export_WithUriAndTokenOptions_ShouldSendReqeustToUrlWithToken()
 		{
 			// Arrange
-			using var meter = new Meter(Utils.GetCurrentMethodName(), "0.0.1");
+			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
 
 			HttpRequestMessage actualRequestMessage = null!;
 			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
@@ -158,10 +159,10 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 		}
 
 		[Fact]
-		public async Task ExportAsync_WithPrefixOptions_ShouldAppendPrefixToMetrics()
+		public async Task Export_WithPrefixOptions_ShouldAppendPrefixToMetrics()
 		{
 			// Arrange
-			using var meter = new Meter(Utils.GetCurrentMethodName(), "0.0.1");
+			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
 
 			HttpRequestMessage actualRequestMessage = null!;
 			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
@@ -200,10 +201,10 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 		}
 
 		[Fact]
-		public async Task ExportAsync_WithDefaultDimensions_ShouldAddDimensionsToMetrics()
+		public async Task Export_WithDefaultDimensions_ShouldAddDimensionsToMetrics()
 		{
 			// Arrange
-			using var meter = new Meter(Utils.GetCurrentMethodName(), "0.0.1");
+			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
 
 			HttpRequestMessage actualRequestMessage = null!;
 			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
@@ -248,10 +249,10 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 		}
 
 		[Fact]
-		public void ExportAsync_WithTooLargeMetric_ShouldNotSendRequest()
+		public void Export_WithTooLargeMetric_ShouldNotSendRequest()
 		{
 			// Arrange
-			using var meter = new Meter(Utils.GetCurrentMethodName(), "0.0.1");
+			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
 
 			HttpRequestMessage actualRequestMessage = null!;
 			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
@@ -297,10 +298,10 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 		}
 
 		[Fact]
-		public async Task ExportAsync_WithMultiDataMetric_ShouldSendRequestWithMultipleLines()
+		public async Task Export_MultipleExports_ShouldExportCorrectDelta()
 		{
 			// Arrange
-			using var meter = new Meter(Utils.GetCurrentMethodName(), "0.0.1");
+			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
 
 			HttpRequestMessage actualRequestMessage = null!;
 			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
@@ -337,6 +338,329 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 				Times.Exactly(3),
 				ItExpr.IsAny<HttpRequestMessage>(),
 				ItExpr.IsAny<CancellationToken>());
+		}
+
+		[Fact]
+		public async Task Export_MultipleMetricStreams_ShouldExportMultipleLines()
+		{
+			// Arrange
+			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
+
+			HttpRequestMessage actualRequestMessage = null!;
+			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
+
+			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
+
+			var metricReader = new TestMetricReader(sut);
+			using var provider = Sdk.CreateMeterProviderBuilder()
+				.AddMeter(meter.Name)
+				.AddReader(metricReader)
+				.Build();
+
+			var counterA = meter.CreateCounter<int>("counterA");
+			counterA.Add(10, _attributes);
+
+			var counterB = meter.CreateCounter<int>("counterB");
+			counterB.Add(20, _attributes);
+
+			// Act - Reader will call our exporter
+			metricReader.Collect();
+
+			// Assert
+			var exportedMetrics = metricReader.GetExportedMetrics();
+			var pointA = MetricTest.FromMetricPoints(exportedMetrics.First().GetMetricPoints()).First();
+			var pointB = MetricTest.FromMetricPoints(exportedMetrics.Last().GetMetricPoints()).First();
+
+			var expected = @$"counterA,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=10 {pointA.TimeStamp}
+counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {pointB.TimeStamp}";
+
+			var actualMetricString = await actualRequestMessage.Content!.ReadAsStringAsync();
+			Assert.Equal(expected, actualMetricString);
+
+			mockMessageHandler.Protected().Verify(
+				"SendAsync",
+				Times.Exactly(1),
+				ItExpr.IsAny<HttpRequestMessage>(),
+				ItExpr.IsAny<CancellationToken>());
+
+			AssertExportRequest(actualRequestMessage);
+		}
+
+		[Fact]
+		public async Task Export_LongSumCumulative_ShouldExportAsGauge()
+		{
+			// Arrange
+			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
+
+			HttpRequestMessage actualRequestMessage = null!;
+			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
+
+			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
+
+			var metricReader = new TestMetricReader(sut)
+			{
+				PreferredAggregationTemporality = AggregationTemporality.Cumulative
+			};
+			using var provider = Sdk.CreateMeterProviderBuilder()
+				.AddMeter(meter.Name)
+				.AddReader(metricReader)
+				.Build();
+
+			var counter = meter.CreateCounter<int>("counter");
+			counter.Add(10, _attributes);
+
+			// Act - Reader will call our exporter
+			metricReader.Collect();
+
+			// Assert
+			var exportedMetrics = metricReader.GetExportedMetrics();
+			var point = MetricTest.FromMetricPoints(exportedMetrics.First().GetMetricPoints()).First();
+
+			var expected = $"counter,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry gauge,10 {point.TimeStamp}";
+			var actualMetricString = await actualRequestMessage.Content!.ReadAsStringAsync();
+			Assert.Equal(expected, actualMetricString);
+
+			mockMessageHandler.Protected().Verify(
+				"SendAsync",
+				Times.Exactly(1),
+				ItExpr.IsAny<HttpRequestMessage>(),
+				ItExpr.IsAny<CancellationToken>());
+
+			AssertExportRequest(actualRequestMessage);
+		}
+
+		[Fact]
+		public async Task Export_LongSumDelta()
+		{
+			// Arrange
+			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
+
+			HttpRequestMessage actualRequestMessage = null!;
+			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
+
+			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
+
+			// Delta is already the preferred temporality for our exporter
+			var metricReader = new TestMetricReader(sut);
+			using var provider = Sdk.CreateMeterProviderBuilder()
+				.AddMeter(meter.Name)
+				.AddReader(metricReader)
+				.Build();
+
+			var counter = meter.CreateCounter<int>("counter");
+			counter.Add(10, _attributes);
+
+			// Act - Reader will call our exporter
+			metricReader.Collect();
+
+			// Assert
+			var exportedMetrics = metricReader.GetExportedMetrics();
+			var point = MetricTest.FromMetricPoints(exportedMetrics.First().GetMetricPoints()).First();
+
+			var expected = $"counter,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=10 {point.TimeStamp}";
+			var actualMetricString = await actualRequestMessage.Content!.ReadAsStringAsync();
+			Assert.Equal(expected, actualMetricString);
+
+			mockMessageHandler.Protected().Verify(
+				"SendAsync",
+				Times.Exactly(1),
+				ItExpr.IsAny<HttpRequestMessage>(),
+				ItExpr.IsAny<CancellationToken>());
+
+			AssertExportRequest(actualRequestMessage);
+		}
+
+		[Fact]
+		public async Task Export_DoubleSumCumulative_ShouldExportAsGauge()
+		{
+			// Arrange
+			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
+
+			HttpRequestMessage actualRequestMessage = null!;
+			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
+
+			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
+
+			var metricReader = new TestMetricReader(sut)
+			{
+				PreferredAggregationTemporality = AggregationTemporality.Cumulative
+			};
+			using var provider = Sdk.CreateMeterProviderBuilder()
+				.AddMeter(meter.Name)
+				.AddReader(metricReader)
+				.Build();
+
+			var counter = meter.CreateCounter<double>("double_counter");
+			counter.Add(10.3, _attributes);
+
+			// Act - Reader will call our exporter
+			metricReader.Collect();
+
+			// Assert
+			var exportedMetrics = metricReader.GetExportedMetrics();
+			var point = MetricTest.FromMetricPoints(exportedMetrics.First().GetMetricPoints()).First();
+
+			var expected = $"double_counter,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry gauge,10.3 {point.TimeStamp}";
+			var actualMetricString = await actualRequestMessage.Content!.ReadAsStringAsync();
+			Assert.Equal(expected, actualMetricString);
+
+			mockMessageHandler.Protected().Verify(
+				"SendAsync",
+				Times.Exactly(1),
+				ItExpr.IsAny<HttpRequestMessage>(),
+				ItExpr.IsAny<CancellationToken>());
+
+			AssertExportRequest(actualRequestMessage);
+		}
+
+		[Fact]
+		public async Task Export_DoubleSumDelta()
+		{
+			// Arrange
+			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
+
+			HttpRequestMessage actualRequestMessage = null!;
+			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
+
+			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
+
+			// Delta is already the preferred temporality for our exporter
+			var metricReader = new TestMetricReader(sut);
+			using var provider = Sdk.CreateMeterProviderBuilder()
+				.AddMeter(meter.Name)
+				.AddReader(metricReader)
+				.Build();
+
+			var counter = meter.CreateCounter<double>("double_counter");
+			counter.Add(10.3, _attributes);
+
+			// Act - Reader will call our exporter
+			metricReader.Collect();
+
+			// Assert
+			var exportedMetrics = metricReader.GetExportedMetrics();
+			var point = MetricTest.FromMetricPoints(exportedMetrics.First().GetMetricPoints()).First();
+
+			var expected = $"double_counter,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=10.3 {point.TimeStamp}";
+			var actualMetricString = await actualRequestMessage.Content!.ReadAsStringAsync();
+			Assert.Equal(expected, actualMetricString);
+
+			mockMessageHandler.Protected().Verify(
+				"SendAsync",
+				Times.Exactly(1),
+				ItExpr.IsAny<HttpRequestMessage>(),
+				ItExpr.IsAny<CancellationToken>());
+
+			AssertExportRequest(actualRequestMessage);
+		}
+
+		[Fact]
+		public async Task Export_LongGauge()
+		{
+			// Arrange
+			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
+
+			HttpRequestMessage actualRequestMessage = null!;
+			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
+
+			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
+
+			// Delta is already the preferred temporality for our exporter
+			var metricReader = new TestMetricReader(sut);
+			using var provider = Sdk.CreateMeterProviderBuilder()
+				.AddMeter(meter.Name)
+				.AddReader(metricReader)
+				.Build();
+
+			var observableCounter = meter.CreateObservableGauge<long>("gauge", () =>
+			{
+				return new List<Measurement<long>>()
+				{
+					new Measurement<long>(10, _attributes)
+				};
+			});
+
+			// Act - Reader will call our exporter
+			metricReader.Collect();
+
+			// Assert
+			var exportedMetrics = metricReader.GetExportedMetrics();
+			var point = MetricTest.FromMetricPoints(exportedMetrics.First().GetMetricPoints()).First();
+
+			var expected = $"gauge,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry gauge,10 {point.TimeStamp}";
+			var actualMetricString = await actualRequestMessage.Content!.ReadAsStringAsync();
+			Assert.Equal(expected, actualMetricString);
+
+			mockMessageHandler.Protected().Verify(
+				"SendAsync",
+				Times.Exactly(1),
+				ItExpr.IsAny<HttpRequestMessage>(),
+				ItExpr.IsAny<CancellationToken>());
+
+			AssertExportRequest(actualRequestMessage);
+		}
+
+		[Fact]
+		public async Task Export_DoubleGauge()
+		{
+			// Arrange
+			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
+
+			HttpRequestMessage actualRequestMessage = null!;
+			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
+
+			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
+
+			// Delta is already the preferred temporality for our exporter
+			var metricReader = new TestMetricReader(sut);
+			using var provider = Sdk.CreateMeterProviderBuilder()
+				.AddMeter(meter.Name)
+				.AddReader(metricReader)
+				.Build();
+
+			var observableCounter = meter.CreateObservableGauge<double>("double_gauge", () =>
+			{
+				return new List<Measurement<double>>()
+				{
+					new Measurement<double>(10.3, _attributes),
+				};
+			});
+
+			// Act - Reader will call our exporter
+			metricReader.Collect();
+
+			// Assert
+			var exportedMetrics = metricReader.GetExportedMetrics();
+			var point = MetricTest.FromMetricPoints(exportedMetrics.First().GetMetricPoints()).First();
+
+			var expected = $"double_gauge,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry gauge,10.3 {point.TimeStamp}";
+			var actualMetricString = await actualRequestMessage.Content!.ReadAsStringAsync();
+			Assert.Equal(expected, actualMetricString);
+
+			mockMessageHandler.Protected().Verify(
+				"SendAsync",
+				Times.Exactly(1),
+				ItExpr.IsAny<HttpRequestMessage>(),
+				ItExpr.IsAny<CancellationToken>());
+
+			AssertExportRequest(actualRequestMessage);
+		}
+
+		[Fact]
+		public async Task Export_Histogram()
+		{
+			Assert.True(false);
+		}
+
+		[Fact]
+		public async Task Export_CounterWithViewCumulative()
+		{
+			Assert.True(false);
+		}
+		[Fact]
+		public async Task Export_CounterWithViewDelta()
+		{
+			Assert.True(false);
 		}
 
 		private static Mock<HttpMessageHandler> SetupHttpMock(

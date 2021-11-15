@@ -40,7 +40,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 					metricPoint.EndTime.UtcDateTime);
 		}
 
-		public static DynatraceMetric ToDoubleCounterDelta(Metric metric, MetricPoint metricPoint, ILogger logger)
+		public static DynatraceMetric ToDoubleCounterDelta(this Metric metric, MetricPoint metricPoint, ILogger logger)
 		{
 			// TODO: Perform cumulative -> Delta conversion
 			return metric.Temporality == AggregationTemporality.Cumulative ?
