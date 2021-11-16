@@ -13,12 +13,13 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 		private static Action<ILogger, Exception> _sendMetricException;
 		private static Action<ILogger, string, Exception> _serializeMetricException;
 		private static Action<ILogger, string, Exception> _unsupportedMetricType;
+		private static Action<ILogger, string, Exception> _receivedCumulativeValue;
 
 		static LoggerExtensions()
 		{
 			_dynatraceMetricUrl = LoggerMessage.Define<string>(
 				LogLevel.Debug,
-				new EventId(1, nameof(InvalidMetricType)),
+				new EventId(1, nameof(DynatraceMetricUrl)),
 				"Dynatrace Metrics Url: {Url}"
 				);
 
@@ -30,13 +31,13 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 
 			_sendMetricErrorResponse = LoggerMessage.Define<HttpStatusCode, string>(
 				LogLevel.Error,
-				new EventId(3, nameof(InvalidMetricType)),
+				new EventId(3, nameof(ReceivedErrorResponse)),
 				"Received an error response while sending metrics. StatusCode: {StatusCode} Response: {Response}"
 				);
 
 			_sendMetricException = LoggerMessage.Define(
 				LogLevel.Error,
-				new EventId(4, nameof(InvalidMetricType)),
+				new EventId(4, nameof(FailedSendingMetricLines)),
 				"Error sending metrics to Dynatrace."
 				);
 
@@ -48,8 +49,14 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 
 			_unsupportedMetricType = LoggerMessage.Define<string>(
 				LogLevel.Warning,
-				new EventId(6, nameof(FailedToSerializeMetric)),
+				new EventId(6, nameof(UnsupportedMetricType)),
 				"Skipping unsupported dimension with value type '{MetricType}'"
+				);
+
+			_receivedCumulativeValue = LoggerMessage.Define<string>(
+				LogLevel.Warning,
+				new EventId(7, nameof(ReceivedCumulativeValue)),
+				"Received metric: '{MetricName}' with cumulative aggregation temporality. Exporting as gauge"
 				);
 		}
 
@@ -70,5 +77,8 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 
 		internal static void UnsupportedMetricType(this ILogger logger, string metricType)
 			=> _unsupportedMetricType(logger, metricType, null);
+
+		internal static void ReceivedCumulativeValue(this ILogger logger, string metricName)
+			=> _receivedCumulativeValue(logger, metricName, null);
 	}
 }
