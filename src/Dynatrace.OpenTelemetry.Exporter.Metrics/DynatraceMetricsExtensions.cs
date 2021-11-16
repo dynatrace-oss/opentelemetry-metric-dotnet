@@ -26,6 +26,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 	{
 		// Used to reduce the amount of log messages generated
 		// when receiving metrics with cumulative aggregation temporality
+		// The exporter runs on a separated-single thread.
 		private static readonly short CumulativeMetricLogIntervalHours = 1;
 		private static DateTimeOffset? CumulativeMetricLastSeen = null;
 
