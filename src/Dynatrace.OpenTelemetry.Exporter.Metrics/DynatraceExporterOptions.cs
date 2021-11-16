@@ -57,5 +57,10 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 		/// Indicates whether metrics should be enriched with Dynatrace metadata as labels.
 		/// </summary>
 		public bool EnrichWithDynatraceMetadata { get; set; } = true;
+
+		/// <summary>
+		/// Gets or sets the metric export interval in milliseconds. The default value is 1000 milliseconds.
+		/// </summary>
+		public int MetricExportIntervalMilliseconds { get; set; } = 1000;
 	}
 }
