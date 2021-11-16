@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Net;
@@ -34,9 +35,9 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 {
 	public class DynatraceMetricsExporterTests
 	{
-		private readonly KeyValuePair<string, object?>[] _attributes = new KeyValuePair<string, object?>[]
+		private readonly TagList _attributes = new()
 		{
-			new ("attr1", "v1"), new ("attr2", "v2"),
+			{ "attr1", "v1" }, { "attr2", "v2" },
 		};
 
 		[Fact]
@@ -260,7 +261,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 			mockLogger.Setup(x => x.IsEnabled(LogLevel.Warning)).Returns(true);
 
 			// 20 dimensions of ~ 100 characters should result in lines with more than 2000 characters
-			var dimensions = new List<KeyValuePair<string, object?>>();
+			var dimensions = new TagList();
 			for (var i = 0; i < 20; i++)
 			{
 				// creates a dimension that takes up a little more than 100 characters
