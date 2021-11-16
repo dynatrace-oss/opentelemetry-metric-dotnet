@@ -6,7 +6,7 @@
 
 ## Getting started
 
-The general setup of OpenTelemetry .NET is explained in the official [Getting Started Guide](https://github.com/open-telemetry/opentelemetry-dotnet/blob/0.8.0-beta/docs/trace/getting-started/README.md).
+The general setup of OpenTelemetry .NET is explained in the official [Getting Started Guide](https://github.com/open-telemetry/opentelemetry-dotnet/blob/core-1.2.0-beta1/docs/trace/getting-started/README.md).
 
 To add the exporter to your project add the [Dynatrace.OpenTelemetry.Exporter.Metrics](https://www.nuget.org/packages/Dynatrace.OpenTelemetry.Exporter.Metrics) package to your project.
 This can be done through the NuGet package manager in Visual Studio or by running the following command in your project folder:
@@ -22,29 +22,29 @@ This exporter package targets [.NET Standard 2.0](https://docs.microsoft.com/en-
 To set up a Dynatrace metrics exporter, add the following code to your project:
 
 ```csharp
-// Create exporter instance. Without configuring anything, the exporter will attempt to export to the local OneAgent endpoint
-var dtExporter = new DynatraceMetricsExporter();
+// A Meter instance is obtained via the System.Diagnostics.DiagnosticSource package
+// Learn more about this here:
+// https://github.com/open-telemetry/opentelemetry-dotnet/blob/main/docs/metrics/getting-started/README.md
+var meter = new Meter("my_meter", "0.0.1");
 
-// Set up OpenTelemetry by setting the global MeterProvider and attaching the exporter.
-var processor = new UngroupedBatcher();
-MeterProvider.SetDefault(Sdk.CreateMeterProviderBuilder()
-    .SetProcessor(processor)
-    .SetExporter(dtExporter)
-    .SetPushInterval(TimeSpan.FromSeconds(30))  // set up the export interval
-    .Build());
+// Configure the MeterProvider with the DynatraceMetricsExporter
+// AddDynatraceExporter() -> will attempt to export to the local OneAgent endpoint.
+var provider = Sdk.CreateMeterProviderBuilder()
+    .AddMeter(meter.Name)
+    .AddMeter("MyApp.*") // To register meters not know upon MeterProvider configuration
+    .AddDynatraceExporter()
+    .Build();
 
-// Create a Meter and a counter instrument.
-var meter = MeterProvider.Default.GetMeter("my_meter");
-var myCounter = meter.CreateInt64Counter("my_counter");
-var labels = new List<KeyValuePair<string, string>>()
+// Use the meter to create a counter instrument.
+var myCounter = meter.CreateCounter<long>("my_counter");
+var attributes = new TagList
 {
-    new KeyValuePair<string, string>("my_label", "value1")
+    { "my_label", "value1" }
 };
-var defaultContext = default(SpanContext);
 
-// Record data. The export interval can be set up during the MeterProvider setup above.
-// In the current configuration, all metrics will be exported to the local OneAgent endpoint every 30s.
-myCounter.Add(defaultContext, 100, meter.GetLabelSet(labels));
+// Record data. The export interval can be configured during the AddDynatraceExporter() call above.
+// By default, all metrics will be exported to the local OneAgent endpoint every second.
+testCounter.Add(100, attributes);
 ```
 
 If no local OneAgent is available or metrics should be exported directly to the backend, the `DynatraceMetricsExporter` can be set up with an endpoint and an API token.
@@ -54,39 +54,37 @@ The `DynatraceMetricsExporter` also accepts a logger, which logs information abo
 
 ```csharp
 // Not required, but potentially helpful.
-ILoggerFactory loggerFactory = LoggerFactory.Create(builder =>
+var loggerFactory = LoggerFactory.Create(builder =>
 {
     builder.SetMinimumLevel(LogLevel.Debug).AddConsole();
 });
 
-// Set up a DynatraceExporterOptions object to set the endpoint and token.
-// It is not recommended to store the token in code, but to read it from a secure location, e.g. environment variables or program arguments.
-var exporterOptions = new DynatraceExporterOptions()
+var meter = new Meter("my_meter", "0.0.1");
+
+// Configure the MeterProvider with the DynatraceMetricsExporter
+// AddDynatraceExporter() -> Provide the Action<DynatraceExporterOptions> to customize the exporter
+using var provider = Sdk.CreateMeterProviderBuilder()
+    .AddMeter(meter.Name)
+    .AddDynatraceExporter(cfg =>
+    {
+        cfg.Url = "https://{your-environment-id}.live.dynatrace.com/api/v2/metrics/ingest";
+        cfg.ApiToken = "YOUR_API_TOKEN";
+        cfg.DefaultDimensions = new Dictionary<string, string> { { "default1", "defval1" } };
+        cfg.Prefix = "my.app";
+        cfg.MetricExportIntervalMilliseconds = 30000;
+    }, loggerFactory)
+    .Build();
+
+// Use the meter to create a counter instrument.
+var myCounter = meter.CreateCounter<long>("my_counter");
+var attributes = new TagList
 {
-    Url = "https://{your-environment-id}.live.dynatrace.com/api/v2/metrics/ingest",
-    ApiToken = "YOUR_API_TOKEN",
+    { "my_label", "value1" }
 };
 
-// The constructor for DynatraceMetricsExporter allows passing an DynatraceExporterOptions object and an optional logger.
-var dtExporter = new DynatraceMetricsExporter(exporterOptions, loggerFactory.CreateLogger<DynatraceMetricsExporter>());
-
-// Continue as above, set up OpenTelemetry and start exporting metrics:
-var processor = new UngroupedBatcher();
-MeterProvider.SetDefault(Sdk.CreateMeterProviderBuilder()
-    .SetProcessor(processor)
-    .SetExporter(dtExporter)
-    .SetPushInterval(TimeSpan.FromSeconds(30))
-    .Build());
-
-var meter = MeterProvider.Default.GetMeter("my_meter");
-var myCounter = meter.CreateInt64Counter("my_counter");
-var labels = new List<KeyValuePair<string, string>>()
-{
-    new KeyValuePair<string, string>("my_label", "value1")
-};
-var defaultContext = default(SpanContext);
-
-myCounter.Add(defaultContext, 100, meter.GetLabelSet(labels));
+// Record data. 
+// In the current configuration, all metrics will be exported every 30s.
+testCounter.Add(100, attributes);
 ```
 
 In addition to the `Url` and `ApiToken`, optional properties can be set on the `DynatraceExporterOptions` object, which are described in the [Configuration section](#configuration):
@@ -95,6 +93,7 @@ In addition to the `Url` and `ApiToken`, optional properties can be set on the `
 - `DefaultDimensions`, which are added as dimensions to every exported metric
 - A toggle, `EnrichWithOneAgentMetadata`, which allows turning off the enrichment of metrics with host-specific information.
   See [below](#dynatrace-api-endpoint) for more information.
+- The interval to export metrics `MetricExportIntervalMilliseconds`. Defaults to 30 seconds.
 
 ```csharp
 var exporterOptions = new DynatraceExporterOptions()
@@ -108,6 +107,7 @@ var exporterOptions = new DynatraceExporterOptions()
         new KeyValuePair<string, string>("defaultDim2", "value2")
     },
     EnrichWithOneAgentMetadata = false,
+    MetricExportIntervalMilliseconds = 10000
 };
 ```
 
