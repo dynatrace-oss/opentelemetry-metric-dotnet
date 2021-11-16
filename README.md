@@ -8,7 +8,7 @@
 
 The general setup of OpenTelemetry .NET is explained in the official [Getting Started Guide](https://github.com/open-telemetry/opentelemetry-dotnet/blob/core-1.2.0-beta1/docs/trace/getting-started/README.md).
 
-To add the exporter to your project add the [Dynatrace.OpenTelemetry.Exporter.Metrics](https://www.nuget.org/packages/Dynatrace.OpenTelemetry.Exporter.Metrics) package to your project.
+To add the exporter to your project, install the [Dynatrace.OpenTelemetry.Exporter.Metrics](https://www.nuget.org/packages/Dynatrace.OpenTelemetry.Exporter.Metrics) package to your project.
 This can be done through the NuGet package manager in Visual Studio or by running the following command in your project folder:
 
 ```sh
@@ -23,15 +23,14 @@ To set up a Dynatrace metrics exporter, add the following code to your project:
 
 ```csharp
 // A Meter instance is obtained via the System.Diagnostics.DiagnosticSource package
-// Learn more about this here:
-// https://github.com/open-telemetry/opentelemetry-dotnet/blob/main/docs/metrics/getting-started/README.md
 var meter = new Meter("my_meter", "0.0.1");
 
 // Configure the MeterProvider with the DynatraceMetricsExporter
-// AddDynatraceExporter() -> will attempt to export to the local OneAgent endpoint.
+// using the extension method .AddDynatraceExporter().
+// Without passing any configuration, the exporter will attempt 
+// to export to the local OneAgent endpoint.
 var provider = Sdk.CreateMeterProviderBuilder()
     .AddMeter(meter.Name)
-    .AddMeter("MyApp.*") // To register meters not know upon MeterProvider configuration
     .AddDynatraceExporter()
     .Build();
 
@@ -42,18 +41,20 @@ var attributes = new TagList
     { "my_label", "value1" }
 };
 
-// Record data. The export interval can be configured during the AddDynatraceExporter() call above.
-// By default, all metrics will be exported to the local OneAgent endpoint every second.
+// Record a metric. The export interval can be configured during the AddDynatraceExporter() call above.
+// By default, all metrics will be exported to the local OneAgent endpoint every 30 seconds.
 testCounter.Add(100, attributes);
 ```
 
 If no local OneAgent is available or metrics should be exported directly to the backend, the `DynatraceMetricsExporter` can be set up with an endpoint and an API token.
-The 'Ingest metrics' (`metrics.ingest`) permission is required for the token, and it is recommended to restrict the token access to that scope.
+
+> The 'Ingest metrics' (`metrics.ingest`) permission is required for the token,
+ and it is recommended to restrict the token access to that scope.
 More information about the token setup can be found [here](#dynatrace-api-token).
-The `DynatraceMetricsExporter` also accepts a logger, which logs information about preparing and exporting metrics.
 
 ```csharp
 // Not required, but potentially helpful.
+// The exporter logs information about preparing and exporting metrics.
 var loggerFactory = LoggerFactory.Create(builder =>
 {
     builder.SetMinimumLevel(LogLevel.Debug).AddConsole();
@@ -62,16 +63,14 @@ var loggerFactory = LoggerFactory.Create(builder =>
 var meter = new Meter("my_meter", "0.0.1");
 
 // Configure the MeterProvider with the DynatraceMetricsExporter
-// AddDynatraceExporter() -> Provide the Action<DynatraceExporterOptions> to customize the exporter
+// using the extension method .AddDynatraceExporter().
+// You can customize the exporter by providing an Action<DynatraceExporterOptions>.
 using var provider = Sdk.CreateMeterProviderBuilder()
     .AddMeter(meter.Name)
     .AddDynatraceExporter(cfg =>
     {
         cfg.Url = "https://{your-environment-id}.live.dynatrace.com/api/v2/metrics/ingest";
         cfg.ApiToken = "YOUR_API_TOKEN";
-        cfg.DefaultDimensions = new Dictionary<string, string> { { "default1", "defval1" } };
-        cfg.Prefix = "my.app";
-        cfg.MetricExportIntervalMilliseconds = 30000;
     }, loggerFactory)
     .Build();
 
@@ -82,33 +81,29 @@ var attributes = new TagList
     { "my_label", "value1" }
 };
 
-// Record data. 
-// In the current configuration, all metrics will be exported every 30s.
+// Record a metric which will be exported to the provided Url.
 testCounter.Add(100, attributes);
 ```
 
-In addition to the `Url` and `ApiToken`, optional properties can be set on the `DynatraceExporterOptions` object, which are described in the [Configuration section](#configuration):
-
-- A `Prefix`, that is prepended to every metric key.
-- `DefaultDimensions`, which are added as dimensions to every exported metric
-- A toggle, `EnrichWithOneAgentMetadata`, which allows turning off the enrichment of metrics with host-specific information.
-  See [below](#dynatrace-api-endpoint) for more information.
-- The interval to export metrics `MetricExportIntervalMilliseconds`. Defaults to 30 seconds.
+The example below shows all the other optional properties that can be
+configured in the `DynatraceExporterOptions`.
+Read the [Configuration section](#configuration) to learn more about each of them.
 
 ```csharp
-var exporterOptions = new DynatraceExporterOptions()
-{
-    Url = "https://{your-environment-id}.live.dynatrace.com/api/v2/metrics/ingest",
-    ApiToken = "YOUR_API_TOKEN", // don't hardcode but read from a secure source
-    Prefix = "metric.key.prefix",
-    DefaultDimensions = new List<KeyValuePair<string, string>>()
+using var provider = Sdk.CreateMeterProviderBuilder()
+    .AddMeter(meter.Name)
+    .AddDynatraceExporter(cfg =>
     {
-        new KeyValuePair<string, string>("defaultDim1", "value1")
-        new KeyValuePair<string, string>("defaultDim2", "value2")
-    },
-    EnrichWithOneAgentMetadata = false,
-    MetricExportIntervalMilliseconds = 10000
-};
+        cfg.Prefix = "metric.key.prefix";
+        cfg.DefaultDimensions = new List<KeyValuePair<string, string>>()
+        {
+            new KeyValuePair<string, string>("defaultDim1", "value1"),
+            new KeyValuePair<string, string>("defaultDim2", "value2")
+        };
+        cfg.EnrichWithDynatraceMetadata = true;
+        cfg.MetricExportIntervalMilliseconds = 10000;
+    }, loggerFactory)
+    .Build();
 ```
 
 ## Example application
@@ -123,8 +118,11 @@ dotnet run
 
 Without any further configuration, the example app will try to export to a local OneAgent endpoint, which requires no authentication.
 More information about the local OneAgent endpoint can be found [below](#dynatrace-api-endpoint).
+
 The example app provides a number of command line options, which can be retrieved by running `dotnet run --project src/Examples.Console/Examples.Console.csproj -- --help`.
-Note the `--` separating the dotnet command and the parameters passed to the application - everything after the dashes is passed to the application.
+
+> Note the `--` separating the dotnet command and the parameters passed to the application. 
+  Everything after the dashes is passed to the application.
 
 If no local OneAgent is available, the app can be configured with [an endpoint](#dynatrace-api-endpoint) and [a metrics ingest token](#dynatrace-api-token) like this:
 
@@ -135,9 +133,13 @@ dotnet run -- -u "https://{your-environment-id}.live.dynatrace.com/api/v2/metric
 
 ## Configuration
 
-The exporter allows for configuring the following settings using the `DynatraceExporterOptions` object passed to the constructor:
+The `DynatraceExporterOptions` class contains all the available configuration.
+The `DynatraceExporterOptions` can be provided either via the `AddDynatraceExporter()` extension method
+on the `MeterProviderBuilder`, or by manually passing it to the `DynatraceMetricsExporter` constructor.
 
-### Dynatrace API Endpoint
+The `DynatraceExporterOptions` contains the following properties:
+
+### Dynatrace API Endpoint (`Url`)
 
 A OneAgent installed on the host can provide a local endpoint for ingesting metrics without the need for an API token.
 The [OneAgent metric API documentation](https://www.dynatrace.com/support/help/how-to-use-dynatrace/metrics/metric-ingestion/ingestion-methods/local-api/) provides information on how to enable the local OneAgent endpoint, if necessary.
@@ -150,7 +152,7 @@ The [metrics ingest endpoint URL](https://www.dynatrace.com/support/help/dynatra
 - `https://{your-environment-id}.live.dynatrace.com/api/v2/metrics/ingest` on SaaS deployments.
 - `https://{your-domain}/e/{your-environment-id}/api/v2/metrics/ingest` on managed deployments.
 
-### Dynatrace API Token
+### Dynatrace API Token (`ApiToken`)
 
 If metrics are not sent to the local OneAgent endpoint but directly to a Dynatrace server, an API token has to be provided for authentication.
 The Dynatrace API token to be used by the exporter can be specified using the `ApiToken` property.
@@ -163,13 +165,13 @@ and it is recommended to limit scope to only this permission:
 
 ![API token creation](docs/img/api_token.png)
 
-### Metric Key Prefix
+### Metric Key Prefix (`Prefix`)
 
 The `Prefix` property allows specifying an optional prefix, which is prepended to each metric key, separated by a dot (e.g. a prefix of `<prefix>` and a metric name of `<name>` will lead to a combined metric name of `<prefix>.<name>`).
 
 In the example, a prefix of `otel.dotnet` is used, which leads to metrics named `otel.dotnet.metric_name`, and allows for clear distinction between metrics from different sources in the Dynatrace metrics UI.
 
-### Default Dimensions
+### Default Dimensions (`DefaultDimensions`)
 
 The `DefaultDimensions` property can be used to optionally specify a `List<KeyValuePair<string, string>>`, which will be added as dimensions to all data points.
 Dimension keys will be normalized, de-duplicated, and only one dimension value per key will be sent to the server.
@@ -178,15 +180,22 @@ Dimensions set on instruments will overwrite default dimensions if they share th
 
 The reserved dimension `dt.metrics.source=opentelemetry` will automatically be added to every exported metric when using the exporter.
 
-### Export OneAgent Metadata
+### Enrich metrics with OneAgent Metadata (`EnrichWithDynatraceMetadata`)
 
-If the `OneAgentMetadataEnrichment` property is set to true, the exporter will retrieve host and process metadata from the OneAgent, if available, and set it as dimensions to all exported metrics.
-The `EnrichWithOneAgentMetaData` property on the options object can be used to disable OneAgent metadata export.
+If the `EnrichWithDynatraceMetadata` property is set to true, the exporter will retrieve host and process metadata from the OneAgent, if available, and set it as dimensions to all exported metrics.
+The `EnrichWithDynatraceMetadata` property on the options object can be used to disable OneAgent metadata export.
 If running on a host with a OneAgent, setting this option will instruct the exporter to read and export metadata collected by the OneAgent to the Dynatrace endpoint.
 This option is set to `true` by default.
 If the OneAgent is running locally, but this option is set to false, no OneAgent metadata will be exported.
 More information on the underlying OneAgent feature that is used by the exporter can be found in the
 [Dynatrace documentation](https://www.dynatrace.com/support/help/how-to-use-dynatrace/metrics/metric-ingestion/ingestion-methods/enrich-metrics/).
+
+### Export interval (`MetricExportIntervalMilliseconds`)
+
+The interval to collect metrics. This value is passed and used by the 
+[Periodic Metric Reader](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/sdk.md#periodic-exporting-metricreader).
+
+This option is set to **30 seconds** (30000 ms) by default.
 
 ## Known issues and limitations
 

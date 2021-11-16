@@ -64,7 +64,7 @@ namespace Examples.Console
 					{
 						cfg.Url = runOptions.Url;
 					}
-				})
+				}, _loggerFactory)
 				.Build();
 
 			var testCounter = meter.CreateCounter<long>("my_counter");
