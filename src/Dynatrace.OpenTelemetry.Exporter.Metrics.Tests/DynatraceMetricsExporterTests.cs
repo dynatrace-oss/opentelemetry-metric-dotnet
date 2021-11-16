@@ -649,7 +649,95 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 		[Fact]
 		public async Task Export_Histogram()
 		{
-			Assert.True(false);
+			// Arrange
+			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
+
+			HttpRequestMessage actualRequestMessage = null!;
+			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
+
+			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
+
+			// Delta is already the preferred temporality for our exporter
+			var metricReader = new TestMetricReader(sut);
+			using var provider = Sdk.CreateMeterProviderBuilder()
+				.AddMeter(meter.Name)
+				.AddReader(metricReader)
+				.Build();
+
+			// default bounds are 0, 5, 10, 25, 50, 75, 100, 250, 500
+			var histogram = meter.CreateHistogram<long>("histogram");
+
+			histogram.Record(1, _attributes);
+			histogram.Record(6, _attributes);
+			histogram.Record(11, _attributes);
+			histogram.Record(21, _attributes);
+
+			// Act - Reader will call our exporter
+			metricReader.Collect();
+
+			// Assert
+			var exportedMetrics = metricReader.GetExportedMetrics();
+			var point = MetricTest.FromMetricPoints(exportedMetrics.First().GetMetricPoints()).First();
+
+			var expected = $"histogram,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry gauge,min=0,max=25,sum=39,count=4 {point.TimeStamp}";
+			var actualMetricString = await actualRequestMessage.Content!.ReadAsStringAsync();
+			Assert.Equal(expected, actualMetricString);
+
+			mockMessageHandler.Protected().Verify(
+				"SendAsync",
+				Times.Exactly(1),
+				ItExpr.IsAny<HttpRequestMessage>(),
+				ItExpr.IsAny<CancellationToken>());
+
+			AssertExportRequest(actualRequestMessage);
+		}
+
+		[Fact]
+		public async Task Export_Histogram_CustomBounds()
+		{
+			// Arrange
+			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
+
+			HttpRequestMessage actualRequestMessage = null!;
+			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
+
+			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
+
+			// Delta is already the preferred temporality for our exporter
+			var metricReader = new TestMetricReader(sut);
+			using var provider = Sdk.CreateMeterProviderBuilder()
+				.AddMeter(meter.Name)
+				.AddReader(metricReader)
+				.AddView(
+				instrumentName: "histogram",
+				new HistogramConfiguration { BucketBounds = new double[] { 0.1, 1.2, 3.4, 5.6 } })
+				.Build();
+
+			var histogram = meter.CreateHistogram<double>("histogram");
+
+			histogram.Record(0.2, _attributes);
+			histogram.Record(1.4, _attributes);
+			histogram.Record(2, _attributes);
+			histogram.Record(4, _attributes);
+
+			// Act - Reader will call our exporter
+			metricReader.Collect();
+
+			// Assert
+			var exportedMetrics = metricReader.GetExportedMetrics();
+			var point = MetricTest.FromMetricPoints(exportedMetrics.First().GetMetricPoints()).First();
+
+			var expected = $"histogram,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry gauge,min=0.1,max=5.6,sum=7.6,count=4 {point.TimeStamp}";
+			var actualMetricString = await actualRequestMessage.Content!.ReadAsStringAsync();
+			Assert.Equal(expected, actualMetricString);
+
+			mockMessageHandler.Protected().Verify(
+				"SendAsync",
+				Times.Exactly(1),
+				ItExpr.IsAny<HttpRequestMessage>(),
+				ItExpr.IsAny<CancellationToken>());
+
+			AssertExportRequest(actualRequestMessage);
 		}
 
 		[Fact]

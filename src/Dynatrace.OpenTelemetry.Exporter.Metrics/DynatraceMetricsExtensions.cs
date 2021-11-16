@@ -107,7 +107,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 
 			for (var i = 0; i < pointData.BucketCounts.Length; i++)
 			{
-				if (pointData.BucketCounts[0] > 0)
+				if (pointData.BucketCounts[i] > 0)
 				{
 					// the current bucket contains something.
 					if (i == 0)
