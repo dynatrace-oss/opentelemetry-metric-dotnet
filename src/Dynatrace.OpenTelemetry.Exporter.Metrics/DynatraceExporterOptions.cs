@@ -59,8 +59,8 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 		public bool EnrichWithDynatraceMetadata { get; set; } = true;
 
 		/// <summary>
-		/// Gets or sets the metric export interval in milliseconds. The default value is 30000 milliseconds.
+		/// Gets or sets the metric export interval in milliseconds. The default value is 1 minute (60000 ms).
 		/// </summary>
-		public int MetricExportIntervalMilliseconds { get; set; } = 30000;
+		public int MetricExportIntervalMilliseconds { get; set; } = 60000;
 	}
 }

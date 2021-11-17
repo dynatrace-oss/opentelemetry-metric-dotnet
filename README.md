@@ -42,7 +42,7 @@ var attributes = new TagList
 };
 
 // Record a metric. The export interval can be configured during the AddDynatraceExporter() call above.
-// By default, all metrics will be exported to the local OneAgent endpoint every 30 seconds.
+// By default, metrics are exported in an interval of 1 minute (60000ms).
 testCounter.Add(100, attributes);
 ```
 
@@ -147,7 +147,7 @@ Using the local API endpoint, the host ID and host name context are automaticall
 
 If no OneAgent is running on the host or if metrics should be sent to a different endpoint, the `Url` property allows for setting that endpoint.
 
-The [metrics ingest endpoint URL](https://www.dynatrace.com/support/help/dynatrace-api/environment-api/metric-v2/post-ingest-metrics/) looks like:
+The [metrics ingest endpoint URL](https://www.dynatrace.com/support/help/dynatrace-api/environment-api/metric-v2/post-ingest-metrics/) follows the current format:
 
 - `https://{your-environment-id}.live.dynatrace.com/api/v2/metrics/ingest` on SaaS deployments.
 - `https://{your-domain}/e/{your-environment-id}/api/v2/metrics/ingest` on managed deployments.
@@ -195,10 +195,25 @@ More information on the underlying OneAgent feature that is used by the exporter
 The interval to collect metrics. This value is passed and used by the 
 [Periodic Metric Reader](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/sdk.md#periodic-exporting-metricreader).
 
-This option is set to **30 seconds** (30000 ms) by default.
+This option is set to **1 minute** (60000ms) by default.
 
 ## Known issues and limitations
 
 The OpenTelemetry Metrics SDK currently does not allow exporters to distinguish between values received from counters and those received from observers.
 Counter values are passed to the exporter as deltas to the last export whereas for observers, the current value is reported.
 For this exporter, we decided to properly support counters and thus send the received values marked as deltas, which will lead to wrong values being reported for observers.
+
+#### Typed attributes support
+
+The OpenTelemetry specification has a concept of
+[Attributes](
+https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/common/common.md#attributes).
+These attributes consist of key-value pairs, where the keys are strings
+and the values are either primitive types or arrays of uniform primitive types.
+
+The OpenTelemetry .NET SDK implementation of this works with a `KeyValuePair<string, object>`, meaning the `value `can be of any type.
+
+At the moment, this exporter **only supports attributes with a string value type**.
+This means that if attributes of any other type are used,
+they will be **ignored** and **only** the string-valued attributes
+are going to be sent to Dynatrace.
