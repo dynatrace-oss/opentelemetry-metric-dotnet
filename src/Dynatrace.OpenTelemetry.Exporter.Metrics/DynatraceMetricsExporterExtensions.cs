@@ -27,7 +27,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 		/// </summary>
 		/// <remarks>
 		/// The exporter is configured together with a <see cref="PeriodicExportingMetricReader"/>.
-		/// By default, the export interval is 1000ms. It can be customized via the
+		/// By default, the export interval is 1 minute (60000ms). It can be customized via the
 		/// <see cref="DynatraceExporterOptions.MetricExportIntervalMilliseconds"/> property.
 		/// </remarks>
 		/// <param name="builder"><see cref="MeterProviderBuilder"/> builder to use.</param>

@@ -20,7 +20,7 @@ using OpenTelemetry.Metrics;
 namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests.Utils
 {
 	/// <summary>
-	/// An exporter to be used for tests. It holds the exported items and export result internally.
+	/// A <see cref="MetricReader"/> to be used for tests. It holds the exported items and the export result internally.
 	/// Useful to use for test assertion.
 	/// </summary>
 	internal class TestMetricReader : BaseExportingMetricReader

@@ -21,6 +21,11 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 {
 	internal class TestUtils
 	{
+		/// <summary>
+		/// From: https://github.com/open-telemetry/opentelemetry-dotnet/blob/main/test/OpenTelemetry.Tests/Shared/Utils.cs
+		/// Used to create meters for each test using the method name as the meter name.
+		/// </summary>
+		/// <returns></returns>
 		[MethodImpl(MethodImplOptions.NoInlining)]
 		public static string GetCurrentMethodName()
 		{
