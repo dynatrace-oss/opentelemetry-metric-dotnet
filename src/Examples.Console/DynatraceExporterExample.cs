@@ -20,7 +20,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
-using OpenTelemetry.Trace;
 using Dynatrace.OpenTelemetry.Exporter.Metrics;
 using System.Diagnostics.Metrics;
 

@@ -134,10 +134,6 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 
 		private IReadOnlyCollection<string> GetSerializedMetricPoints(Metric metric)
 		{
-			// TODO: Try to send a PR to get a .Count of the metric points
-			// so we can allocate only the necessary in the list. Similar as in:
-			// https://github.com/open-telemetry/opentelemetry-dotnet/pull/2542/files
-
 			var lines = new List<string>();
 			foreach (var metricPoint in metric.GetMetricPoints())
 			{
@@ -169,10 +165,6 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 					{
 						lines.Add(_serializer.SerializeMetric(dtMetric));
 					}
-				}
-				catch (DynatraceMetricException dtEx)
-				{
-					_logger.FailedToSerializeMetric(metric.Name, dtEx);
 				}
 				catch (Exception ex)
 				{

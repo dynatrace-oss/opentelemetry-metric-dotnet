@@ -42,14 +42,14 @@ var attributes = new TagList
 };
 
 // Record a metric. The export interval can be configured during the AddDynatraceExporter() call above.
-// By default, metrics are exported in an interval of 1 minute (60000ms).
+// By default, metrics are exported in 1 minute intervals (60000ms).
 testCounter.Add(100, attributes);
 ```
 
 If no local OneAgent is available or metrics should be exported directly to the backend, the `DynatraceMetricsExporter` can be set up with an endpoint and an API token.
 
-> The 'Ingest metrics' (`metrics.ingest`) permission is required for the token,
- and it is recommended to restrict the token access to that scope.
+The 'Ingest metrics' (`metrics.ingest`) permission is required for the token,
+and it is recommended to restrict the token access to that scope.
 More information about the token setup can be found [here](#dynatrace-api-token).
 
 ```csharp
@@ -121,8 +121,8 @@ More information about the local OneAgent endpoint can be found [below](#dynatra
 
 The example app provides a number of command line options, which can be retrieved by running `dotnet run --project src/Examples.Console/Examples.Console.csproj -- --help`.
 
-> Note the `--` separating the dotnet command and the parameters passed to the application. 
-  Everything after the dashes is passed to the application.
+Note the `--` separating the dotnet command and the parameters passed to the application.
+Everything after the dashes is passed to the application.
 
 If no local OneAgent is available, the app can be configured with [an endpoint](#dynatrace-api-endpoint) and [a metrics ingest token](#dynatrace-api-token) like this:
 
@@ -137,7 +137,7 @@ The `DynatraceExporterOptions` class contains all the available configuration.
 The `DynatraceExporterOptions` can be provided either via the `AddDynatraceExporter()` extension method
 on the `MeterProviderBuilder`, or by manually passing it to the `DynatraceMetricsExporter` constructor.
 
-The `DynatraceExporterOptions` contains the following properties:
+The `DynatraceExporterOptions` class contains the following properties:
 
 ### Dynatrace API Endpoint (`Url`)
 
@@ -147,7 +147,7 @@ Using the local API endpoint, the host ID and host name context are automaticall
 
 If no OneAgent is running on the host or if metrics should be sent to a different endpoint, the `Url` property allows for setting that endpoint.
 
-The [metrics ingest endpoint URL](https://www.dynatrace.com/support/help/dynatrace-api/environment-api/metric-v2/post-ingest-metrics/) follows the current format:
+The [metrics ingest endpoint URL](https://www.dynatrace.com/support/help/dynatrace-api/environment-api/metric-v2/post-ingest-metrics/) follows the format:
 
 - `https://{your-environment-id}.live.dynatrace.com/api/v2/metrics/ingest` on SaaS deployments.
 - `https://{your-domain}/e/{your-environment-id}/api/v2/metrics/ingest` on managed deployments.
@@ -180,13 +180,13 @@ Dimensions set on instruments will overwrite default dimensions if they share th
 
 The reserved dimension `dt.metrics.source=opentelemetry` will automatically be added to every exported metric when using the exporter.
 
-### Enrich metrics with OneAgent Metadata (`EnrichWithDynatraceMetadata`)
+### Enrich metrics with Dynatrace Metadata (`EnrichWithDynatraceMetadata`)
 
 If the `EnrichWithDynatraceMetadata` property is set to true, the exporter will retrieve host and process metadata from the OneAgent, if available, and set it as dimensions to all exported metrics.
-The `EnrichWithDynatraceMetadata` property on the options object can be used to disable OneAgent metadata export.
+The `EnrichWithDynatraceMetadata` property on the options object can be used to disable Dynatrace metadata export.
 If running on a host with a OneAgent, setting this option will instruct the exporter to read and export metadata collected by the OneAgent to the Dynatrace endpoint.
 This option is set to `true` by default.
-If the OneAgent is running locally, but this option is set to false, no OneAgent metadata will be exported.
+If the OneAgent is running locally, but this option is set to false, no Dynatrace metadata will be exported.
 More information on the underlying OneAgent feature that is used by the exporter can be found in the
 [Dynatrace documentation](https://www.dynatrace.com/support/help/how-to-use-dynatrace/metrics/metric-ingestion/ingestion-methods/enrich-metrics/).
 

@@ -25,7 +25,7 @@ namespace Examples.Console
 		{
 			await Parser.Default.ParseArguments<Options>(args)
 				.MapResult(
-				(Options options) => DynatraceExporterExample.RunAsync(options), errs => Task.FromResult(0));
+				(Options options) => DynatraceExporterExample.RunAsync(options), _ => Task.FromResult(1));
 		}
 	}
 
@@ -44,7 +44,7 @@ namespace Examples.Console
 		[Option('t', "token", HelpText = "Dynatrace API authentication token with the 'metrics.ingest' permission.", Required = false)]
 		public string ApiToken { get; set; }
 
-		[Option('n', "enableDynatraceMetadataEnrichment", Default = true, HelpText = "Enables automatic label enrichment via Dynatrace metadata.", Required = false)]
+		[Option('m', "enableDynatraceMetadataEnrichment", Default = true, HelpText = "Enables automatic label enrichment via Dynatrace metadata.", Required = false)]
 		public bool EnableDynatraceMetadataEnrichment { get; set; }
 	}
 }

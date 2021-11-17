@@ -26,7 +26,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests.Utils
 	internal class TestMetricReader : BaseExportingMetricReader
 	{
 		protected readonly BaseExporter<Metric> _exporter;
-		private readonly List<Metric> _exportedItems = new();
+		private List<Metric> _exportedItems = new();
 
 		public TestMetricReader(BaseExporter<Metric> exporter)
 			: base(exporter)
@@ -48,6 +48,12 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests.Utils
 			return ExportResult == ExportResult.Success;
 		}
 
-		internal List<Metric> GetExportedMetrics() => _exportedItems;
+		internal List<Metric> GetExportedMetrics()
+		{
+			var result = _exportedItems;
+			_exportedItems = new List<Metric>();
+
+			return result;
+		}
 	}
 }

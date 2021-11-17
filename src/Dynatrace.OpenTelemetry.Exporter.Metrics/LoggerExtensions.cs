@@ -27,58 +27,33 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 	/// </summary>
 	internal static class LoggerExtensions
 	{
-		private static Action<ILogger, string, Exception> _dynatraceMetricUrl;
-		private static Action<ILogger, MetricType, Exception> _unknownMetricType;
-		private static Action<ILogger, HttpStatusCode, string, Exception> _sendMetricErrorResponse;
-		private static Action<ILogger, Exception> _sendMetricException;
-		private static Action<ILogger, string, Exception> _serializeMetricException;
-		private static Action<ILogger, string, Exception> _unsupportedMetricType;
-		private static Action<ILogger, string, Exception> _receivedCumulativeValue;
+		private static readonly Action<ILogger, string, Exception> _dynatraceMetricUrl =
+			LoggerMessage.Define<string>(LogLevel.Debug, new EventId(1, nameof(DynatraceMetricUrl)),
+				"Dynatrace Metrics Url: {Url}");
 
-		static LoggerExtensions()
-		{
-			_dynatraceMetricUrl = LoggerMessage.Define<string>(
-				LogLevel.Debug,
-				new EventId(1, nameof(DynatraceMetricUrl)),
-				"Dynatrace Metrics Url: {Url}"
-				);
+		private static readonly Action<ILogger, MetricType, Exception> _unknownMetricType =
+			LoggerMessage.Define<MetricType>(LogLevel.Warning, new EventId(2, nameof(InvalidMetricType)),
+				"Tried to serialize metric of type {MetricType}. The Dynatrace metrics exporter does not handle metrics of that type at this time.");
 
-			_unknownMetricType = LoggerMessage.Define<MetricType>(
-				LogLevel.Warning,
-				new EventId(2, nameof(InvalidMetricType)),
-				"Tried to serialize metric of type {MetricType}. The Dynatrace metrics exporter does not handle metrics of that type at this time."
-				);
+		private static readonly Action<ILogger, HttpStatusCode, string, Exception> _sendMetricErrorResponse =
+			LoggerMessage.Define<HttpStatusCode, string>(LogLevel.Error, new EventId(3, nameof(ReceivedErrorResponse)),
+				"Received an error response while sending metrics. StatusCode: {StatusCode} Response: {Response}");
 
-			_sendMetricErrorResponse = LoggerMessage.Define<HttpStatusCode, string>(
-				LogLevel.Error,
-				new EventId(3, nameof(ReceivedErrorResponse)),
-				"Received an error response while sending metrics. StatusCode: {StatusCode} Response: {Response}"
-				);
+		private static readonly Action<ILogger, Exception> _sendMetricException =
+			LoggerMessage.Define(LogLevel.Error, new EventId(4, nameof(FailedSendingMetricLines)),
+				"Error sending metrics to Dynatrace.");
 
-			_sendMetricException = LoggerMessage.Define(
-				LogLevel.Error,
-				new EventId(4, nameof(FailedSendingMetricLines)),
-				"Error sending metrics to Dynatrace."
-				);
+		private static readonly Action<ILogger, string, Exception> _serializeMetricException =
+			LoggerMessage.Define<string>(LogLevel.Warning, new EventId(5, nameof(FailedToSerializeMetric)),
+				"Skipping metric with the original name '{MetricName}'");
 
-			_serializeMetricException = LoggerMessage.Define<string>(
-				LogLevel.Warning,
-				new EventId(5, nameof(FailedToSerializeMetric)),
-				"Skipping metric with the original name '{MetricName}'"
-				);
+		private static readonly Action<ILogger, string, Exception> _unsupportedMetricType =
+			LoggerMessage.Define<string>(LogLevel.Warning, new EventId(6, nameof(UnsupportedMetricType)),
+				"Skipping unsupported dimension with value type '{MetricType}'");
 
-			_unsupportedMetricType = LoggerMessage.Define<string>(
-				LogLevel.Warning,
-				new EventId(6, nameof(UnsupportedMetricType)),
-				"Skipping unsupported dimension with value type '{MetricType}'"
-				);
-
-			_receivedCumulativeValue = LoggerMessage.Define<string>(
-				LogLevel.Warning,
-				new EventId(7, nameof(ReceivedCumulativeValue)),
-				"Received metric: '{MetricName}' with cumulative aggregation temporality. Exporting as gauge"
-				);
-		}
+		private static readonly Action<ILogger, string, Exception> _receivedCumulativeValue =
+			LoggerMessage.Define<string>(LogLevel.Warning, new EventId(7, nameof(ReceivedCumulativeValue)),
+				"Received metric: '{MetricName}' with cumulative aggregation temporality. Exporting as gauge");
 
 		internal static void DynatraceMetricUrl(this ILogger logger, string url)
 			=> _dynatraceMetricUrl(logger, url, null);

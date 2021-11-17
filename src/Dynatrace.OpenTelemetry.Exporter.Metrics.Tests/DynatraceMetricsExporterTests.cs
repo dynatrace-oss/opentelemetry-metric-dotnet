@@ -81,7 +81,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 		}
 
 		[Fact]
-		public void Export_ReceivedErroFromServer_ReturnsFailedExportResult()
+		public void Export_ReceivedErrorFromServer_ReturnsFailedExportResult()
 		{
 			// Arrange
 			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
@@ -147,7 +147,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 		}
 
 		[Fact]
-		public async Task Export_WithUriAndTokenOptions_ShouldSendReqeustToUrlWithToken()
+		public async Task Export_WithUriAndTokenOptions_ShouldSendRequestToUrlWithToken()
 		{
 			// Arrange
 			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
@@ -284,8 +284,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 			// Arrange
 			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
 
-			HttpRequestMessage actualRequestMessage = null!;
-			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
+			var mockMessageHandler = SetupHttpMock();
 			var mockLogger = new Mock<ILogger<DynatraceMetricsExporter>>();
 			mockLogger.Setup(x => x.IsEnabled(LogLevel.Warning)).Returns(true);
 
@@ -991,7 +990,7 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 		}
 
 		private static Mock<HttpMessageHandler> SetupHttpMock(
-			Action<HttpRequestMessage> setter,
+			Action<HttpRequestMessage>? setter = null,
 			HttpStatusCode? statusCode = null,
 			HttpContent? content = null)
 		{
@@ -1006,8 +1005,10 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 				})
 				.Callback((HttpRequestMessage r, CancellationToken _) =>
 				{
-					setter(r);
+					setter?.Invoke(r);
 				});
+
+
 
 			return mockMessageHandler;
 		}

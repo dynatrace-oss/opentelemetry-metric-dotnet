@@ -17,7 +17,7 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
-namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
+namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests.Utils
 {
 	internal class TestUtils
 	{
