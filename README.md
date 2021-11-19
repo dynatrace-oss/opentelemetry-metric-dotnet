@@ -199,11 +199,7 @@ This option is set to **1 minute** (60000ms) by default.
 
 ## Known issues and limitations
 
-The OpenTelemetry Metrics SDK currently does not allow exporters to distinguish between values received from counters and those received from observers.
-Counter values are passed to the exporter as deltas to the last export whereas for observers, the current value is reported.
-For this exporter, we decided to properly support counters and thus send the received values marked as deltas, which will lead to wrong values being reported for observers.
-
-#### Typed attributes support
+### Typed attributes support
 
 The OpenTelemetry specification has a concept of
 [Attributes](
