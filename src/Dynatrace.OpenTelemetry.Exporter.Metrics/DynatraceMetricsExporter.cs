@@ -31,7 +31,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 	/// https://www.dynatrace.com/support/help/how-to-use-dynatrace/metrics/metric-ingestion/metric-ingestion-protocol/
 	/// https://www.dynatrace.com/support/help/dynatrace-api/environment-api/metric-v2/post-ingest-metrics
 	/// </summary>
-	[AggregationTemporality(AggregationTemporality.Cumulative | AggregationTemporality.Delta, AggregationTemporality.Delta)]
+	[AggregationTemporality(AggregationTemporality.Delta)]
 	public class DynatraceMetricsExporter : BaseExporter<Metric>
 	{
 		private readonly DynatraceExporterOptions _options;

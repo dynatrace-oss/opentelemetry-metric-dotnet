@@ -24,71 +24,33 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 {
 	internal static class DynatraceMetricsExtensions
 	{
-		// Used to reduce the amount of log messages generated
-		// when receiving metrics with cumulative aggregation temporality
-		// The exporter runs on a separated-single thread.
-		private static readonly short CumulativeMetricLogIntervalHours = 1;
-		private static DateTimeOffset? CumulativeMetricLastSeen = null;
-
 		public static DynatraceMetric ToLongCounterDelta(this Metric metric, MetricPoint metricPoint, ILogger logger)
-		{
-			if (metric.Temporality == AggregationTemporality.Cumulative)
-			{
-				LogCumulativeReceived(metric.Name, logger);
-
-				// TODO: Perform cumulative -> delta conversion
-				return DynatraceMetricsFactory.CreateLongGauge(
-					metric.Name,
-					metricPoint.LongValue,
-					metricPoint.GetAttributes(logger),
-					metricPoint.EndTime.UtcDateTime);
-			}
-
-			return DynatraceMetricsFactory.CreateLongCounterDelta(
+			=> DynatraceMetricsFactory.CreateLongCounterDelta(
 				metric.Name,
 				metricPoint.LongValue,
 				metricPoint.GetAttributes(logger),
 				metricPoint.EndTime.UtcDateTime);
-		}
 
 		public static DynatraceMetric ToDoubleCounterDelta(this Metric metric, MetricPoint metricPoint, ILogger logger)
-		{
-			if (metric.Temporality == AggregationTemporality.Cumulative)
-			{
-				LogCumulativeReceived(metric.Name, logger);
-
-				// TODO: Perform cumulative -> delta conversion
-				return DynatraceMetricsFactory.CreateDoubleGauge(
-					metric.Name,
-					metricPoint.DoubleValue,
-					metricPoint.GetAttributes(logger),
-					metricPoint.EndTime.UtcDateTime);
-			}
-			
-			return DynatraceMetricsFactory.CreateDoubleCounterDelta(
+			=> DynatraceMetricsFactory.CreateDoubleCounterDelta(
 				metric.Name,
 				metricPoint.DoubleValue,
 				metricPoint.GetAttributes(logger),
 				metricPoint.EndTime.UtcDateTime);
-		}
 
 		public static DynatraceMetric ToLongGauge(this Metric metric, MetricPoint metricPoint, ILogger logger)
-		{
-			return DynatraceMetricsFactory.CreateLongGauge(
+			=> DynatraceMetricsFactory.CreateLongGauge(
 				metric.Name,
 				metricPoint.LongValue,
 				metricPoint.GetAttributes(logger),
 				metricPoint.EndTime.UtcDateTime);
-		}
 
 		public static DynatraceMetric ToDoubleGauge(this Metric metric, MetricPoint metricPoint, ILogger logger)
-		{
-			return DynatraceMetricsFactory.CreateDoubleGauge(
+			=> DynatraceMetricsFactory.CreateDoubleGauge(
 				metric.Name,
 				metricPoint.DoubleValue,
 				metricPoint.GetAttributes(logger),
 				metricPoint.EndTime.UtcDateTime);
-		}
 
 		public static DynatraceMetric ToDoubleHistogram(this Metric metric, MetricPoint metricPoint, ILogger logger)
 		{
@@ -205,16 +167,6 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 				{
 					yield return new KeyValuePair<string, string>(metricPoint.Keys[i], value.ToString());
 				}
-			}
-		}
-
-		private static void LogCumulativeReceived(string metricName, ILogger logger)
-		{
-			if (CumulativeMetricLastSeen == null ||
-				CumulativeMetricLastSeen.Value.AddHours(CumulativeMetricLogIntervalHours) > DateTimeOffset.UtcNow)
-			{
-				logger.ReceivedCumulativeValue(metricName);
-				CumulativeMetricLastSeen = DateTimeOffset.UtcNow;
 			}
 		}
 	}
