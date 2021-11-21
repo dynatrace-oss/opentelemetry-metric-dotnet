@@ -331,36 +331,74 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 		public void Export_OverrideAggregationTemporality_ShouldThrowArgumentException()
 		{
 			// Arrange
-			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
-
-			HttpRequestMessage actualRequestMessage = null!;
-			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
-			var mockLogger = new Mock<ILogger<DynatraceMetricsExporter>>();
-			mockLogger.Setup(x => x.IsEnabled(LogLevel.Warning)).Returns(true);
-
-			var sut = new DynatraceMetricsExporter(null, mockLogger.Object, new HttpClient(mockMessageHandler.Object));
+			var sut = new DynatraceMetricsExporter();
 
 			// It should not be possible to override the reader with a different temporality
 			// https://github.com/open-telemetry/opentelemetry-specification/blob/v1.8.0/specification/metrics/sdk.md#temporality-override-rules
-			var ex = Assert.Throws<ArgumentException>(() => new TestMetricReader(sut)
+			var ex = Assert.Throws<ArgumentException>(() => new PeriodicExportingMetricReader(sut)
 			{
 				PreferredAggregationTemporality = AggregationTemporality.Cumulative
 			});
 
-			Assert.Equal(
-				"PreferredAggregationTemporality Cumulative and SupportedAggregationTemporality Delta are incompatible.",
+			Assert.Contains(
+				"PreferredAggregationTemporality Cumulative and SupportedAggregationTemporality Delta are incompatible",
 				ex.Message);
 
 			// It should not be possible to override the reader with a different temporality
 			// https://github.com/open-telemetry/opentelemetry-specification/blob/v1.8.0/specification/metrics/sdk.md#temporality-override-rules
-			ex = Assert.Throws<ArgumentException>(() => new TestMetricReader(sut)
+			ex = Assert.Throws<ArgumentException>(() => new PeriodicExportingMetricReader(sut)
 			{
 				SupportedAggregationTemporality = AggregationTemporality.Cumulative
 			});
 
-			Assert.Equal(
-				"PreferredAggregationTemporality Delta and SupportedAggregationTemporality Cumulative are incompatible.",
+			Assert.Contains(
+				"PreferredAggregationTemporality Delta and SupportedAggregationTemporality Cumulative are incompatible",
 				ex.Message);
+		}
+
+		[Fact]
+		public async Task Export_SecondCumulativeMetricReader_DynatraceExporterUsesDelta()
+		{
+			// Arrange
+			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
+
+			HttpRequestMessage actualRequestMessage = null!;
+			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
+
+			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
+
+			var metricReader = new TestMetricReader(sut);
+			using var provider = Sdk.CreateMeterProviderBuilder()
+				.AddMeter(meter.Name)
+				.AddReader(metricReader)
+				// configure another reader with Cumulative aggregation
+				.AddConsoleExporter(opt => opt.AggregationTemporality = AggregationTemporality.Cumulative)
+				.Build();
+
+			var counter = meter.CreateCounter<int>("counter");
+
+			for (var i = 10; i <= 30; i += 10)
+			{
+				counter.Add(i, _attributes);
+
+				metricReader.Collect();
+
+				// Assert
+				var exportedMetrics = metricReader.GetExportedMetrics();
+				var point = MetricTest.FromMetricPoints(exportedMetrics.First().GetMetricPoints()).First();
+
+				var expected = $"counter,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta={i} {point.TimeStamp}";
+				var actualMetricString = await actualRequestMessage.Content!.ReadAsStringAsync();
+				Assert.Equal(expected, actualMetricString);
+
+				AssertExportRequest(actualRequestMessage);
+			}
+
+			mockMessageHandler.Protected().Verify(
+				"SendAsync",
+				Times.Exactly(3),
+				ItExpr.IsAny<HttpRequestMessage>(),
+				ItExpr.IsAny<CancellationToken>());
 		}
 
 		[Fact]
@@ -792,7 +830,7 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 				.AddReader(metricReader)
 				.AddView(
 				instrumentName: "histogram",
-				new HistogramConfiguration { BucketBounds = new double[] { 0.1, 1.2, 3.4, 5.6 } })
+				new ExplicitBucketHistogramConfiguration { Boundaries = new double[] { 0.1, 1.2, 3.4, 5.6 } })
 				.Build();
 
 			var histogram = meter.CreateHistogram<double>("histogram");

@@ -36,7 +36,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests.Utils
 
 		public ExportResult ExportResult { get; private set; }
 
-		protected override bool ProcessMetrics(Batch<Metric> metrics, int timeoutMilliseconds)
+		protected override bool ProcessMetrics(in Batch<Metric> metrics, int timeoutMilliseconds)
 		{
 			foreach (var data in metrics)
 			{
