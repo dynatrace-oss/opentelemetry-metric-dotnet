@@ -590,6 +590,9 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 				.AddReader(metricReader)
 				.Build();
 
+			// When exported twice, this obs counter will output
+			// 10 -> 20. Since we expect deltas to be calculated by the SDK
+			// we assert both exports to be 10
 			var i = 1;
 			var observableCounter = meter.CreateObservableCounter("obs_counter", () =>
 			{
@@ -643,6 +646,9 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 				.AddReader(metricReader)
 				.Build();
 
+			// When exported twice, this obs counter will output
+			// 10.3 -> 20.6. Since we expect deltas to be calculated by the SDK
+			// we assert both exports to be 10.3
 			var i = 1;
 			var observableCounter = meter.CreateObservableCounter("double_obs_counter", () =>
 			{
