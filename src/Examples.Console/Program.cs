@@ -15,6 +15,7 @@
 // </copyright>
 
 using CommandLine;
+using System;
 using System.Threading.Tasks;
 
 namespace Examples.Console
@@ -23,19 +24,21 @@ namespace Examples.Console
 	{
 		public static async Task Main(string[] args)
 		{
-			await Parser.Default.ParseArguments<Options>(args)
+			var	result = await Parser.Default.ParseArguments<Options>(args)
 				.MapResult(
 				(Options options) => DynatraceExporterExample.RunAsync(options), _ => Task.FromResult(1));
+
+			Environment.Exit(result);
 		}
 	}
 
 	[Verb("dynatrace", HelpText = "Specify the options required to test Dynatrace")]
 	internal class Options
 	{
-		[Option('i', "exportIntervalMilliseconds", Default = 1000, HelpText = "The interval at which metrics are exported to Dynatrace.", Required = false)]
+		[Option('i', "exportIntervalMillis", Default = 1000, HelpText = "The interval at which metrics are exported to Dynatrace.", Required = false)]
 		public int ExportIntervalMilliseconds { get; set; }
 
-		[Option('d', "duration", Default = 2, HelpText = "Total duration in minutes to run the demo. Run at least for one minute to see metrics flowing.", Required = false)]
+		[Option('d', "durationMins", Default = 2, HelpText = "Total duration in minutes to run the demo. Run at least for one minute to see metrics flowing.", Required = false)]
 		public int DurationInMins { get; set; }
 
 		[Option('u', "url", HelpText = "Dynatrace metrics ingest API URL, including the '/api/v2/metrics/ingest' suffix. If not specified, the local OneAgent endpoint will be used.", Required = false)]
@@ -44,7 +47,7 @@ namespace Examples.Console
 		[Option('t', "token", HelpText = "Dynatrace API authentication token with the 'metrics.ingest' permission.", Required = false)]
 		public string ApiToken { get; set; }
 
-		[Option('m', "enableDynatraceMetadataEnrichment", Default = true, HelpText = "Enables automatic label enrichment via Dynatrace metadata.", Required = false)]
+		[Option('m', "dtMetadataEnrichment", Default = true, HelpText = "Enables automatic label enrichment via Dynatrace metadata.", Required = false)]
 		public bool EnableDynatraceMetadataEnrichment { get; set; }
 	}
 }
