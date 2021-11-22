@@ -14,106 +14,100 @@
 // limitations under the License.
 // </copyright>
 
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
-using OpenTelemetry.Metrics.Export;
-using OpenTelemetry.Trace;
 using Dynatrace.OpenTelemetry.Exporter.Metrics;
+using System.Diagnostics.Metrics;
 
 namespace Examples.Console
 {
 	internal class DynatraceExporterExample
 	{
-		internal static async Task<int> RunAsync(string url, string apiToken, int pushIntervalInSecs, int totalDurationInMins, bool dynatraceMetadataEnrichment)
+		private static readonly ILoggerFactory _loggerFactory = LoggerFactory.Create(builder =>
 		{
-			ILoggerFactory loggerFactory = LoggerFactory.Create(builder =>
-			{
-				builder.SetMinimumLevel(LogLevel.Debug)
-						.AddConsole();
-			});
-			var logger = loggerFactory.CreateLogger<DynatraceExporterExample>();
+			builder.SetMinimumLevel(LogLevel.Debug).AddConsole();
+		});
 
-			var options = new DynatraceExporterOptions
+		private static readonly ILogger _logger = _loggerFactory.CreateLogger<DynatraceExporterExample>();
+
+		internal static async Task<int> RunAsync(Options runOptions)
+		{
+			if (runOptions.Url == null)
 			{
-				ApiToken = apiToken,
-				EnrichWithDynatraceMetadata = dynatraceMetadataEnrichment,
-				DefaultDimensions = new Dictionary<string, string> { { "default1", "defval1" } },
-				Prefix = "otel.dotnet"
-			};
-			if (url != null)
-			{
-				options.Url = url;
+				_logger.LogInformation("no URL provided, falling back to default OneAgent endpoint.");
 			}
-			else
+
+			// A Meter instance is obtained via the System.Diagnostics.DiagnosticSource package
+			// and not via the MeterProvider. To learn more, read here:
+			// https://github.com/open-telemetry/opentelemetry-dotnet/blob/main/docs/metrics/getting-started/README.md
+			using var meter = new Meter("my_meter", "0.0.1");
+
+			// The application which decides to enable OpenTelemetry metrics
+			// needs to setup a MeterProvider and register the Meters/Views at this point.
+			// If meters are created later on, they can be registered upfront by using wildcards, e.g. AddMeter("MyApp.*")
+			// More examples can be found on GitHub: https://github.com/open-telemetry/opentelemetry-dotnet/tree/main/docs/metrics
+			using var provider = Sdk.CreateMeterProviderBuilder()
+				.AddMeter(meter.Name)
+				.AddDynatraceExporter(cfg =>
+				{
+					cfg.ApiToken = runOptions.ApiToken;
+					cfg.EnrichWithDynatraceMetadata = runOptions.EnableDynatraceMetadataEnrichment;
+					cfg.DefaultDimensions = new Dictionary<string, string> { { "default1", "defval1" } };
+					cfg.Prefix = "otel.dotnet";
+
+					if (runOptions.Url != null)
+					{
+						cfg.Url = runOptions.Url;
+					}
+				}, _loggerFactory)
+				.Build();
+
+			var testCounter = meter.CreateCounter<long>("my_counter");
+			var testHistogram = meter.CreateHistogram<long>("my_histogram");
+			var testObserver = meter.CreateObservableCounter("my_observation", CallBackForMyObservation);
+
+			var attributes1 = new TagList
 			{
-				logger.LogInformation("no URL provided, falling back to default OneAgent endpoint.");
-			}
-			// create the Dynatrace metrics exporter
-			var dtExporter = new DynatraceMetricsExporter(options, loggerFactory.CreateLogger<DynatraceMetricsExporter>());
-
-			// Create Processor (called Batcher in Metric spec, this is still not decided)
-			var processor = new UngroupedBatcher();
-
-			// Application which decides to enable OpenTelemetry metrics
-			// would setup a MeterProvider and make it default.
-			// All meters from this factory will be configured with the common processing pipeline.
-			MeterProvider.SetDefault(Sdk.CreateMeterProviderBuilder()
-				.SetProcessor(processor)
-				.SetExporter(dtExporter)
-				.SetPushInterval(TimeSpan.FromSeconds(pushIntervalInSecs))
-				.Build());
-
-			// The following shows how libraries would obtain a MeterProvider.
-			// MeterProvider is the entry point, which provides Meter.
-			// If user did not set the Default MeterProvider (shown in earlier lines),
-			// all metric operations become no-ops.
-			var meterProvider = MeterProvider.Default;
-			var meter = meterProvider.GetMeter("my_meter");
-
-			// the rest is purely from the OpenTelemetry Metrics API.
-			var testCounter = meter.CreateInt64Counter("my_counter");
-			var testMeasure = meter.CreateInt64Measure("my_measure");
-			var testObserver = meter.CreateInt64Observer("my_observation", CallBackForMyObservation);
-			var labels1 = new List<KeyValuePair<string, string>>{
-				new KeyValuePair<string, string>("my_label", "value1")
+				{ "my_label", "value1" }
 			};
 
-			var labels2 = new List<KeyValuePair<string, string>>();
-			labels2.Add(new KeyValuePair<string, string>("my_label", "value2"));
-			var defaultContext = default(SpanContext);
-
-			Stopwatch sw = Stopwatch.StartNew();
-			while (sw.Elapsed.TotalMinutes < totalDurationInMins)
+			var attributes2 = new TagList
 			{
-				testCounter.Add(defaultContext, 100, meter.GetLabelSet(labels1));
+				{ "my_label", "value2" }
+			};
 
-				testMeasure.Record(defaultContext, 100, meter.GetLabelSet(labels1));
-				testMeasure.Record(defaultContext, 500, meter.GetLabelSet(labels1));
-				testMeasure.Record(defaultContext, 5, meter.GetLabelSet(labels2));
-				testMeasure.Record(defaultContext, 750, meter.GetLabelSet(labels2));
+			var sw = Stopwatch.StartNew();
+			while (sw.Elapsed.TotalMinutes < runOptions.DurationInMins)
+			{
+				testCounter.Add(100, attributes1);
 
-				// Obviously there is no testObserver.Observe() here, as Observer instruments
-				// have callbacks that are called by the Meter automatically at each collection interval.
+				testHistogram.Record(100, attributes1);
+				testHistogram.Record(500, attributes1);
+				testHistogram.Record(5, attributes2);
+				testHistogram.Record(750, attributes2);
+
+				// The testObserver is called by the Meter automatically at each collection interval.
 				await Task.Delay(1000);
-				var remaining = (totalDurationInMins * 60) - sw.Elapsed.TotalSeconds;
-				logger.LogInformation("Running and emitting metrics. Remaining time: {Remaining} seconds", (int)remaining);
+				var remaining = (runOptions.DurationInMins * 60) - sw.Elapsed.TotalSeconds;
+				_logger.LogInformation("Running and emitting metrics. Remaining time: {Remaining} seconds", (int)remaining);
 			}
 
-			logger.LogInformation("Metrics exporter has shut down.");
+			_logger.LogInformation("Metrics exporter has shut down.");
 			return 0;
 		}
 
-		internal static void CallBackForMyObservation(Int64ObserverMetric observerMetric)
+		internal static Measurement<long> CallBackForMyObservation()
 		{
-			var labels = new List<KeyValuePair<string, string>>();
-			labels.Add(new KeyValuePair<string, string>("my_label", "value1"));
+			var attributes = new TagList
+			{
+				{ "my_attribute", "value1" }
+			};
 
-			observerMetric.Observe(Process.GetCurrentProcess().WorkingSet64, labels);
+			return new Measurement<long>(Process.GetCurrentProcess().WorkingSet64, attributes);
 		}
 	}
 }

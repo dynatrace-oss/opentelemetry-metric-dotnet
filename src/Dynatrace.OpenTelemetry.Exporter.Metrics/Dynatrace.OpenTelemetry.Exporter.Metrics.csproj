@@ -5,7 +5,8 @@
     <Authors>Dynatrace</Authors>
     <Company>Dynatrace</Company>
     <Product>Dynatrace OpenTelemetry Metrics Exporter for .NET</Product>
-    <Version>0.2.2-beta</Version>
+    <PackageId>Dynatrace.OpenTelemetry.Exporter.Metrics</PackageId>
+    <Version>0.3.0-beta</Version>
     <Description>See https://github.com/dynatrace-oss/opentelemetry-metric-dotnet to learn more.</Description>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <Copyright>Copyright 2020 Dynatrace LLC; Licensed under the Apache License, Version 2.0</Copyright>
@@ -17,8 +18,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Need to use a version < 1.0.0 since metrics is not included in the v1.0.0 release -->
-    <PackageReference Include="OpenTelemetry" Version="0.8.0-beta.1" />
+    <PackageReference Include="OpenTelemetry" Version="1.2.0-beta2.1" />
     <PackageReference Include="Dynatrace.MetricUtils" Version="0.1.0-beta" />
   </ItemGroup>
 
