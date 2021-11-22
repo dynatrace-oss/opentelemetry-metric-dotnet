@@ -47,7 +47,7 @@ namespace Examples.Console
 		[Option('t', "token", HelpText = "Dynatrace API authentication token with the 'metrics.ingest' permission.", Required = false)]
 		public string ApiToken { get; set; }
 
-		[Option('m', "dtMetadataEnrichment", Default = true, HelpText = "Enables automatic label enrichment via Dynatrace metadata.", Required = false)]
+		[Option('m', "enableMetadataEnrichment", Default = true, HelpText = "Enables automatic label enrichment via Dynatrace metadata.", Required = false)]
 		public bool EnableDynatraceMetadataEnrichment { get; set; }
 	}
 }
