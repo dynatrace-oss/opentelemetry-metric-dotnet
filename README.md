@@ -43,7 +43,7 @@ var attributes = new TagList
 
 // Record a metric. The export interval can be configured during the AddDynatraceExporter() call above.
 // By default, metrics are exported in 1 minute intervals (60000ms).
-testCounter.Add(100, attributes);
+myCounter.Add(100, attributes);
 ```
 
 If no local OneAgent is available or metrics should be exported directly to the backend, the `DynatraceMetricsExporter` can be set up with an endpoint and an API token.
@@ -82,7 +82,7 @@ var attributes = new TagList
 };
 
 // Record a metric which will be exported to the provided Url.
-testCounter.Add(100, attributes);
+myCounter.Add(100, attributes);
 ```
 
 The example below shows all the other optional properties that can be
