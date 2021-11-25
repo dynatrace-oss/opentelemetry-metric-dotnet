@@ -27,28 +27,28 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 		public static DynatraceMetric ToLongCounterDelta(this Metric metric, MetricPoint metricPoint, ILogger logger)
 			=> DynatraceMetricsFactory.CreateLongCounterDelta(
 				metric.Name,
-				metricPoint.LongValue,
+				metricPoint.GetSumLong(),
 				metricPoint.GetAttributes(logger),
 				metricPoint.EndTime);
 
 		public static DynatraceMetric ToDoubleCounterDelta(this Metric metric, MetricPoint metricPoint, ILogger logger)
 			=> DynatraceMetricsFactory.CreateDoubleCounterDelta(
 				metric.Name,
-				metricPoint.DoubleValue,
+				metricPoint.GetSumDouble(),
 				metricPoint.GetAttributes(logger),
 				metricPoint.EndTime);
 
 		public static DynatraceMetric ToLongGauge(this Metric metric, MetricPoint metricPoint, ILogger logger)
 			=> DynatraceMetricsFactory.CreateLongGauge(
 				metric.Name,
-				metricPoint.LongValue,
+				metricPoint.GetGaugeLastValueLong(),
 				metricPoint.GetAttributes(logger),
 				metricPoint.EndTime);
 
 		public static DynatraceMetric ToDoubleGauge(this Metric metric, MetricPoint metricPoint, ILogger logger)
 			=> DynatraceMetricsFactory.CreateDoubleGauge(
 				metric.Name,
-				metricPoint.DoubleValue,
+				metricPoint.GetGaugeLastValueDouble(),
 				metricPoint.GetAttributes(logger),
 				metricPoint.EndTime);
 
@@ -61,30 +61,34 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 				metric.Name,
 				min,
 				max,
-				metricPoint.DoubleValue,
-				metricPoint.LongValue,
+				metricPoint.GetHistogramSum(),
+				metricPoint.GetHistogramCount(),
 				metricPoint.GetAttributes(logger),
 				metricPoint.EndTime);
 		}
 
 		private static double GetMinFromBoundaries(MetricPoint pointData)
 		{
-			if (pointData.BucketCounts.Length == 1)
+			if (pointData.GetHistogramCount() == 1)
 			{
-				// In this case, only one bucket exists: (-Inf, Inf). If there were any boundaries, there
-				// would be more counts.
-				if (pointData.BucketCounts[0] > 0)
+				foreach (var item in pointData.GetHistogramBuckets())
 				{
-					// in case the single bucket contains something, use the mean as min.
-					return pointData.DoubleValue / pointData.LongValue;
+					if (item.BucketCount > 0)
+					{
+						// in case the single bucket contains something, use the mean as min.
+						return pointData.GetHistogramSum() / pointData.GetHistogramCount();
+					}
+
+					// otherwise the histogram has no data. Use the sum as the min and max, respectively.
+					return pointData.GetHistogramSum();
 				}
-				// otherwise the histogram has no data. Use the sum as the min and max, respectively.
-				return pointData.DoubleValue;
 			}
 
-			for (var i = 0; i < pointData.BucketCounts.Length; i++)
+			var i = 0;
+			double previousBound = 0;
+			foreach (var item in pointData.GetHistogramBuckets())
 			{
-				if (pointData.BucketCounts[i] > 0)
+				if (item.BucketCount > 0)
 				{
 					// the current bucket contains something.
 					if (i == 0)
@@ -101,35 +105,51 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 						// - The average in the bucket (smallest if there are multiple positive measurements
 						// smaller than the lowest boundary)
 						return Math.Min(
-							Math.Min(pointData.ExplicitBounds[i], pointData.DoubleValue),
-							pointData.DoubleValue / pointData.LongValue);
+							Math.Min(item.ExplicitBound, pointData.GetHistogramSum()),
+							pointData.GetHistogramSum() / pointData.GetHistogramCount());
 					}
-					return pointData.ExplicitBounds[i - 1];
+					return previousBound;
 				}
+
+				i++;
+				previousBound = item.ExplicitBound;
 			}
 
 			// there are no counts > 0, so calculating a mean would result in a division by 0. By returning
 			// the sum, we can let the backend decide what to do with the value (with a count of 0)
-			return pointData.DoubleValue;
+			return pointData.GetHistogramSum();
 		}
 
 		private static double GetMaxFromBoundaries(MetricPoint pointData)
 		{
 			// see getMinFromBoundaries for a very similar method that is annotated.
-			if (pointData.BucketCounts.Length == 1)
+			if (pointData.GetHistogramCount() == 1)
 			{
-				if (pointData.BucketCounts[0] > 0)
+				foreach (var item in pointData.GetHistogramBuckets())
 				{
-					return pointData.DoubleValue / pointData.LongValue;
+					if (item.BucketCount > 0)
+					{
+						// in case the single bucket contains something, use the mean as min.
+						return pointData.GetHistogramSum() / pointData.GetHistogramCount();
+					}
+					return pointData.GetHistogramSum();
 				}
-				return pointData.DoubleValue;
 			}
 
-			var lastElemIdx = pointData.BucketCounts.Length - 1;
+			var bucketCounts = new List<long>();
+			var bounds = new List<double>();
+
+			foreach (var item in pointData.GetHistogramBuckets())
+			{
+				bucketCounts.Add(item.BucketCount);
+				bounds.Add(item.ExplicitBound);
+			}
+
+			var lastElemIdx = bucketCounts.Count - 1;
 			// loop over counts in reverse
 			for (var i = lastElemIdx; i >= 0; i--)
 			{
-				if (pointData.BucketCounts[i] > 0)
+				if (bucketCounts[i] > 0)
 				{
 					if (i == lastElemIdx)
 					{
@@ -137,35 +157,29 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 						// 0 in the last bucket (lastBound, Inf), therefore, the bound has to be smaller than the
 						// actual maximum value, which in turn ensures that the sum is larger than the bound we
 						// use as max here.
-						return pointData.ExplicitBounds[i - 1];
+						return bounds[i - 1];
 					}
 					// in any bucket except the last, make sure the sum is greater than or equal to the max,
 					// otherwise report the sum.
-					return Math.Min(pointData.ExplicitBounds[i], pointData.DoubleValue);
+					return Math.Min(bounds[i], pointData.GetHistogramSum());
 				}
 			}
 
-			return pointData.DoubleValue;
+			return pointData.GetHistogramSum();
 		}
 
 		private static IEnumerable<KeyValuePair<string, string>> GetAttributes(this MetricPoint metricPoint, ILogger logger)
 		{
-			if (metricPoint.Keys == null)
-			{
-				yield break;
-			}
 
-			for (var i = 0; i < metricPoint.Keys.Length; i++)
+			foreach (var tag in metricPoint.Tags)
 			{
-				var value = metricPoint.Values[i];
-
-				if (!(value is string))
+				if (!(tag.Value is string))
 				{
-					logger.UnsupportedMetricType(value.GetType().Name);
+					logger.UnsupportedMetricType(tag.Value.GetType().Name);
 				}
 				else
 				{
-					yield return new KeyValuePair<string, string>(metricPoint.Keys[i], value.ToString());
+					yield return new KeyValuePair<string, string>(tag.Key, tag.Value.ToString());
 				}
 			}
 		}

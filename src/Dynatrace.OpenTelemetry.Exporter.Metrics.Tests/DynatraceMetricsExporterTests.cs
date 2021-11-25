@@ -335,24 +335,13 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 
 			// It should not be possible to override the reader with a different temporality
 			// https://github.com/open-telemetry/opentelemetry-specification/blob/v1.8.0/specification/metrics/sdk.md#temporality-override-rules
-			var ex = Assert.Throws<ArgumentException>(() => new PeriodicExportingMetricReader(sut)
+			var ex = Assert.Throws<NotSupportedException>(() => new PeriodicExportingMetricReader(sut)
 			{
-				PreferredAggregationTemporality = AggregationTemporality.Cumulative
+				Temporality = AggregationTemporality.Cumulative
 			});
 
 			Assert.Contains(
-				"PreferredAggregationTemporality Cumulative and SupportedAggregationTemporality Delta are incompatible",
-				ex.Message);
-
-			// It should not be possible to override the reader with a different temporality
-			// https://github.com/open-telemetry/opentelemetry-specification/blob/v1.8.0/specification/metrics/sdk.md#temporality-override-rules
-			ex = Assert.Throws<ArgumentException>(() => new PeriodicExportingMetricReader(sut)
-			{
-				SupportedAggregationTemporality = AggregationTemporality.Cumulative
-			});
-
-			Assert.Contains(
-				"PreferredAggregationTemporality Delta and SupportedAggregationTemporality Cumulative are incompatible",
+				"The temporality cannot be modified (the current value is Delta)",
 				ex.Message);
 		}
 
