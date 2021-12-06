@@ -55,6 +55,10 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 			LoggerMessage.Define<string>(LogLevel.Warning, new EventId(7, nameof(ReceivedCumulativeValue)),
 				"Received metric: '{MetricName}' with cumulative aggregation temporality. Exporting as gauge");
 
+		private static readonly Action<ILogger, HttpStatusCode, Exception> _successRequestResult =
+			LoggerMessage.Define<HttpStatusCode>(LogLevel.Debug, new EventId(8, nameof(SuccessRequestResult)),
+				"Exporting metrics succeed: StatusCode: {StatusCode}");
+
 		internal static void DynatraceMetricUrl(this ILogger logger, string url)
 			=> _dynatraceMetricUrl(logger, url, null);
 
@@ -75,5 +79,8 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 
 		internal static void ReceivedCumulativeValue(this ILogger logger, string metricName)
 			=> _receivedCumulativeValue(logger, metricName, null);
+
+		internal static void SuccessRequestResult(this ILogger logger, HttpStatusCode statusCode)
+			=> _successRequestResult(logger, statusCode, null);
 	}
 }

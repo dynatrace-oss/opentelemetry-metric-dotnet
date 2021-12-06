@@ -95,6 +95,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 						var response = _httpClient.SendAsync(httpRequest).GetAwaiter().GetResult();
 						if (response.IsSuccessStatusCode)
 						{
+							_logger.SuccessRequestResult(response.StatusCode);
 							exportResult = ExportResult.Success;
 						}
 						else

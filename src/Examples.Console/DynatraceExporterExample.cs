@@ -58,6 +58,7 @@ namespace Examples.Console
 					cfg.EnrichWithDynatraceMetadata = runOptions.EnableDynatraceMetadataEnrichment;
 					cfg.DefaultDimensions = new Dictionary<string, string> { { "default1", "defval1" } };
 					cfg.Prefix = "otel.dotnet";
+					cfg.MetricExportIntervalMilliseconds = runOptions.ExportIntervalMilliseconds;
 
 					if (runOptions.Url != null)
 					{
