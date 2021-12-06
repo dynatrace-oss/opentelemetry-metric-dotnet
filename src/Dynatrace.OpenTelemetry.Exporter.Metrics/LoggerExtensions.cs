@@ -57,7 +57,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 
 		private static readonly Action<ILogger, HttpStatusCode, Exception> _successRequestResult =
 			LoggerMessage.Define<HttpStatusCode>(LogLevel.Debug, new EventId(8, nameof(SuccessRequestResult)),
-				"Exporting metrics succeed: StatusCode: {StatusCode}");
+				"Exporting metrics succeeded: StatusCode: {StatusCode}");
 
 		internal static void DynatraceMetricUrl(this ILogger logger, string url)
 			=> _dynatraceMetricUrl(logger, url, null);
