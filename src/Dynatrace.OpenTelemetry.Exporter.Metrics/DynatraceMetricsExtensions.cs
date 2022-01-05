@@ -29,28 +29,28 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 				metric.Name,
 				metricPoint.LongValue,
 				metricPoint.GetAttributes(logger),
-				metricPoint.EndTime.UtcDateTime);
+				metricPoint.EndTime);
 
 		public static DynatraceMetric ToDoubleCounterDelta(this Metric metric, MetricPoint metricPoint, ILogger logger)
 			=> DynatraceMetricsFactory.CreateDoubleCounterDelta(
 				metric.Name,
 				metricPoint.DoubleValue,
 				metricPoint.GetAttributes(logger),
-				metricPoint.EndTime.UtcDateTime);
+				metricPoint.EndTime);
 
 		public static DynatraceMetric ToLongGauge(this Metric metric, MetricPoint metricPoint, ILogger logger)
 			=> DynatraceMetricsFactory.CreateLongGauge(
 				metric.Name,
 				metricPoint.LongValue,
 				metricPoint.GetAttributes(logger),
-				metricPoint.EndTime.UtcDateTime);
+				metricPoint.EndTime);
 
 		public static DynatraceMetric ToDoubleGauge(this Metric metric, MetricPoint metricPoint, ILogger logger)
 			=> DynatraceMetricsFactory.CreateDoubleGauge(
 				metric.Name,
 				metricPoint.DoubleValue,
 				metricPoint.GetAttributes(logger),
-				metricPoint.EndTime.UtcDateTime);
+				metricPoint.EndTime);
 
 		public static DynatraceMetric ToDoubleHistogram(this Metric metric, MetricPoint metricPoint, ILogger logger)
 		{
@@ -64,7 +64,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 				metricPoint.DoubleValue,
 				metricPoint.LongValue,
 				metricPoint.GetAttributes(logger),
-				metricPoint.EndTime.UtcDateTime);
+				metricPoint.EndTime);
 		}
 
 		private static double GetMinFromBoundaries(MetricPoint pointData)
