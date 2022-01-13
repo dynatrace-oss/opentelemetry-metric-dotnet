@@ -30,7 +30,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests.Utils
 		{
 			foreach (var point in metricPoints)
 			{
-				yield return new MetricTest(point.GetEndTime());
+				yield return new MetricTest(point.EndTime);
 			}
 		}
 	}
