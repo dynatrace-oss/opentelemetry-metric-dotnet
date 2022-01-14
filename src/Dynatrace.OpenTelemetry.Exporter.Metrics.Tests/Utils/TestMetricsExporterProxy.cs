@@ -20,6 +20,10 @@ using OpenTelemetry.Metrics;
 
 namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests.Utils
 {
+	/// <summary>
+	/// Exporter Proxy for spying on the <see cref="Batch{Metric}"/> passed to <see cref="Export"/> and the
+	/// <see cref="ExportResult"/> associated with the export call performed by the SDK.
+	/// </summary>
 	[AggregationTemporality(AggregationTemporality.Delta)]
 	public class TestMetricsExporterProxy : BaseExporter<Metric>
 	{
