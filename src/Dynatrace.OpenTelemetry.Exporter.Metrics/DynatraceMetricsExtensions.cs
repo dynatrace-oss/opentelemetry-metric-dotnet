@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Dynatrace.MetricUtils;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry.Metrics;
@@ -54,8 +55,9 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 
 		public static DynatraceMetric ToDoubleHistogram(this Metric metric, MetricPoint metricPoint, ILogger logger)
 		{
-			var min = GetMinFromBoundaries(metricPoint);
-			var max = GetMaxFromBoundaries(metricPoint);
+			var buckets = GetHistogramBuckets(metricPoint).ToArray();
+			var min = GetMinFromBoundaries(metricPoint.GetHistogramSum(), metricPoint.GetHistogramCount(), buckets);
+			var max = GetMaxFromBoundaries(metricPoint.GetHistogramSum(), metricPoint.GetHistogramCount(), buckets);
 
 			return DynatraceMetricsFactory.CreateDoubleSummary(
 				metric.Name,
@@ -67,28 +69,34 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 				metricPoint.EndTime);
 		}
 
-		private static double GetMinFromBoundaries(MetricPoint pointData)
+		private static List<HistogramBucket> GetHistogramBuckets(MetricPoint pointData)
 		{
-			if (pointData.GetHistogramCount() == 1)
+			var buckets = new List<HistogramBucket>();
+			foreach (var bucket in pointData.GetHistogramBuckets())
 			{
-				foreach (var item in pointData.GetHistogramBuckets())
-				{
-					if (item.BucketCount > 0)
-					{
-						// in case the single bucket contains something, use the mean as min.
-						return pointData.GetHistogramSum() / pointData.GetHistogramCount();
-					}
-
-					// otherwise the histogram has no data. Use the sum as the min and max, respectively.
-					return pointData.GetHistogramSum();
-				}
+				buckets.Add(bucket);
 			}
 
-			var i = 0;
-			double previousBound = 0;
-			foreach (var item in pointData.GetHistogramBuckets())
+			return buckets;
+		}
+
+		private static double GetMinFromBoundaries(double sum, long count, HistogramBucket[] buckets)
+		{
+			if (buckets.Length == 0)
 			{
-				if (item.BucketCount > 0)
+				if (count > 0)
+				{
+					// in case the single bucket contains something, use the mean as min.
+					return sum / count;
+				}
+
+				// otherwise the histogram has no data. Use the sum as the min and max, respectively.
+				return sum;
+			}
+
+			for (var i = 0; i < buckets.Length; i++)
+			{
+				if (buckets[i].BucketCount > 0)
 				{
 					// the current bucket contains something.
 					if (i == 0)
@@ -105,51 +113,39 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 						// - The average in the bucket (smallest if there are multiple positive measurements
 						// smaller than the lowest boundary)
 						return Math.Min(
-							Math.Min(item.ExplicitBound, pointData.GetHistogramSum()),
-							pointData.GetHistogramSum() / pointData.GetHistogramCount());
+							Math.Min(buckets[i].ExplicitBound, sum),
+							sum / count);
 					}
-					return previousBound;
-				}
 
-				i++;
-				previousBound = item.ExplicitBound;
+					return buckets[i - 1].ExplicitBound;
+				}
 			}
 
 			// there are no counts > 0, so calculating a mean would result in a division by 0. By returning
 			// the sum, we can let the backend decide what to do with the value (with a count of 0)
-			return pointData.GetHistogramSum();
+			return sum;
 		}
 
-		private static double GetMaxFromBoundaries(MetricPoint pointData)
+		private static double GetMaxFromBoundaries(double sum, long count, HistogramBucket[] buckets)
 		{
 			// see getMinFromBoundaries for a very similar method that is annotated.
-			if (pointData.GetHistogramCount() == 1)
+			if (buckets.Length == 0)
 			{
-				foreach (var item in pointData.GetHistogramBuckets())
+				if (count > 0)
 				{
-					if (item.BucketCount > 0)
-					{
-						// in case the single bucket contains something, use the mean as min.
-						return pointData.GetHistogramSum() / pointData.GetHistogramCount();
-					}
-					return pointData.GetHistogramSum();
+					// in case the single bucket contains something, use the mean as max.
+					return sum / count;
 				}
+
+				// otherwise the histogram has no data. Use the sum as the min and max, respectively.
+				return sum;
 			}
 
-			var bucketCounts = new List<long>();
-			var bounds = new List<double>();
-
-			foreach (var item in pointData.GetHistogramBuckets())
-			{
-				bucketCounts.Add(item.BucketCount);
-				bounds.Add(item.ExplicitBound);
-			}
-
-			var lastElemIdx = bucketCounts.Count - 1;
+			var lastElemIdx = buckets.Length - 1;
 			// loop over counts in reverse
 			for (var i = lastElemIdx; i >= 0; i--)
 			{
-				if (bucketCounts[i] > 0)
+				if (buckets[i].BucketCount > 0)
 				{
 					if (i == lastElemIdx)
 					{
@@ -157,20 +153,20 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 						// 0 in the last bucket (lastBound, Inf), therefore, the bound has to be smaller than the
 						// actual maximum value, which in turn ensures that the sum is larger than the bound we
 						// use as max here.
-						return bounds[i - 1];
+						return buckets[i - 1].ExplicitBound;
 					}
+
 					// in any bucket except the last, make sure the sum is greater than or equal to the max,
 					// otherwise report the sum.
-					return Math.Min(bounds[i], pointData.GetHistogramSum());
+					return Math.Min(buckets[i].ExplicitBound, sum);
 				}
 			}
 
-			return pointData.GetHistogramSum();
+			return sum;
 		}
 
 		private static IEnumerable<KeyValuePair<string, string>> GetAttributes(this MetricPoint metricPoint, ILogger logger)
 		{
-
 			foreach (var tag in metricPoint.Tags)
 			{
 				if (!(tag.Value is string))
@@ -185,4 +181,3 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 		}
 	}
 }
-
