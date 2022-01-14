@@ -83,7 +83,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 		{
 			if (buckets.Count == 0)
 			{
-				if (count > 0)
+				if (count > 1)
 				{
 					// in case the single bucket contains something, use the mean as min.
 					return sum / count;
@@ -127,10 +127,9 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 
 		private static double GetMaxFromBoundaries(double sum, long count, IReadOnlyList<HistogramBucket> buckets)
 		{
-			// see getMinFromBoundaries for a very similar method that is annotated.
 			if (buckets.Count == 0)
 			{
-				if (count > 0)
+				if (count > 1)
 				{
 					// in case the single bucket contains something, use the mean as max.
 					return sum / count;

@@ -918,12 +918,29 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 
 
 		[Theory]
-		[InlineData(new[] { 0.2 }, 0, 0.2, 0.2, 1)]
-		[InlineData(new[] { 0.2, 0.3 }, 0, 0.5, 0.5, 2)] // Values in one bucket should export bucket lower bound (0) as min and sum as max.
-		[InlineData(new[] { -1d, -1d }, -2, -2, -2, 2)] // Values outside of lower bound (<0) should export sum min and sum as max.
-		[InlineData(new[] { 1001d, 1001d }, 1000, 1000, 2002, 2)] // Values outside of upper bound (>1000) should upper bound (1000) as min and upper bound (1000) as max.
-		[InlineData(new[] { -1d }, -1, -1, -1, 1)] // Single value lower than bound (<0) should upper bound (1000) as min and upper bound (1000) as max.
-		public async Task Export_Histogram_ShouldSetMinAndMaxCorrectly(double[] values, double min, double max, double sum, int count)
+		// min: A value between the first two boundaries (1.5)
+		[InlineData(new[] { 1.5, 3.5, 3.5, 6 }, 1d, 5d, 14.5, 4, new[] { 1d, 2d, 3d, 4d, 5d })]
+		// min: lowest bucket has value, use the first boundary as estimation instead of -Inf
+		// max: last bucket has value, use the last boundary as estimation instead of Inf
+		[InlineData(new[] { 0.5, 3.5, 3.5, 6 }, 1d, 5d, 13.5, 4, new[] { 1d, 2d, 3d, 4d, 5d })]
+		// min: lowest bucket (-Inf, 1) has values, mean is lower than the lowest bucket bound and smaller than the sum
+		[InlineData(new[] { 0.9, 0.9 }, 0.9, 1, 1.8, 2, new[] { 1d, 2d, 3d, 4d, 5d })]
+		// min: lowest bucket (-Inf, 0) has values, sum is lower than the lowest bucket bound
+		[InlineData(new[] { 0.1, 0.1 }, 0.1, 0.2, 0.2, 2, new[] { 1d, 2d, 3d, 4d, 5d })]
+		// min: just one bucket from -Inf to Inf, calc the mean as min value.
+		// max: just one bucket from -Inf to Inf, calc the mean as max value.
+		[InlineData(new[] { 1d, 2d, 3d }, 2, 2, 6, 3, new double[] { })]
+		// min: just one bucket from -Inf to Inf, with a count of 1, use sum.
+		// max: just one bucket from -Inf to Inf, with a count of 1, use sum.
+		[InlineData(new[] { 6d }, 6, 6, 6, 1, new double[] { })]
+		// min: only the last bucket has a value (5, +Inf), use the last boundary as an estimation instead of Inf
+		// max: only the last bucket has a value (5, +Inf), use the last boundary as an estimation instead of Inf
+		[InlineData(new[] { 6d }, 5, 5, 6, 1, new[] { 1d, 2d, 3d, 4d, 5d })]
+		// max: A value between the last two boundaries.
+		[InlineData(new[] { 1.5, 3.5, 3.5, 4.5 }, 1d, 5d, 13, 4, new[] { 1d, 2d, 3d, 4d, 5d })]
+		// max: just values in one bucket, but lower than boundary, use sum.
+		[InlineData(new[] { 1d, 1d }, 0d, 2d, 2, 2, new[] { -5d, 0, 5d })]
+		public async Task Export_Histogram_ShouldSetMinAndMaxCorrectly(double[] values, double min, double max, double sum, int count, double[] boundaries)
 		{
 			// Arrange
 			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
@@ -939,6 +956,9 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 			using var provider = Sdk.CreateMeterProviderBuilder()
 				.AddMeter(meter.Name)
 				.AddReader(metricReader)
+				.AddView(
+					instrumentName: "histogram",
+					new ExplicitBucketHistogramConfiguration { Boundaries = boundaries })
 				.Build();
 
 			var histogram = meter.CreateHistogram<double>("histogram");
