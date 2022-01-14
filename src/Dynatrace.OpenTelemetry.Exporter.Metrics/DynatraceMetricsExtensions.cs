@@ -16,7 +16,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Dynatrace.MetricUtils;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry.Metrics;
@@ -55,7 +54,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 
 		public static DynatraceMetric ToDoubleHistogram(this Metric metric, MetricPoint metricPoint, ILogger logger)
 		{
-			var buckets = GetHistogramBuckets(metricPoint).ToArray();
+			var buckets = GetHistogramBuckets(metricPoint);
 			var min = GetMinFromBoundaries(metricPoint.GetHistogramSum(), metricPoint.GetHistogramCount(), buckets);
 			var max = GetMaxFromBoundaries(metricPoint.GetHistogramSum(), metricPoint.GetHistogramCount(), buckets);
 
@@ -80,9 +79,9 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 			return buckets;
 		}
 
-		private static double GetMinFromBoundaries(double sum, long count, HistogramBucket[] buckets)
+		private static double GetMinFromBoundaries(double sum, long count, IReadOnlyList<HistogramBucket> buckets)
 		{
-			if (buckets.Length == 0)
+			if (buckets.Count == 0)
 			{
 				if (count > 0)
 				{
@@ -94,7 +93,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 				return sum;
 			}
 
-			for (var i = 0; i < buckets.Length; i++)
+			for (var i = 0; i < buckets.Count; i++)
 			{
 				if (buckets[i].BucketCount > 0)
 				{
@@ -126,10 +125,10 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 			return sum;
 		}
 
-		private static double GetMaxFromBoundaries(double sum, long count, HistogramBucket[] buckets)
+		private static double GetMaxFromBoundaries(double sum, long count, IReadOnlyList<HistogramBucket> buckets)
 		{
 			// see getMinFromBoundaries for a very similar method that is annotated.
-			if (buckets.Length == 0)
+			if (buckets.Count == 0)
 			{
 				if (count > 0)
 				{
@@ -141,7 +140,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 				return sum;
 			}
 
-			var lastElemIdx = buckets.Length - 1;
+			var lastElemIdx = buckets.Count - 1;
 			// loop over counts in reverse
 			for (var i = lastElemIdx; i >= 0; i--)
 			{
