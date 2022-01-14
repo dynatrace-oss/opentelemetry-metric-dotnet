@@ -869,54 +869,6 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 			AssertExportRequest(actualRequestMessage);
 		}
 
-		[Fact]
-		public async Task Export_Histogram_NoBounds()
-		{
-			// Arrange
-			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
-
-			HttpRequestMessage actualRequestMessage = null!;
-			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
-
-			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
-
-			var exporterProxy = new TestMetricsExporterProxy(sut);
-
-			var metricReader = new BaseExportingMetricReader(exporterProxy);
-			using var provider = Sdk.CreateMeterProviderBuilder()
-				.AddMeter(meter.Name)
-				.AddReader(metricReader)
-				.AddView(
-					instrumentName: "histogram",
-					new ExplicitBucketHistogramConfiguration { Boundaries = Array.Empty<double>() })
-				.Build();
-
-			var histogram = meter.CreateHistogram<double>("histogram");
-
-			histogram.Record(4, _attributes);
-			histogram.Record(6, _attributes);
-
-			// Act - Reader will call our exporter
-			metricReader.Collect();
-
-			// Assert
-			var exportedMetrics = exporterProxy.GetExportedMetrics();
-			var point = MetricTest.FromMetricPoints(exportedMetrics.First().GetMetricPoints()).First();
-
-			var expected = $"histogram,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry gauge,min=5,max=5,sum=10,count=2 {point.TimeStamp}";
-			var actualMetricString = await actualRequestMessage.Content!.ReadAsStringAsync();
-			Assert.Equal(expected, actualMetricString);
-
-			mockMessageHandler.Protected().Verify(
-				"SendAsync",
-				Times.Exactly(1),
-				ItExpr.IsAny<HttpRequestMessage>(),
-				ItExpr.IsAny<CancellationToken>());
-
-			AssertExportRequest(actualRequestMessage);
-		}
-
-
 		[Theory]
 		// min: A value between the first two boundaries (1.5)
 		[InlineData(new[] { 1.5, 3.5, 3.5, 6 }, 1d, 5d, 14.5, 4, new[] { 1d, 2d, 3d, 4d, 5d })]
