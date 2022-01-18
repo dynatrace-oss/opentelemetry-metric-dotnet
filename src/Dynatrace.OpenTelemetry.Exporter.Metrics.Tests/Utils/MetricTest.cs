@@ -26,7 +26,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests.Utils
 	{
 		internal long TimeStamp => EndTime.ToUnixTimeMilliseconds();
 
-		internal static IEnumerable<MetricTest> FromMetricPoints(BatchMetricPoint metricPoints)
+		internal static IEnumerable<MetricTest> FromMetricPoints(MetricPointsAccessor metricPoints)
 		{
 			foreach (var point in metricPoints)
 			{

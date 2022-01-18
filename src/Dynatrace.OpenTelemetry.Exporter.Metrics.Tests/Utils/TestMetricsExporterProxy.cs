@@ -13,6 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // </copyright>
+
 using System.Collections.Generic;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
@@ -20,32 +21,46 @@ using OpenTelemetry.Metrics;
 namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests.Utils
 {
 	/// <summary>
-	/// A <see cref="MetricReader"/> to be used for tests. It holds the exported items and the export result internally.
-	/// Useful to use for test assertion.
+	/// Exporter Proxy for spying on the <see cref="Batch{Metric}"/> passed to <see cref="Export"/> and the
+	/// <see cref="ExportResult"/> associated with the export call performed by the SDK.
 	/// </summary>
-	internal class TestMetricReader : BaseExportingMetricReader
+	[AggregationTemporality(AggregationTemporality.Delta)]
+	public class TestMetricsExporterProxy : BaseExporter<Metric>
 	{
-		protected readonly BaseExporter<Metric> _exporter;
 		private List<Metric> _exportedItems = new();
+		private readonly BaseExporter<Metric> _exporter;
 
-		public TestMetricReader(BaseExporter<Metric> exporter)
-			: base(exporter)
+		public ExportResult ExportResult { get; private set; }
+
+		public TestMetricsExporterProxy(BaseExporter<Metric> exporter)
 		{
 			_exporter = exporter;
 		}
 
-		public ExportResult ExportResult { get; private set; }
-
-		protected override bool ProcessMetrics(in Batch<Metric> metrics, int timeoutMilliseconds)
+		public override ExportResult Export(in Batch<Metric> batch)
 		{
-			foreach (var data in metrics)
+			foreach (var data in batch)
 			{
 				_exportedItems.Add(data);
 			}
 
-			ExportResult = _exporter.Export(metrics);
+			ExportResult = _exporter.Export(batch);
+			return ExportResult;
+		}
 
-			return ExportResult == ExportResult.Success;
+		protected override bool OnForceFlush(int timeoutMilliseconds)
+		{
+			return _exporter.ForceFlush(timeoutMilliseconds);
+		}
+
+		protected override bool OnShutdown(int timeoutMilliseconds)
+		{
+			return _exporter.Shutdown(timeoutMilliseconds);
+		}
+
+		protected override void Dispose(bool disposing)
+		{
+			_exporter.Dispose();
 		}
 
 		internal List<Metric> GetExportedMetrics()
