@@ -25,35 +25,48 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 	internal static class DynatraceMetricsExtensions
 	{
 		public static DynatraceMetric ToLongCounterDelta(this Metric metric, MetricPoint metricPoint, ILogger logger)
-			=> DynatraceMetricsFactory.CreateLongCounterDelta(
+		{
+			EnsureDeltaTemporality(metric);
+			return DynatraceMetricsFactory.CreateLongCounterDelta(
 				metric.Name,
 				metricPoint.GetSumLong(),
 				metricPoint.GetAttributes(logger),
 				metricPoint.EndTime);
+		}
 
 		public static DynatraceMetric ToDoubleCounterDelta(this Metric metric, MetricPoint metricPoint, ILogger logger)
-			=> DynatraceMetricsFactory.CreateDoubleCounterDelta(
+		{
+			EnsureDeltaTemporality(metric);
+			return DynatraceMetricsFactory.CreateDoubleCounterDelta(
 				metric.Name,
 				metricPoint.GetSumDouble(),
 				metricPoint.GetAttributes(logger),
 				metricPoint.EndTime);
+		}
 
 		public static DynatraceMetric ToLongGauge(this Metric metric, MetricPoint metricPoint, ILogger logger)
-			=> DynatraceMetricsFactory.CreateLongGauge(
+		{
+			EnsureDeltaTemporality(metric);
+			return DynatraceMetricsFactory.CreateLongGauge(
 				metric.Name,
 				metricPoint.GetGaugeLastValueLong(),
 				metricPoint.GetAttributes(logger),
 				metricPoint.EndTime);
+		}
 
 		public static DynatraceMetric ToDoubleGauge(this Metric metric, MetricPoint metricPoint, ILogger logger)
-			=> DynatraceMetricsFactory.CreateDoubleGauge(
+		{
+			EnsureDeltaTemporality(metric);
+			return DynatraceMetricsFactory.CreateDoubleGauge(
 				metric.Name,
 				metricPoint.GetGaugeLastValueDouble(),
 				metricPoint.GetAttributes(logger),
 				metricPoint.EndTime);
+		}
 
 		public static DynatraceMetric ToDoubleHistogram(this Metric metric, MetricPoint metricPoint, ILogger logger)
 		{
+			EnsureDeltaTemporality(metric);
 			var buckets = GetHistogramBuckets(metricPoint);
 			var min = GetMinFromBoundaries(metricPoint.GetHistogramSum(), metricPoint.GetHistogramCount(), buckets);
 			var max = GetMaxFromBoundaries(metricPoint.GetHistogramSum(), metricPoint.GetHistogramCount(), buckets);
@@ -66,6 +79,14 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 				metricPoint.GetHistogramCount(),
 				metricPoint.GetAttributes(logger),
 				metricPoint.EndTime);
+		}
+
+		private static void EnsureDeltaTemporality(Metric metric)
+		{
+			if (metric.Temporality != AggregationTemporality.Delta)
+			{
+				// throw new DynatraceMetricException($"Metric of name '{metric.Name}' is not of required temporality DELTA.");
+			}
 		}
 
 		private static List<HistogramBucket> GetHistogramBuckets(MetricPoint pointData)

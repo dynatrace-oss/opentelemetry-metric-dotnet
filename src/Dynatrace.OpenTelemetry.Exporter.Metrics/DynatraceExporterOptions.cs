@@ -15,6 +15,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Net.Http;
 
 namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 {
@@ -62,5 +63,10 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 		/// Gets or sets the metric export interval in milliseconds. The default value is 1 minute (60000 ms).
 		/// </summary>
 		public int MetricExportIntervalMilliseconds { get; set; } = 60000;
+
+		/// <summary>
+		/// Gets or sets the <see cref="HttpClient"/> that is used by the exporter
+		/// </summary>
+		internal HttpClient Client { get; set; } = null;
 	}
 }
