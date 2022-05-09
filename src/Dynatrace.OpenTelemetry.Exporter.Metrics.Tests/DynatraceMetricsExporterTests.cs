@@ -731,6 +731,49 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 			AssertExportRequest(actualRequestMessage);
 		}
 
+		[Fact]
+		public void Export_WithCumulativeMetrics_ShouldDropMetrics()
+		{
+			// Arrange
+			using var meter = new Meter(Guid.NewGuid().ToString(), "0.0.1");
+			var exportedMetrics = new List<Metric>();
+
+			using var provider = Sdk.CreateMeterProviderBuilder()
+				.AddMeter(meter.Name)
+				.AddInMemoryExporter(exportedMetrics,
+					options => options.TemporalityPreference = MetricReaderTemporalityPreference.Cumulative)
+				.Build();
+
+			// Arrange
+			HttpRequestMessage actualRequestMessage = null!;
+			var mockMessageHandler = SetupHttpMock(r => actualRequestMessage = r);
+
+			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
+
+			var doubleCounter = meter.CreateCounter<double>("double_counter");
+			doubleCounter.Add(10.3, _attributes);
+
+			var doubleHistogram = meter.CreateHistogram<double>("histogram");
+			doubleHistogram.Record(10, _attributes);
+
+			var intCounter = meter.CreateCounter<int>("int_counter");
+			intCounter.Add(10, _attributes);
+
+			var intHistogram = meter.CreateHistogram<int>("int_histogram");
+			intHistogram.Record(10, _attributes);
+
+			// Act
+			_provider.ForceFlush();
+			sut.Export(new Batch<Metric>(exportedMetrics.ToArray(), exportedMetrics.Count));
+
+			// Assert
+			mockMessageHandler.Protected().Verify(
+				"SendAsync",
+				Times.Never(),
+				ItExpr.IsAny<HttpRequestMessage>(),
+				ItExpr.IsAny<CancellationToken>());
+		}
+
 		private static Mock<HttpMessageHandler> SetupHttpMock(
 			Action<HttpRequestMessage>? setter = null,
 			HttpStatusCode? statusCode = null,

@@ -85,7 +85,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 		{
 			if (metric.Temporality != AggregationTemporality.Delta)
 			{
-				// throw new DynatraceMetricException($"Metric of name '{metric.Name}' is not of required temporality DELTA.");
+				throw new DynatraceMetricException($"Metric of name '{metric.Name}' is not of required temporality DELTA.");
 			}
 		}
 
