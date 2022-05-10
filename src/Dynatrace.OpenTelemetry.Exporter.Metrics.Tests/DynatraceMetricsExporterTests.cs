@@ -65,7 +65,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 			counter.Add(10, _attributes);
 
 			HttpRequestMessage actualRequestMessage = null!;
-			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
+			var mockMessageHandler = SetupHttpMock(r => actualRequestMessage = r);
 			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
 
 			// Act
@@ -94,7 +94,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 			// Arrange
 			HttpRequestMessage actualRequestMessage = null!;
 			var mockMessageHandler = SetupHttpMock(
-				(HttpRequestMessage r) => actualRequestMessage = r,
+				r => actualRequestMessage = r,
 				HttpStatusCode.InternalServerError);
 
 			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
@@ -146,7 +146,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 		{
 			// Arrange
 			HttpRequestMessage actualRequestMessage = null!;
-			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
+			var mockMessageHandler = SetupHttpMock(r => actualRequestMessage = r);
 
 			var sut = new DynatraceMetricsExporter(
 				new DynatraceExporterOptions { Url = "http://my.url", ApiToken = "test-token" }, null,
@@ -180,7 +180,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 		{
 			// Arrange
 			HttpRequestMessage actualRequestMessage = null!;
-			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
+			var mockMessageHandler = SetupHttpMock(r => actualRequestMessage = r);
 
 			var sut = new DynatraceMetricsExporter(
 				new DynatraceExporterOptions { Prefix = "my.prefix" }, null,
@@ -214,7 +214,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 		{
 			// Arrange
 			HttpRequestMessage actualRequestMessage = null!;
-			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
+			var mockMessageHandler = SetupHttpMock(r => actualRequestMessage = r);
 
 			var defaultDimensions = new KeyValuePair<string, string>[] { new("d1", "v1"), new("d2", "v2"), };
 
@@ -291,7 +291,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 		{
 			// Arrange
 			HttpRequestMessage actualRequestMessage = null!;
-			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
+			var mockMessageHandler = SetupHttpMock(r => actualRequestMessage = r);
 
 			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
 
@@ -327,7 +327,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 		{
 			// Arrange
 			HttpRequestMessage actualRequestMessage = null!;
-			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
+			var mockMessageHandler = SetupHttpMock(r => actualRequestMessage = r);
 
 			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
 
@@ -365,7 +365,7 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 		{
 			// Arrange
 			HttpRequestMessage actualRequestMessage = null!;
-			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
+			var mockMessageHandler = SetupHttpMock(r => actualRequestMessage = r);
 
 			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
 
@@ -397,7 +397,7 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 		{
 			// Arrange
 			HttpRequestMessage actualRequestMessage = null!;
-			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
+			var mockMessageHandler = SetupHttpMock(r => actualRequestMessage = r);
 
 			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
 
@@ -429,7 +429,7 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 		{
 			// Arrange
 			HttpRequestMessage actualRequestMessage = null!;
-			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
+			var mockMessageHandler = SetupHttpMock(r => actualRequestMessage = r);
 
 			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
 
@@ -473,7 +473,7 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 		{
 			// Arrange
 			HttpRequestMessage actualRequestMessage = null!;
-			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
+			var mockMessageHandler = SetupHttpMock(r => actualRequestMessage = r);
 
 			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
 
@@ -517,7 +517,7 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 		{
 			// Arrange
 			HttpRequestMessage actualRequestMessage = null!;
-			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
+			var mockMessageHandler = SetupHttpMock(r => actualRequestMessage = r);
 
 			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
 
@@ -549,7 +549,7 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 		{
 			// Arrange
 			HttpRequestMessage actualRequestMessage = null!;
-			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
+			var mockMessageHandler = SetupHttpMock(r => actualRequestMessage = r);
 
 			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
 
@@ -581,7 +581,7 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 		{
 			// Arrange
 			HttpRequestMessage actualRequestMessage = null!;
-			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
+			var mockMessageHandler = SetupHttpMock(r => actualRequestMessage = r);
 
 			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
 
@@ -630,7 +630,7 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 				.Build();
 
 			HttpRequestMessage actualRequestMessage = null!;
-			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
+			var mockMessageHandler = SetupHttpMock(r => actualRequestMessage = r);
 
 			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
 
@@ -700,7 +700,7 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 				.Build();
 
 			HttpRequestMessage actualRequestMessage = null!;
-			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
+			var mockMessageHandler = SetupHttpMock(r => actualRequestMessage = r);
 
 			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
 
