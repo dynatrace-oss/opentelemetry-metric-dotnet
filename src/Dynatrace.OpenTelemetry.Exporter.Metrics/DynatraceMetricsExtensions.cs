@@ -26,7 +26,6 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 	{
 		public static DynatraceMetric ToLongCounterDelta(this Metric metric, MetricPoint metricPoint, ILogger logger)
 		{
-			EnsureDeltaTemporality(metric);
 			return DynatraceMetricsFactory.CreateLongCounterDelta(
 				metric.Name,
 				metricPoint.GetSumLong(),
@@ -36,7 +35,6 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 
 		public static DynatraceMetric ToDoubleCounterDelta(this Metric metric, MetricPoint metricPoint, ILogger logger)
 		{
-			EnsureDeltaTemporality(metric);
 			return DynatraceMetricsFactory.CreateDoubleCounterDelta(
 				metric.Name,
 				metricPoint.GetSumDouble(),
@@ -46,7 +44,6 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 
 		public static DynatraceMetric ToLongGauge(this Metric metric, MetricPoint metricPoint, ILogger logger)
 		{
-			// Temporality is not defined for Gauges, therefore no temporality check.
 			return DynatraceMetricsFactory.CreateLongGauge(
 				metric.Name,
 				metricPoint.GetGaugeLastValueLong(),
@@ -56,7 +53,6 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 
 		public static DynatraceMetric ToDoubleGauge(this Metric metric, MetricPoint metricPoint, ILogger logger)
 		{
-			// Temporality is not defined for Gauges, therefore no temporality check.
 			return DynatraceMetricsFactory.CreateDoubleGauge(
 				metric.Name,
 				metricPoint.GetGaugeLastValueDouble(),
@@ -66,7 +62,6 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 
 		public static DynatraceMetric ToDoubleHistogram(this Metric metric, MetricPoint metricPoint, ILogger logger)
 		{
-			EnsureDeltaTemporality(metric);
 			var buckets = GetHistogramBuckets(metricPoint);
 			var min = GetMinFromBoundaries(metricPoint.GetHistogramSum(), metricPoint.GetHistogramCount(), buckets);
 			var max = GetMaxFromBoundaries(metricPoint.GetHistogramSum(), metricPoint.GetHistogramCount(), buckets);
@@ -79,14 +74,6 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 				metricPoint.GetHistogramCount(),
 				metricPoint.GetAttributes(logger),
 				metricPoint.EndTime);
-		}
-
-		private static void EnsureDeltaTemporality(Metric metric)
-		{
-			if (metric.Temporality != AggregationTemporality.Delta)
-			{
-				throw new DynatraceMetricException($"Metric of name '{metric.Name}' is not of required temporality DELTA.");
-			}
 		}
 
 		private static List<HistogramBucket> GetHistogramBuckets(MetricPoint pointData)
