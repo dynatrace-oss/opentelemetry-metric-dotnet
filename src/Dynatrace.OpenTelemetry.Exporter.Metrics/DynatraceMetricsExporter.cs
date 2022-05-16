@@ -32,14 +32,14 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 	/// https://www.dynatrace.com/support/help/dynatrace-api/environment-api/metric-v2/post-ingest-metrics
 	/// </summary>
 	[ExportModes(ExportModes.Push)]
-	public class DynatraceMetricsExporter : BaseExporter<Metric>
+	internal class DynatraceMetricsExporter : BaseExporter<Metric>
 	{
 		private readonly DynatraceExporterOptions _options;
 		private readonly ILogger<DynatraceMetricsExporter> _logger;
 		private readonly HttpClient _httpClient;
 		private readonly DynatraceMetricsSerializer _serializer;
 
-		public DynatraceMetricsExporter(DynatraceExporterOptions options = null, ILogger<DynatraceMetricsExporter> logger = null)
+		internal DynatraceMetricsExporter(DynatraceExporterOptions options = null, ILogger<DynatraceMetricsExporter> logger = null)
 			: this(options, logger, new HttpClient()) { }
 
 		internal DynatraceMetricsExporter(DynatraceExporterOptions options, ILogger<DynatraceMetricsExporter> logger, HttpClient client)
