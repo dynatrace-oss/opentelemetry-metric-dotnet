@@ -46,7 +46,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 
 		public static DynatraceMetric ToLongGauge(this Metric metric, MetricPoint metricPoint, ILogger logger)
 		{
-			EnsureDeltaTemporality(metric);
+			// Temporality is not defined for Gauges, therefore no temporality check.
 			return DynatraceMetricsFactory.CreateLongGauge(
 				metric.Name,
 				metricPoint.GetGaugeLastValueLong(),
@@ -56,7 +56,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 
 		public static DynatraceMetric ToDoubleGauge(this Metric metric, MetricPoint metricPoint, ILogger logger)
 		{
-			EnsureDeltaTemporality(metric);
+			// Temporality is not defined for Gauges, therefore no temporality check.
 			return DynatraceMetricsFactory.CreateDoubleGauge(
 				metric.Name,
 				metricPoint.GetGaugeLastValueDouble(),
