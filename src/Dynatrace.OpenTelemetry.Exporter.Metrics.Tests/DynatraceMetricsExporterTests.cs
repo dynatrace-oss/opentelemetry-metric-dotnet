@@ -36,7 +36,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 	public sealed class DynatraceMetricsExporterTests : IDisposable
 	{
 		private readonly TagList _attributes = new() { { "attr1", "v1" }, { "attr2", "v2" } };
-		private readonly MeterProvider _provider;
+		private readonly MeterProvider _meterProvider;
 		private readonly List<Metric> _exportedMetrics;
 		private readonly Meter _meter;
 
@@ -45,7 +45,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 			_meter = new Meter(Guid.NewGuid().ToString(), "0.0.1");
 			_exportedMetrics = new List<Metric>();
 
-			_provider = Sdk.CreateMeterProviderBuilder()
+			_meterProvider = Sdk.CreateMeterProviderBuilder()
 				.AddMeter(_meter.Name)
 				.AddInMemoryExporter(_exportedMetrics, options => options.TemporalityPreference = MetricReaderTemporalityPreference.Delta)
 				.Build();
@@ -54,7 +54,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 		public void Dispose()
 		{
 			_meter.Dispose();
-			_provider.Dispose();
+			_meterProvider.Dispose();
 		}
 
 		[Fact]
@@ -69,7 +69,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
 
 			// Act
-			_provider.ForceFlush();
+			_meterProvider.ForceFlush();
 			sut.Export(new Batch<Metric>(_exportedMetrics.ToArray(), _exportedMetrics.Count));
 
 			// Assert
@@ -103,7 +103,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 			counter.Add(10, _attributes);
 
 			// Act
-			_provider.ForceFlush();
+			_meterProvider.ForceFlush();
 			var exportResult = sut.Export(new Batch<Metric>(_exportedMetrics.ToArray(), _exportedMetrics.Count));
 
 			// Assert
@@ -134,7 +134,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 			counter.Add(10, _attributes);
 
 			// Act
-			_provider.ForceFlush();
+			_meterProvider.ForceFlush();
 			var exportResult = sut.Export(new Batch<Metric>(_exportedMetrics.ToArray(), _exportedMetrics.Count));
 
 			// Assert
@@ -156,7 +156,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 			counter.Add(10, _attributes);
 
 			// Act
-			_provider.ForceFlush();
+			_meterProvider.ForceFlush();
 			sut.Export(new Batch<Metric>(_exportedMetrics.ToArray(), _exportedMetrics.Count));
 
 			// Assert
@@ -190,7 +190,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 			counter.Add(10, _attributes);
 
 			// Act
-			_provider.ForceFlush();
+			_meterProvider.ForceFlush();
 			sut.Export(new Batch<Metric>(_exportedMetrics.ToArray(), _exportedMetrics.Count));
 
 			// Assert
@@ -226,7 +226,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 			counter.Add(10, _attributes);
 
 			// Act
-			_provider.ForceFlush();
+			_meterProvider.ForceFlush();
 			sut.Export(new Batch<Metric>(_exportedMetrics.ToArray(), _exportedMetrics.Count));
 
 			// Assert
@@ -267,7 +267,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 			counter.Add(10, dimensions.ToArray());
 
 			// Act
-			_provider.ForceFlush();
+			_meterProvider.ForceFlush();
 			sut.Export(new Batch<Metric>(_exportedMetrics.ToArray(), _exportedMetrics.Count));
 
 			// Assert
@@ -302,7 +302,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 				counter.Add(i, _attributes);
 
 				_exportedMetrics.Clear();
-				_provider.ForceFlush();
+				_meterProvider.ForceFlush();
 				sut.Export(new Batch<Metric>(_exportedMetrics.ToArray(), _exportedMetrics.Count));
 
 				// Assert
@@ -338,7 +338,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 			counterB.Add(20, _attributes);
 
 			// Act
-			_provider.ForceFlush();
+			_meterProvider.ForceFlush();
 			sut.Export(new Batch<Metric>(_exportedMetrics.ToArray(), _exportedMetrics.Count));
 
 			// Assert
@@ -373,7 +373,7 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 			counter.Add(10, _attributes);
 
 			// Act
-			_provider.ForceFlush();
+			_meterProvider.ForceFlush();
 			sut.Export(new Batch<Metric>(_exportedMetrics.ToArray(), _exportedMetrics.Count));
 
 			// Assert
@@ -405,7 +405,7 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 			counter.Add(10.3, _attributes);
 
 			// Act
-			_provider.ForceFlush();
+			_meterProvider.ForceFlush();
 			sut.Export(new Batch<Metric>(_exportedMetrics.ToArray(), _exportedMetrics.Count));
 
 			// Assert
@@ -441,12 +441,12 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 				() => new List<Measurement<long>> { new(i++ * 10, _attributes) });
 
 			// Perform two exports to ensure deltas are exported correctly
-			_provider.ForceFlush();
+			_meterProvider.ForceFlush();
 			sut.Export(new Batch<Metric>(_exportedMetrics.ToArray(), _exportedMetrics.Count));
 			await AssertLines(10);
 			_exportedMetrics.Clear();
 
-			_provider.ForceFlush();
+			_meterProvider.ForceFlush();
 			sut.Export(new Batch<Metric>(_exportedMetrics.ToArray(), _exportedMetrics.Count));
 			await AssertLines(10);
 
@@ -485,12 +485,12 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 				() => new List<Measurement<double>> { new(i++ * 10.3, _attributes) });
 
 			// Perform two exports to ensure deltas are exported correctly
-			_provider.ForceFlush();
+			_meterProvider.ForceFlush();
 			sut.Export(new Batch<Metric>(_exportedMetrics.ToArray(), _exportedMetrics.Count));
 			await AssertLines(10.3);
 			_exportedMetrics.Clear();
 
-			_provider.ForceFlush();
+			_meterProvider.ForceFlush();
 			sut.Export(new Batch<Metric>(_exportedMetrics.ToArray(), _exportedMetrics.Count));
 			await AssertLines(10.3);
 
@@ -525,7 +525,7 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 				() => new List<Measurement<long>> { new(10, _attributes) });
 
 			// Act
-			_provider.ForceFlush();
+			_meterProvider.ForceFlush();
 			sut.Export(new Batch<Metric>(_exportedMetrics.ToArray(), _exportedMetrics.Count));
 
 			// Assert
@@ -557,7 +557,7 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 				() => new List<Measurement<double>> { new(10.3, _attributes), });
 
 			// Act
-			_provider.ForceFlush();
+			_meterProvider.ForceFlush();
 			sut.Export(new Batch<Metric>(_exportedMetrics.ToArray(), _exportedMetrics.Count));
 
 			// Assert
@@ -594,7 +594,7 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 			histogram.Record(21, _attributes);
 
 			// Act
-			_provider.ForceFlush();
+			_meterProvider.ForceFlush();
 			sut.Export(new Batch<Metric>(_exportedMetrics.ToArray(), _exportedMetrics.Count));
 
 			// Assert
@@ -620,7 +620,7 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 			using var meter = new Meter(Guid.NewGuid().ToString(), "0.0.1");
 			var exportedMetrics = new List<Metric>();
 
-			using var provider = Sdk.CreateMeterProviderBuilder()
+			using var meterProvider = Sdk.CreateMeterProviderBuilder()
 				.AddMeter(meter.Name)
 				.AddInMemoryExporter(exportedMetrics,
 					options => options.TemporalityPreference = MetricReaderTemporalityPreference.Delta)
@@ -642,7 +642,7 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 			histogram.Record(4, _attributes);
 
 			// Act
-			provider.ForceFlush();
+			meterProvider.ForceFlush();
 			sut.Export(new Batch<Metric>(exportedMetrics.ToArray(), exportedMetrics.Count));
 
 			// Assert
@@ -690,7 +690,7 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 			using var meter = new Meter(Guid.NewGuid().ToString(), "0.0.1");
 			var exportedMetrics = new List<Metric>();
 
-			using var provider = Sdk.CreateMeterProviderBuilder()
+			using var meterProvider = Sdk.CreateMeterProviderBuilder()
 				.AddMeter(meter.Name)
 				.AddInMemoryExporter(exportedMetrics,
 					options => options.TemporalityPreference = MetricReaderTemporalityPreference.Delta)
@@ -712,7 +712,7 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 			}
 
 			// Act
-			provider.ForceFlush();
+			meterProvider.ForceFlush();
 			sut.Export(new Batch<Metric>(exportedMetrics.ToArray(), exportedMetrics.Count));
 
 			// Assert
@@ -738,7 +738,7 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 			using var meter = new Meter(Guid.NewGuid().ToString(), "0.0.1");
 			var exportedMetrics = new List<Metric>();
 
-			using var provider = Sdk.CreateMeterProviderBuilder()
+			using var meterProvider = Sdk.CreateMeterProviderBuilder()
 				.AddMeter(meter.Name)
 				.AddInMemoryExporter(exportedMetrics,
 					options => options.TemporalityPreference = MetricReaderTemporalityPreference.Cumulative)
@@ -763,7 +763,7 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 			intHistogram.Record(10, _attributes);
 
 			// Act
-			_provider.ForceFlush();
+			this._meterProvider.ForceFlush();
 			sut.Export(new Batch<Metric>(exportedMetrics.ToArray(), exportedMetrics.Count));
 
 			// Assert

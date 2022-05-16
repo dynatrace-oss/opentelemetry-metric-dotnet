@@ -50,7 +50,7 @@ namespace Examples.Console
 			// needs to setup a MeterProvider and register the Meters/Views at this point.
 			// If meters are created later on, they can be registered upfront by using wildcards, e.g. AddMeter("MyApp.*")
 			// More examples can be found on GitHub: https://github.com/open-telemetry/opentelemetry-dotnet/tree/main/docs/metrics
-			using var provider = Sdk.CreateMeterProviderBuilder()
+			using var meterProvider = Sdk.CreateMeterProviderBuilder()
 				.AddMeter(meter.Name)
 				.AddDynatraceExporter(cfg =>
 				{
