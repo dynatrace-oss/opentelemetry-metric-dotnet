@@ -2,7 +2,7 @@
 
 ## Getting started
 
-The general setup of OpenTelemetry .NET is explained in the official [Getting Started Guide](https://github.com/open-telemetry/opentelemetry-dotnet/blob/core-1.2.0-rc1/docs/metrics/getting-started/README.md).
+The general setup of OpenTelemetry .NET is explained in the official [Getting Started Guide](https://github.com/open-telemetry/opentelemetry-dotnet/blob/core-1.2.0/docs/metrics/getting-started/README.md).
 
 To add the exporter to your project, install the [Dynatrace.OpenTelemetry.Exporter.Metrics](https://www.nuget.org/packages/Dynatrace.OpenTelemetry.Exporter.Metrics) package to your project.
 This can be done through the NuGet package manager in Visual Studio or by running the following command in your project folder:
