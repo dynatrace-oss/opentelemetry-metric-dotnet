@@ -83,7 +83,6 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 			{
 				buckets.Add(bucket);
 			}
-
 			return buckets;
 		}
 
