@@ -342,6 +342,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 			sut.Export(new Batch<Metric>(_exportedMetrics.ToArray(), _exportedMetrics.Count));
 
 			// Assert
+			Assert.Equal(2, _exportedMetrics.Count);
 			var pointA = MetricTest.FromMetricPoints(_exportedMetrics.First().GetMetricPoints()).First();
 			var pointB = MetricTest.FromMetricPoints(_exportedMetrics.Last().GetMetricPoints()).First();
 
