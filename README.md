@@ -1,12 +1,18 @@
 # Dynatrace OpenTelemetry Metrics Exporter for .NET
 
-> This exporter is based on the OpenTelemetry Metrics SDK for .NET, which is currently in an alpha state and neither considered stable nor complete as of this writing.
-> As such, this exporter is not intended for production use until the underlying OpenTelemetry Metrics API and SDK are stable.
-> See [open-telemetry/opentelemetry-dotnet](https://github.com/open-telemetry/opentelemetry-dotnet) for the current state of the OpenTelemetry SDK for .NET.
+This exporter allows exporting metrics created using the [OpenTelemetry SDK for .NET](https://github.com/open-telemetry/opentelemetry-dotnet)
+directly to [Dynatrace](https://www.dynatrace.com).
+
+More information on exporting OpenTelemetry metrics to Dynatrace can be found in the
+[Dynatrace documentation](https://www.dynatrace.com/support/help/extend-dynatrace/opentelemetry/opentelemetry-metrics).
+
+This exporter is built against the OpenTelemetry .NET
+SDK [v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet/releases/tag/core-1.2.0) which is the first stable
+release for the metrics SDK and should be compatible with this and later versions.
 
 ## Getting started
 
-The general setup of OpenTelemetry .NET is explained in the official [Getting Started Guide](https://github.com/open-telemetry/opentelemetry-dotnet/blob/core-1.2.0-rc1/docs/metrics/getting-started/README.md).
+The general setup of OpenTelemetry .NET is explained in the official [Getting Started Guide](https://github.com/open-telemetry/opentelemetry-dotnet/blob/core-1.2.0/docs/metrics/getting-started/README.md).
 
 To add the exporter to your project, install the [Dynatrace.OpenTelemetry.Exporter.Metrics](https://www.nuget.org/packages/Dynatrace.OpenTelemetry.Exporter.Metrics) package to your project.
 This can be done through the NuGet package manager in Visual Studio or by running the following command in your project folder:

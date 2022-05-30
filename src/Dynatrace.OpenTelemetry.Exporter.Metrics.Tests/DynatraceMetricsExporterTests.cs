@@ -33,38 +33,47 @@ using Xunit;
 
 namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 {
-	public class DynatraceMetricsExporterTests
+	public sealed class DynatraceMetricsExporterTests : IDisposable
 	{
 		private readonly TagList _attributes = new() { { "attr1", "v1" }, { "attr2", "v2" } };
+		private readonly MeterProvider _meterProvider;
+		private readonly List<Metric> _exportedMetrics;
+		private readonly Meter _meter;
+
+		public DynatraceMetricsExporterTests()
+		{
+			_meter = new Meter(Guid.NewGuid().ToString(), "0.0.1");
+			_exportedMetrics = new List<Metric>();
+
+			_meterProvider = Sdk.CreateMeterProviderBuilder()
+				.AddMeter(_meter.Name)
+				.AddInMemoryExporter(_exportedMetrics, options => options.TemporalityPreference = MetricReaderTemporalityPreference.Delta)
+				.Build();
+		}
+
+		public void Dispose()
+		{
+			_meter.Dispose();
+			_meterProvider.Dispose();
+		}
 
 		[Fact]
 		public async Task Export_WithDefaultOptions_ShouldSendRequestToOneAgent()
 		{
 			// Arrange
-			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
-
-			HttpRequestMessage actualRequestMessage = null!;
-			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
-
-			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
-
-			var exporterProxy = new TestMetricsExporterProxy(sut);
-
-			var metricReader = new BaseExportingMetricReader(exporterProxy);
-			using var provider = Sdk.CreateMeterProviderBuilder()
-				.AddMeter(meter.Name)
-				.AddReader(metricReader)
-				.Build();
-
-			var counter = meter.CreateCounter<int>("counter");
+			var counter = _meter.CreateCounter<int>("counter");
 			counter.Add(10, _attributes);
 
-			// Act - Reader will call our exporter
-			metricReader.Collect();
+			HttpRequestMessage actualRequestMessage = null!;
+			var mockMessageHandler = SetupHttpMock(r => actualRequestMessage = r);
+			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
+
+			// Act
+			_meterProvider.ForceFlush();
+			sut.Export(new Batch<Metric>(_exportedMetrics.ToArray(), _exportedMetrics.Count));
 
 			// Assert
-			var exportedMetrics = exporterProxy.GetExportedMetrics();
-			var point = MetricTest.FromMetricPoints(exportedMetrics.First().GetMetricPoints()).First();
+			var point = MetricTest.FromMetricPoints(_exportedMetrics.First().GetMetricPoints()).First();
 
 			var expected = $"counter,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=10 {point.TimeStamp}";
 			var actualMetricString = await actualRequestMessage.Content!.ReadAsStringAsync();
@@ -83,31 +92,22 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 		public void Export_ReceivedErrorFromServer_ReturnsFailedExportResult()
 		{
 			// Arrange
-			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
-
 			HttpRequestMessage actualRequestMessage = null!;
 			var mockMessageHandler = SetupHttpMock(
-				(HttpRequestMessage r) => actualRequestMessage = r,
+				r => actualRequestMessage = r,
 				HttpStatusCode.InternalServerError);
 
 			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
 
-			var exporterProxy = new TestMetricsExporterProxy(sut);
-
-			var metricReader = new BaseExportingMetricReader(exporterProxy);
-			using var provider = Sdk.CreateMeterProviderBuilder()
-				.AddMeter(meter.Name)
-				.AddReader(metricReader)
-				.Build();
-
-			var counter = meter.CreateCounter<int>("counter");
+			var counter = _meter.CreateCounter<int>("counter");
 			counter.Add(10, _attributes);
 
-			// Act - Reader will call our exporter
-			metricReader.Collect();
+			// Act
+			_meterProvider.ForceFlush();
+			var exportResult = sut.Export(new Batch<Metric>(_exportedMetrics.ToArray(), _exportedMetrics.Count));
 
 			// Assert
-			Assert.Equal(ExportResult.Failure, exporterProxy.ExportResult);
+			Assert.Equal(ExportResult.Failure, exportResult);
 
 			mockMessageHandler.Protected().Verify(
 				"SendAsync",
@@ -122,8 +122,6 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 		public void Export_ExceptionWithRequest_ReturnsFailedExportResult()
 		{
 			// Arrange
-			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
-
 			var mockMessageHandler = new Mock<HttpMessageHandler>();
 			mockMessageHandler.Protected()
 				.Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(),
@@ -132,54 +130,37 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 
 			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
 
-			var exporterProxy = new TestMetricsExporterProxy(sut);
-
-			var metricReader = new BaseExportingMetricReader(exporterProxy);
-			using var provider = Sdk.CreateMeterProviderBuilder()
-				.AddMeter(meter.Name)
-				.AddReader(metricReader)
-				.Build();
-
-			var counter = meter.CreateCounter<int>("counter");
+			var counter = _meter.CreateCounter<int>("counter");
 			counter.Add(10, _attributes);
 
-			// Act - Reader will call our exporter
-			metricReader.Collect();
+			// Act
+			_meterProvider.ForceFlush();
+			var exportResult = sut.Export(new Batch<Metric>(_exportedMetrics.ToArray(), _exportedMetrics.Count));
 
 			// Assert
-			Assert.Equal(ExportResult.Failure, exporterProxy.ExportResult);
+			Assert.Equal(ExportResult.Failure, exportResult);
 		}
 
 		[Fact]
 		public async Task Export_WithUriAndTokenOptions_ShouldSendRequestToUrlWithToken()
 		{
 			// Arrange
-			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
-
 			HttpRequestMessage actualRequestMessage = null!;
-			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
+			var mockMessageHandler = SetupHttpMock(r => actualRequestMessage = r);
 
 			var sut = new DynatraceMetricsExporter(
 				new DynatraceExporterOptions { Url = "http://my.url", ApiToken = "test-token" }, null,
 				new HttpClient(mockMessageHandler.Object));
 
-			var exporterProxy = new TestMetricsExporterProxy(sut);
-
-			var metricReader = new BaseExportingMetricReader(exporterProxy);
-			using var provider = Sdk.CreateMeterProviderBuilder()
-				.AddMeter(meter.Name)
-				.AddReader(metricReader)
-				.Build();
-
-			var counter = meter.CreateCounter<int>("counter");
+			var counter = _meter.CreateCounter<int>("counter");
 			counter.Add(10, _attributes);
 
-			// Act - Reader will call our exporter
-			metricReader.Collect();
+			// Act
+			_meterProvider.ForceFlush();
+			sut.Export(new Batch<Metric>(_exportedMetrics.ToArray(), _exportedMetrics.Count));
 
 			// Assert
-			var exportedMetrics = exporterProxy.GetExportedMetrics();
-			var point = MetricTest.FromMetricPoints(exportedMetrics.First().GetMetricPoints()).First();
+			var point = MetricTest.FromMetricPoints(_exportedMetrics.First().GetMetricPoints()).First();
 
 			var expected = $"counter,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=10 {point.TimeStamp}";
 			var actualMetricString = await actualRequestMessage.Content!.ReadAsStringAsync();
@@ -198,32 +179,22 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 		public async Task Export_WithPrefixOptions_ShouldAppendPrefixToMetrics()
 		{
 			// Arrange
-			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
-
 			HttpRequestMessage actualRequestMessage = null!;
-			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
+			var mockMessageHandler = SetupHttpMock(r => actualRequestMessage = r);
 
 			var sut = new DynatraceMetricsExporter(
 				new DynatraceExporterOptions { Prefix = "my.prefix" }, null,
 				new HttpClient(mockMessageHandler.Object));
 
-			var exporterProxy = new TestMetricsExporterProxy(sut);
-
-			var metricReader = new BaseExportingMetricReader(exporterProxy);
-			using var provider = Sdk.CreateMeterProviderBuilder()
-				.AddMeter(meter.Name)
-				.AddReader(metricReader)
-				.Build();
-
-			var counter = meter.CreateCounter<int>("counter");
+			var counter = _meter.CreateCounter<int>("counter");
 			counter.Add(10, _attributes);
 
-			// Act - Reader will call our exporter
-			metricReader.Collect();
+			// Act
+			_meterProvider.ForceFlush();
+			sut.Export(new Batch<Metric>(_exportedMetrics.ToArray(), _exportedMetrics.Count));
 
 			// Assert
-			var exportedMetrics = exporterProxy.GetExportedMetrics();
-			var point = MetricTest.FromMetricPoints(exportedMetrics.First().GetMetricPoints()).First();
+			var point = MetricTest.FromMetricPoints(_exportedMetrics.First().GetMetricPoints()).First();
 
 			var expected = $"my.prefix.counter,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=10 {point.TimeStamp}";
 			var actualMetricString = await actualRequestMessage.Content!.ReadAsStringAsync();
@@ -242,10 +213,8 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 		public async Task Export_WithDefaultDimensions_ShouldAddDimensionsToMetrics()
 		{
 			// Arrange
-			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
-
 			HttpRequestMessage actualRequestMessage = null!;
-			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
+			var mockMessageHandler = SetupHttpMock(r => actualRequestMessage = r);
 
 			var defaultDimensions = new KeyValuePair<string, string>[] { new("d1", "v1"), new("d2", "v2"), };
 
@@ -253,23 +222,15 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 				new DynatraceExporterOptions { DefaultDimensions = defaultDimensions }, null,
 				new HttpClient(mockMessageHandler.Object));
 
-			var exporterProxy = new TestMetricsExporterProxy(sut);
-
-			var metricReader = new BaseExportingMetricReader(exporterProxy);
-			using var provider = Sdk.CreateMeterProviderBuilder()
-				.AddMeter(meter.Name)
-				.AddReader(metricReader)
-				.Build();
-
-			var counter = meter.CreateCounter<int>("counter");
+			var counter = _meter.CreateCounter<int>("counter");
 			counter.Add(10, _attributes);
 
-			// Act - Reader will call our exporter
-			metricReader.Collect();
+			// Act
+			_meterProvider.ForceFlush();
+			sut.Export(new Batch<Metric>(_exportedMetrics.ToArray(), _exportedMetrics.Count));
 
 			// Assert
-			var exportedMetrics = exporterProxy.GetExportedMetrics();
-			var point = MetricTest.FromMetricPoints(exportedMetrics.First().GetMetricPoints()).First();
+			var point = MetricTest.FromMetricPoints(_exportedMetrics.First().GetMetricPoints()).First();
 
 			var expected = $"counter,d1=v1,d2=v2,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=10 {point.TimeStamp}";
 			var actualMetricString = await actualRequestMessage.Content!.ReadAsStringAsync();
@@ -288,8 +249,6 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 		public void Export_WithTooLargeMetric_ShouldNotSendRequest()
 		{
 			// Arrange
-			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
-
 			var mockMessageHandler = SetupHttpMock();
 			var mockLogger = new Mock<ILogger<DynatraceMetricsExporter>>();
 			mockLogger.Setup(x => x.IsEnabled(LogLevel.Warning)).Returns(true);
@@ -304,19 +263,12 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 
 			var sut = new DynatraceMetricsExporter(null, mockLogger.Object, new HttpClient(mockMessageHandler.Object));
 
-			var exporterProxy = new TestMetricsExporterProxy(sut);
-
-			var metricReader = new BaseExportingMetricReader(exporterProxy);
-			using var provider = Sdk.CreateMeterProviderBuilder()
-				.AddMeter(meter.Name)
-				.AddReader(metricReader)
-				.Build();
-
-			var counter = meter.CreateCounter<int>("counter");
+			var counter = _meter.CreateCounter<int>("counter");
 			counter.Add(10, dimensions.ToArray());
 
-			// Act - Reader will call our exporter
-			metricReader.Collect();
+			// Act
+			_meterProvider.ForceFlush();
+			sut.Export(new Batch<Metric>(_exportedMetrics.ToArray(), _exportedMetrics.Count));
 
 			// Assert
 			mockMessageHandler.Protected().Verify(
@@ -335,97 +287,26 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 		}
 
 		[Fact]
-		public void Export_OverrideAggregationTemporality_ShouldThrowArgumentException()
-		{
-			// Arrange
-			var sut = new DynatraceMetricsExporter();
-
-			// It should not be possible to override the reader with a different temporality
-			// https://github.com/open-telemetry/opentelemetry-specification/blob/v1.8.0/specification/metrics/sdk.md#temporality-override-rules
-			var ex = Assert.Throws<NotSupportedException>(() => new PeriodicExportingMetricReader(sut) { Temporality = AggregationTemporality.Cumulative });
-
-			Assert.Contains(
-				"The temporality cannot be modified (the current value is Delta)",
-				ex.Message);
-		}
-
-		[Fact]
-		public async Task Export_SecondCumulativeMetricReader_DynatraceExporterUsesDelta()
-		{
-			// Arrange
-			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
-
-			HttpRequestMessage actualRequestMessage = null!;
-			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
-
-			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
-
-			var exporterProxy = new TestMetricsExporterProxy(sut);
-
-			var metricReader = new BaseExportingMetricReader(exporterProxy);
-			using var provider = Sdk.CreateMeterProviderBuilder()
-				.AddMeter(meter.Name)
-				.AddReader(metricReader)
-				// configure another reader with Cumulative aggregation
-				.AddConsoleExporter(opt => opt.AggregationTemporality = AggregationTemporality.Cumulative)
-				.Build();
-
-			var counter = meter.CreateCounter<int>("counter");
-
-			for (var i = 10; i <= 30; i += 10)
-			{
-				counter.Add(i, _attributes);
-
-				metricReader.Collect();
-
-				// Assert
-				var exportedMetrics = exporterProxy.GetExportedMetrics();
-				var point = MetricTest.FromMetricPoints(exportedMetrics.First().GetMetricPoints()).First();
-
-				var expected = $"counter,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta={i} {point.TimeStamp}";
-				var actualMetricString = await actualRequestMessage.Content!.ReadAsStringAsync();
-				Assert.Equal(expected, actualMetricString);
-
-				AssertExportRequest(actualRequestMessage);
-			}
-
-			mockMessageHandler.Protected().Verify(
-				"SendAsync",
-				Times.Exactly(3),
-				ItExpr.IsAny<HttpRequestMessage>(),
-				ItExpr.IsAny<CancellationToken>());
-		}
-
-		[Fact]
 		public async Task Export_SimulateMultipleExports_ShouldExportCorrectDelta()
 		{
 			// Arrange
-			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
-
 			HttpRequestMessage actualRequestMessage = null!;
-			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
+			var mockMessageHandler = SetupHttpMock(r => actualRequestMessage = r);
 
 			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
 
-			var exporterProxy = new TestMetricsExporterProxy(sut);
-
-			var metricReader = new BaseExportingMetricReader(exporterProxy);
-			using var provider = Sdk.CreateMeterProviderBuilder()
-				.AddMeter(meter.Name)
-				.AddReader(metricReader)
-				.Build();
-
-			var counter = meter.CreateCounter<int>("counter");
+			var counter = _meter.CreateCounter<int>("counter");
 
 			for (var i = 10; i <= 30; i += 10)
 			{
 				counter.Add(i, _attributes);
 
-				metricReader.Collect();
+				_exportedMetrics.Clear();
+				_meterProvider.ForceFlush();
+				sut.Export(new Batch<Metric>(_exportedMetrics.ToArray(), _exportedMetrics.Count));
 
 				// Assert
-				var exportedMetrics = exporterProxy.GetExportedMetrics();
-				var point = MetricTest.FromMetricPoints(exportedMetrics.First().GetMetricPoints()).First();
+				var point = MetricTest.FromMetricPoints(_exportedMetrics.First().GetMetricPoints()).First();
 
 				var expected = $"counter,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta={i} {point.TimeStamp}";
 				var actualMetricString = await actualRequestMessage.Content!.ReadAsStringAsync();
@@ -445,34 +326,25 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 		public async Task Export_MultipleMetricStreams_ShouldExportMultipleLines()
 		{
 			// Arrange
-			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
-
 			HttpRequestMessage actualRequestMessage = null!;
-			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
+			var mockMessageHandler = SetupHttpMock(r => actualRequestMessage = r);
 
 			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
 
-			var exporterProxy = new TestMetricsExporterProxy(sut);
-
-			var metricReader = new BaseExportingMetricReader(exporterProxy);
-			using var provider = Sdk.CreateMeterProviderBuilder()
-				.AddMeter(meter.Name)
-				.AddReader(metricReader)
-				.Build();
-
-			var counterA = meter.CreateCounter<int>("counterA");
+			var counterA = _meter.CreateCounter<int>("counterA");
 			counterA.Add(10, _attributes);
 
-			var counterB = meter.CreateCounter<int>("counterB");
+			var counterB = _meter.CreateCounter<int>("counterB");
 			counterB.Add(20, _attributes);
 
-			// Act - Reader will call our exporter
-			metricReader.Collect();
+			// Act
+			_meterProvider.ForceFlush();
+			sut.Export(new Batch<Metric>(_exportedMetrics.ToArray(), _exportedMetrics.Count));
 
 			// Assert
-			var exportedMetrics = exporterProxy.GetExportedMetrics();
-			var pointA = MetricTest.FromMetricPoints(exportedMetrics.First().GetMetricPoints()).First();
-			var pointB = MetricTest.FromMetricPoints(exportedMetrics.Last().GetMetricPoints()).First();
+			Assert.Equal(2, _exportedMetrics.Count);
+			var pointA = MetricTest.FromMetricPoints(_exportedMetrics.First().GetMetricPoints()).First();
+			var pointB = MetricTest.FromMetricPoints(_exportedMetrics.Last().GetMetricPoints()).First();
 
 			var expected = @$"counterA,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=10 {pointA.TimeStamp}
 counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {pointB.TimeStamp}";
@@ -493,31 +365,20 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 		public async Task Export_LongSum_ShouldExportAsDelta()
 		{
 			// Arrange
-			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
-
 			HttpRequestMessage actualRequestMessage = null!;
-			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
+			var mockMessageHandler = SetupHttpMock(r => actualRequestMessage = r);
 
 			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
 
-			// Delta is already the preferred/supported temporality for our exporter
-			var exporterProxy = new TestMetricsExporterProxy(sut);
-
-			var metricReader = new BaseExportingMetricReader(exporterProxy);
-			using var provider = Sdk.CreateMeterProviderBuilder()
-				.AddMeter(meter.Name)
-				.AddReader(metricReader)
-				.Build();
-
-			var counter = meter.CreateCounter<long>("counter");
+			var counter = _meter.CreateCounter<long>("counter");
 			counter.Add(10, _attributes);
 
-			// Act - Reader will call our exporter
-			metricReader.Collect();
+			// Act
+			_meterProvider.ForceFlush();
+			sut.Export(new Batch<Metric>(_exportedMetrics.ToArray(), _exportedMetrics.Count));
 
 			// Assert
-			var exportedMetrics = exporterProxy.GetExportedMetrics();
-			var point = MetricTest.FromMetricPoints(exportedMetrics.First().GetMetricPoints()).First();
+			var point = MetricTest.FromMetricPoints(_exportedMetrics.First().GetMetricPoints()).First();
 
 			var expected = $"counter,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=10 {point.TimeStamp}";
 			var actualMetricString = await actualRequestMessage.Content!.ReadAsStringAsync();
@@ -536,31 +397,20 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 		public async Task Export_DoubleSum_ShouldExportAsDelta()
 		{
 			// Arrange
-			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
-
 			HttpRequestMessage actualRequestMessage = null!;
-			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
+			var mockMessageHandler = SetupHttpMock(r => actualRequestMessage = r);
 
 			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
 
-			// Delta is already the preferred/supported temporality for our exporter
-			var exporterProxy = new TestMetricsExporterProxy(sut);
-
-			var metricReader = new BaseExportingMetricReader(exporterProxy);
-			using var provider = Sdk.CreateMeterProviderBuilder()
-				.AddMeter(meter.Name)
-				.AddReader(metricReader)
-				.Build();
-
-			var counter = meter.CreateCounter<double>("double_counter");
+			var counter = _meter.CreateCounter<double>("double_counter");
 			counter.Add(10.3, _attributes);
 
-			// Act - Reader will call our exporter
-			metricReader.Collect();
+			// Act
+			_meterProvider.ForceFlush();
+			sut.Export(new Batch<Metric>(_exportedMetrics.ToArray(), _exportedMetrics.Count));
 
 			// Assert
-			var exportedMetrics = exporterProxy.GetExportedMetrics();
-			var point = MetricTest.FromMetricPoints(exportedMetrics.First().GetMetricPoints()).First();
+			var point = MetricTest.FromMetricPoints(_exportedMetrics.First().GetMetricPoints()).First();
 
 			var expected = $"double_counter,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=10.3 {point.TimeStamp}";
 			var actualMetricString = await actualRequestMessage.Content!.ReadAsStringAsync();
@@ -579,42 +429,31 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 		public async Task Export_ObservableLongCounter_ShouldExportAsDelta()
 		{
 			// Arrange
-			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
-
 			HttpRequestMessage actualRequestMessage = null!;
-			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
+			var mockMessageHandler = SetupHttpMock(r => actualRequestMessage = r);
 
 			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
-
-			// Delta is already the preferred/supported temporality for our exporter
-			var exporterProxy = new TestMetricsExporterProxy(sut);
-
-			var metricReader = new BaseExportingMetricReader(exporterProxy);
-			using var provider = Sdk.CreateMeterProviderBuilder()
-				.AddMeter(meter.Name)
-				.AddReader(metricReader)
-				.Build();
 
 			// When exported twice, this obs counter will output
 			// 10 -> 20. Since we expect deltas to be calculated by the SDK
 			// we assert both exports to be 10
 			var i = 1;
-			var observableCounter = meter.CreateObservableCounter("obs_counter", () =>
-			{
-				return new List<Measurement<long>>() { new(i++ * 10, _attributes) };
-			});
+			_meter.CreateObservableCounter("obs_counter",
+				() => new List<Measurement<long>> { new(i++ * 10, _attributes) });
 
 			// Perform two exports to ensure deltas are exported correctly
-			metricReader.Collect();
-			await AssertLines(exporterProxy, 10);
+			_meterProvider.ForceFlush();
+			sut.Export(new Batch<Metric>(_exportedMetrics.ToArray(), _exportedMetrics.Count));
+			await AssertLines(10);
+			_exportedMetrics.Clear();
 
-			metricReader.Collect();
-			await AssertLines(exporterProxy, 10);
+			_meterProvider.ForceFlush();
+			sut.Export(new Batch<Metric>(_exportedMetrics.ToArray(), _exportedMetrics.Count));
+			await AssertLines(10);
 
-			async Task AssertLines(TestMetricsExporterProxy exporter, long expectedValue)
+			async Task AssertLines(long expectedValue)
 			{
-				var exportedMetrics = exporter.GetExportedMetrics();
-				var point = MetricTest.FromMetricPoints(exportedMetrics.First().GetMetricPoints()).First();
+				var point = MetricTest.FromMetricPoints(_exportedMetrics.First().GetMetricPoints()).First();
 
 				var expected = $"obs_counter,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta={expectedValue} {point.TimeStamp}";
 				var actualMetricString = await actualRequestMessage.Content!.ReadAsStringAsync();
@@ -634,42 +473,31 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 		public async Task Export_ObservableDoubleCounter_ShouldExportAsDelta()
 		{
 			// Arrange
-			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
-
 			HttpRequestMessage actualRequestMessage = null!;
-			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
+			var mockMessageHandler = SetupHttpMock(r => actualRequestMessage = r);
 
 			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
-
-			// Delta is already the preferred/temporality temporality for our exporter
-			var exporterProxy = new TestMetricsExporterProxy(sut);
-
-			var metricReader = new BaseExportingMetricReader(exporterProxy);
-			using var provider = Sdk.CreateMeterProviderBuilder()
-				.AddMeter(meter.Name)
-				.AddReader(metricReader)
-				.Build();
 
 			// When exported twice, this obs counter will output
 			// 10.3 -> 20.6. Since we expect deltas to be calculated by the SDK
 			// we assert both exports to be 10.3
 			var i = 1;
-			var observableCounter = meter.CreateObservableCounter("double_obs_counter", () =>
-			{
-				return new List<Measurement<double>>() { new(i++ * 10.3, _attributes) };
-			});
+			_meter.CreateObservableCounter("double_obs_counter",
+				() => new List<Measurement<double>> { new(i++ * 10.3, _attributes) });
 
 			// Perform two exports to ensure deltas are exported correctly
-			metricReader.Collect();
-			await AssertLines(exporterProxy, 10.3);
+			_meterProvider.ForceFlush();
+			sut.Export(new Batch<Metric>(_exportedMetrics.ToArray(), _exportedMetrics.Count));
+			await AssertLines(10.3);
+			_exportedMetrics.Clear();
 
-			metricReader.Collect();
-			await AssertLines(exporterProxy, 10.3);
+			_meterProvider.ForceFlush();
+			sut.Export(new Batch<Metric>(_exportedMetrics.ToArray(), _exportedMetrics.Count));
+			await AssertLines(10.3);
 
-			async Task AssertLines(TestMetricsExporterProxy exporter, double expectedValue)
+			async Task AssertLines(double expectedValue)
 			{
-				var exportedMetrics = exporter.GetExportedMetrics();
-				var point = MetricTest.FromMetricPoints(exportedMetrics.First().GetMetricPoints()).First();
+				var point = MetricTest.FromMetricPoints(_exportedMetrics.First().GetMetricPoints()).First();
 
 				var expected = $"double_obs_counter,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta={expectedValue} {point.TimeStamp}";
 				var actualMetricString = await actualRequestMessage.Content!.ReadAsStringAsync();
@@ -689,32 +517,20 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 		public async Task Export_ObservableLongGauge()
 		{
 			// Arrange
-			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
-
 			HttpRequestMessage actualRequestMessage = null!;
-			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
+			var mockMessageHandler = SetupHttpMock(r => actualRequestMessage = r);
 
 			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
 
-			var exporterProxy = new TestMetricsExporterProxy(sut);
+			_meter.CreateObservableGauge("gauge",
+				() => new List<Measurement<long>> { new(10, _attributes) });
 
-			var metricReader = new BaseExportingMetricReader(exporterProxy);
-			using var provider = Sdk.CreateMeterProviderBuilder()
-				.AddMeter(meter.Name)
-				.AddReader(metricReader)
-				.Build();
-
-			var observableCounter = meter.CreateObservableGauge("gauge", () =>
-			{
-				return new List<Measurement<long>>() { new(10, _attributes) };
-			});
-
-			// Act - Reader will call our exporter
-			metricReader.Collect();
+			// Act
+			_meterProvider.ForceFlush();
+			sut.Export(new Batch<Metric>(_exportedMetrics.ToArray(), _exportedMetrics.Count));
 
 			// Assert
-			var exportedMetrics = exporterProxy.GetExportedMetrics();
-			var point = MetricTest.FromMetricPoints(exportedMetrics.First().GetMetricPoints()).First();
+			var point = MetricTest.FromMetricPoints(_exportedMetrics.First().GetMetricPoints()).First();
 
 			var expected = $"gauge,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry gauge,10 {point.TimeStamp}";
 			var actualMetricString = await actualRequestMessage.Content!.ReadAsStringAsync();
@@ -733,32 +549,20 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 		public async Task Export_ObservableDoubleGauge()
 		{
 			// Arrange
-			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
-
 			HttpRequestMessage actualRequestMessage = null!;
-			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
+			var mockMessageHandler = SetupHttpMock(r => actualRequestMessage = r);
 
 			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
 
-			var exporterProxy = new TestMetricsExporterProxy(sut);
+			_meter.CreateObservableGauge("double_gauge",
+				() => new List<Measurement<double>> { new(10.3, _attributes), });
 
-			var metricReader = new BaseExportingMetricReader(exporterProxy);
-			using var provider = Sdk.CreateMeterProviderBuilder()
-				.AddMeter(meter.Name)
-				.AddReader(metricReader)
-				.Build();
-
-			var observableCounter = meter.CreateObservableGauge("double_gauge", () =>
-			{
-				return new List<Measurement<double>>() { new(10.3, _attributes), };
-			});
-
-			// Act - Reader will call our exporter
-			metricReader.Collect();
+			// Act
+			_meterProvider.ForceFlush();
+			sut.Export(new Batch<Metric>(_exportedMetrics.ToArray(), _exportedMetrics.Count));
 
 			// Assert
-			var exportedMetrics = exporterProxy.GetExportedMetrics();
-			var point = MetricTest.FromMetricPoints(exportedMetrics.First().GetMetricPoints()).First();
+			var point = MetricTest.FromMetricPoints(_exportedMetrics.First().GetMetricPoints()).First();
 
 			var expected = $"double_gauge,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry gauge,10.3 {point.TimeStamp}";
 			var actualMetricString = await actualRequestMessage.Content!.ReadAsStringAsync();
@@ -777,35 +581,25 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 		public async Task Export_LongHistogram()
 		{
 			// Arrange
-			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
-
 			HttpRequestMessage actualRequestMessage = null!;
-			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
+			var mockMessageHandler = SetupHttpMock(r => actualRequestMessage = r);
 
 			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
 
-			var exporterProxy = new TestMetricsExporterProxy(sut);
-
-			var metricReader = new BaseExportingMetricReader(exporterProxy);
-			using var provider = Sdk.CreateMeterProviderBuilder()
-				.AddMeter(meter.Name)
-				.AddReader(metricReader)
-				.Build();
-
 			// default bounds are 0, 5, 10, 25, 50, 75, 100, 250, 500
-			var histogram = meter.CreateHistogram<long>("histogram");
+			var histogram = _meter.CreateHistogram<long>("histogram");
 
 			histogram.Record(1, _attributes);
 			histogram.Record(6, _attributes);
 			histogram.Record(11, _attributes);
 			histogram.Record(21, _attributes);
 
-			// Act - Reader will call our exporter
-			metricReader.Collect();
+			// Act
+			_meterProvider.ForceFlush();
+			sut.Export(new Batch<Metric>(_exportedMetrics.ToArray(), _exportedMetrics.Count));
 
 			// Assert
-			var exportedMetrics = exporterProxy.GetExportedMetrics();
-			var point = MetricTest.FromMetricPoints(exportedMetrics.First().GetMetricPoints()).First();
+			var point = MetricTest.FromMetricPoints(_exportedMetrics.First().GetMetricPoints()).First();
 
 			var expected = $"histogram,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry gauge,min=0,max=25,sum=39,count=4 {point.TimeStamp}";
 			var actualMetricString = await actualRequestMessage.Content!.ReadAsStringAsync();
@@ -824,23 +618,22 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 		public async Task Export_Histogram_CustomBounds()
 		{
 			// Arrange
-			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
+			using var meter = new Meter(Guid.NewGuid().ToString(), "0.0.1");
+			var exportedMetrics = new List<Metric>();
 
-			HttpRequestMessage actualRequestMessage = null!;
-			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
-
-			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
-
-			var exporterProxy = new TestMetricsExporterProxy(sut);
-
-			var metricReader = new BaseExportingMetricReader(exporterProxy);
-			using var provider = Sdk.CreateMeterProviderBuilder()
+			using var meterProvider = Sdk.CreateMeterProviderBuilder()
 				.AddMeter(meter.Name)
-				.AddReader(metricReader)
+				.AddInMemoryExporter(exportedMetrics,
+					options => options.TemporalityPreference = MetricReaderTemporalityPreference.Delta)
 				.AddView(
 					instrumentName: "histogram",
 					new ExplicitBucketHistogramConfiguration { Boundaries = new double[] { 0.1, 1.2, 3.4, 5.6 } })
 				.Build();
+
+			HttpRequestMessage actualRequestMessage = null!;
+			var mockMessageHandler = SetupHttpMock(r => actualRequestMessage = r);
+
+			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
 
 			var histogram = meter.CreateHistogram<double>("histogram");
 
@@ -849,11 +642,11 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 			histogram.Record(2, _attributes);
 			histogram.Record(4, _attributes);
 
-			// Act - Reader will call our exporter
-			metricReader.Collect();
+			// Act
+			meterProvider.ForceFlush();
+			sut.Export(new Batch<Metric>(exportedMetrics.ToArray(), exportedMetrics.Count));
 
 			// Assert
-			var exportedMetrics = exporterProxy.GetExportedMetrics();
 			var point = MetricTest.FromMetricPoints(exportedMetrics.First().GetMetricPoints()).First();
 
 			var expected = $"histogram,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry gauge,min=0.1,max=5.6,sum=7.6,count=4 {point.TimeStamp}";
@@ -895,23 +688,22 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 		public async Task Export_Histogram_ShouldSetMinAndMaxCorrectly(double[] values, double min, double max, double sum, int count, double[] boundaries)
 		{
 			// Arrange
-			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
+			using var meter = new Meter(Guid.NewGuid().ToString(), "0.0.1");
+			var exportedMetrics = new List<Metric>();
 
-			HttpRequestMessage actualRequestMessage = null!;
-			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
-
-			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
-
-			var exporterProxy = new TestMetricsExporterProxy(sut);
-
-			var metricReader = new BaseExportingMetricReader(exporterProxy);
-			using var provider = Sdk.CreateMeterProviderBuilder()
+			using var meterProvider = Sdk.CreateMeterProviderBuilder()
 				.AddMeter(meter.Name)
-				.AddReader(metricReader)
+				.AddInMemoryExporter(exportedMetrics,
+					options => options.TemporalityPreference = MetricReaderTemporalityPreference.Delta)
 				.AddView(
 					instrumentName: "histogram",
 					new ExplicitBucketHistogramConfiguration { Boundaries = boundaries })
 				.Build();
+
+			HttpRequestMessage actualRequestMessage = null!;
+			var mockMessageHandler = SetupHttpMock(r => actualRequestMessage = r);
+
+			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
 
 			var histogram = meter.CreateHistogram<double>("histogram");
 
@@ -920,11 +712,11 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 				histogram.Record(value, _attributes);
 			}
 
-			// Act - Reader will call our exporter
-			metricReader.Collect();
+			// Act
+			meterProvider.ForceFlush();
+			sut.Export(new Batch<Metric>(exportedMetrics.ToArray(), exportedMetrics.Count));
 
 			// Assert
-			var exportedMetrics = exporterProxy.GetExportedMetrics();
 			var point = MetricTest.FromMetricPoints(exportedMetrics.First().GetMetricPoints()).First();
 
 			var expected = $"histogram,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry gauge,min={min},max={max},sum={sum},count={count} {point.TimeStamp}";
@@ -938,59 +730,6 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 				ItExpr.IsAny<CancellationToken>());
 
 			AssertExportRequest(actualRequestMessage);
-		}
-
-		[Fact]
-		public async Task Export_View_CounterWithDeltaTemporality()
-		{
-			// Arrange
-			using var meter = new Meter(TestUtils.GetCurrentMethodName(), "0.0.1");
-
-			HttpRequestMessage actualRequestMessage = null!;
-			var mockMessageHandler = SetupHttpMock((HttpRequestMessage r) => actualRequestMessage = r);
-
-			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
-
-			var exporterProxy = new TestMetricsExporterProxy(sut);
-
-			var metricReader = new BaseExportingMetricReader(exporterProxy);
-			using var provider = Sdk.CreateMeterProviderBuilder()
-				.AddMeter(meter.Name)
-				.AddReader(metricReader)
-				.AddView(instrumentName: "counter", name: "myview")
-				.Build();
-
-			var counter = meter.CreateCounter<long>("counter");
-
-			counter.Add(10, _attributes);
-			metricReader.Collect();
-			await AssertLines(exporterProxy, 10);
-
-			counter.Add(20, _attributes);
-			metricReader.Collect();
-			await AssertLines(exporterProxy, 20);
-
-			counter.Add(30, _attributes);
-			metricReader.Collect();
-			await AssertLines(exporterProxy, 30);
-
-			async Task AssertLines(TestMetricsExporterProxy exporter, long expectedValue)
-			{
-				var exportedMetrics = exporter.GetExportedMetrics();
-				var point = MetricTest.FromMetricPoints(exportedMetrics.First().GetMetricPoints()).First();
-
-				var expected = $"myview,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta={expectedValue} {point.TimeStamp}";
-				var actualMetricString = await actualRequestMessage.Content!.ReadAsStringAsync();
-				Assert.Equal(expected, actualMetricString);
-			}
-
-			AssertExportRequest(actualRequestMessage);
-
-			mockMessageHandler.Protected().Verify(
-				"SendAsync",
-				Times.Exactly(3),
-				ItExpr.IsAny<HttpRequestMessage>(),
-				ItExpr.IsAny<CancellationToken>());
 		}
 
 		private static Mock<HttpMessageHandler> SetupHttpMock(

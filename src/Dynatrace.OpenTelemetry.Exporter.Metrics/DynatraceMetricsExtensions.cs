@@ -25,32 +25,40 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 	internal static class DynatraceMetricsExtensions
 	{
 		public static DynatraceMetric ToLongCounterDelta(this Metric metric, MetricPoint metricPoint, ILogger logger)
-			=> DynatraceMetricsFactory.CreateLongCounterDelta(
+		{
+			return DynatraceMetricsFactory.CreateLongCounterDelta(
 				metric.Name,
 				metricPoint.GetSumLong(),
 				metricPoint.GetAttributes(logger),
 				metricPoint.EndTime);
+		}
 
 		public static DynatraceMetric ToDoubleCounterDelta(this Metric metric, MetricPoint metricPoint, ILogger logger)
-			=> DynatraceMetricsFactory.CreateDoubleCounterDelta(
+		{
+			return DynatraceMetricsFactory.CreateDoubleCounterDelta(
 				metric.Name,
 				metricPoint.GetSumDouble(),
 				metricPoint.GetAttributes(logger),
 				metricPoint.EndTime);
+		}
 
 		public static DynatraceMetric ToLongGauge(this Metric metric, MetricPoint metricPoint, ILogger logger)
-			=> DynatraceMetricsFactory.CreateLongGauge(
+		{
+			return DynatraceMetricsFactory.CreateLongGauge(
 				metric.Name,
 				metricPoint.GetGaugeLastValueLong(),
 				metricPoint.GetAttributes(logger),
 				metricPoint.EndTime);
+		}
 
 		public static DynatraceMetric ToDoubleGauge(this Metric metric, MetricPoint metricPoint, ILogger logger)
-			=> DynatraceMetricsFactory.CreateDoubleGauge(
+		{
+			return DynatraceMetricsFactory.CreateDoubleGauge(
 				metric.Name,
 				metricPoint.GetGaugeLastValueDouble(),
 				metricPoint.GetAttributes(logger),
 				metricPoint.EndTime);
+		}
 
 		public static DynatraceMetric ToDoubleHistogram(this Metric metric, MetricPoint metricPoint, ILogger logger)
 		{
@@ -75,7 +83,6 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 			{
 				buckets.Add(bucket);
 			}
-
 			return buckets;
 		}
 

@@ -16,7 +16,7 @@
 
 namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 {
-	static class DynatraceMetricApiConstants
+	internal static class DynatraceMetricApiConstants
 	{
 		private const string _defaultOneAgentEndpoint = "http://localhost:14499/metrics/ingest";
 		private const int _payloadLinesLimit = 1000;
