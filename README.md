@@ -219,3 +219,9 @@ At the moment, this exporter **only supports attributes with a string value type
 This means that if attributes of any other type are used,
 they will be **ignored** and **only** the string-valued attributes
 are going to be sent to Dynatrace.
+
+### Histograms
+
+OpenTelemetry Histograms are exported to Dynatrace as statistical summaries consisting of a minimum and maximum value, 
+the total sum of all values, and the count of the values summarized. If the min and max values are not directly 
+available on the metric data point, estimations based on the boundaries of the first and last buckets containing values are used.
