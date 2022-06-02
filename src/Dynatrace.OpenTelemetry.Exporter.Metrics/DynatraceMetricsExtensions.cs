@@ -114,9 +114,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 						// of the following:
 						// - The lowest boundary
 						// - The average of the histogram (histogram sum / sum of counts)
-						return Math.Min(
-							Math.Min(buckets[i].ExplicitBound, histogramSum),
-							histogramSum / histogramValueCount);
+						return Math.Min(buckets[i].ExplicitBound, histogramSum / histogramValueCount);
 					}
 
 					return buckets[i - 1].ExplicitBound;
