@@ -672,7 +672,7 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 			AssertExportRequest(actualRequestMessage);
 		}
 
-		public static IEnumerable<object[]> TestData =>
+		public static IEnumerable<object[]> MinMaxEstimationData =>
 			new List<object[]>
 			{
 				new object[]
@@ -848,7 +848,7 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 
 
 		[Theory]
-		[MemberData(nameof(TestData))]
+		[MemberData(nameof(MinMaxEstimationData))]
 		public async Task Export_Histogram_ShouldSetMinAndMaxCorrectly(HistogramTestData testData)
 		{
 			// Arrange
