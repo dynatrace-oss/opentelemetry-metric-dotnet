@@ -663,29 +663,33 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 		}
 
 		[Theory]
-		// min: A value between the first two boundaries (1.5)
-		[InlineData(new[] { 1.5, 3.5, 3.5, 6 }, 1d, 5d, 14.5, 4, new[] { 1d, 2d, 3d, 4d, 5d })]
-		// min: lowest bucket has value, use the first boundary as estimation instead of -Inf
-		// max: last bucket has value, use the last boundary as estimation instead of Inf
-		[InlineData(new[] { 0.5, 3.5, 3.5, 6 }, 1d, 5d, 13.5, 4, new[] { 1d, 2d, 3d, 4d, 5d })]
-		// min: lowest bucket (-Inf, 1) has values, mean is lower than the lowest bucket bound and smaller than the sum
-		[InlineData(new[] { 0.9, 0.9 }, 0.9, 1, 1.8, 2, new[] { 1d, 2d, 3d, 4d, 5d })]
-		// min: lowest bucket (-Inf, 0) has values, sum is lower than the lowest bucket bound
-		[InlineData(new[] { 0.1, 0.1 }, 0.1, 0.2, 0.2, 2, new[] { 1d, 2d, 3d, 4d, 5d })]
-		// min: just one bucket from -Inf to Inf, calc the mean as min value.
-		// max: just one bucket from -Inf to Inf, calc the mean as max value.
-		[InlineData(new[] { 1d, 2d, 3d }, 2, 2, 6, 3, new double[] { })]
-		// min: just one bucket from -Inf to Inf, with a count of 1, use sum.
-		// max: just one bucket from -Inf to Inf, with a count of 1, use sum.
-		[InlineData(new[] { 6d }, 6, 6, 6, 1, new double[] { })]
-		// min: only the last bucket has a value (5, +Inf), use the last boundary as an estimation instead of Inf
-		// max: only the last bucket has a value (5, +Inf), use the last boundary as an estimation instead of Inf
-		[InlineData(new[] { 6d }, 5, 5, 6, 1, new[] { 1d, 2d, 3d, 4d, 5d })]
-		// max: A value between the last two boundaries.
-		[InlineData(new[] { 1.5, 3.5, 3.5, 4.5 }, 1d, 5d, 13, 4, new[] { 1d, 2d, 3d, 4d, 5d })]
-		// max: just values in one bucket, but lower than boundary, use sum.
-		[InlineData(new[] { 1d, 1d }, 0d, 2d, 2, 2, new[] { -5d, 0, 5d })]
-		public async Task Export_Histogram_ShouldSetMinAndMaxCorrectly(double[] values, double min, double max, double sum, int count, double[] boundaries)
+		// min: Values between the first two boundaries.
+		[InlineData(new[] { 1d, 2d, 3d, 4d, 5d }, 6, new[] { 1.5, 3.2, 3.2, 3.5, 4.8, 4.9 },  21.1, 1d, 5d)]
+		// min: First bucket has value, use the first boundary as estimation instead of Inf.
+		[InlineData(new[] { 1d, 2d, 3d, 4d, 5d }, 8, new[] { 0.5, 3.1, 3.1, 3.1, 6, 6, 6, 6.7 }, 34.5, 1d, 5d)]
+		// min: Only the first bucket has values, use the mean (0.25) Otherwise, the min would be estimated as 1, and min <= avg would be violated.
+		[InlineData(new[] { 1d, 2d, 3d, 4d, 5d }, 3, new[] { 0.3, 0.3, 0.15 }, 0.75, 0.25, 1)]
+		// min: Just one bucket from -Inf to Inf, calculate the mean as min value.
+		[InlineData(new double[0], 4, new[] { 2, 2, 2, 2.8 }, 8.8, 2.2, 2.2)]
+		// min: Just one bucket from -Inf to Inf, calculate the mean as min value.
+		[InlineData(new double[0], 1, new[] { 1.2 }, 1.2, 1.2, 1.2)]
+		// min: Only the last bucket has a value, use the lower bound.
+		[InlineData(new[] { 1d, 2d, 3d, 4d, 5d }, 3, new[] { 5.1, 5.1, 5.4 }, 15.6, 5, 5.2)]
+		// max: Values between the last two boundaries.
+		[InlineData(new[] { 1d, 2d, 3d, 4d, 5d }, 6, new[] { 1.5, 3.2, 3.2, 3.5, 4.8, 4.9 }, 21.1, 1d, 5d)]
+		// max: Values between the last two boundaries.
+		[InlineData(new[] { 1d, 2d, 3d, 4d, 5d }, 8, new[] { 0.5, 3.1, 3.1, 3.1, 6, 6, 6, 6.7 }, 34.5, 1, 5)]
+		// max: Only the last bucket has values, use the mean (10.1) Otherwise, the max would be estimated as 5, and max >= avg would be violated.
+		[InlineData(new[] { 1d, 2d, 3d, 4d, 5d }, 2, new[] { 5.2, 15 }, 20.2, 5, 10.1)]
+		// max: Just one bucket from -Inf to Inf, calculate the mean as max value.
+		[InlineData(new double[0], 4, new[] { 2, 2, 2, 2.8 }, 8.8, 2.2, 2.2)]
+		// max: Just one bucket from -Inf to Inf, calculate the mean as max value.
+		[InlineData(new double[0], 1, new[] { 1.2 }, 1.2, 1.2, 1.2)]
+		// max: Max is larger than the sum, use the estimated boundary.
+		[InlineData(new[] { 0d, 5d }, 2, new[] { 1, 1.3 }, 2.3, 0, 5d)]
+		// max: Only the first bucket has a value, use the upper bound.
+		[InlineData(new[] {1d, 2d, 3d, 4d, 5d}, 3, new [] {0.2, 0.4, 0.9}, 1.5, 0.5, 1)]
+		public async Task Export_Histogram_ShouldSetMinAndMaxCorrectly(double[] boundaries, int count, double[] values, double sum, double min, double max)
 		{
 			// Arrange
 			using var meter = new Meter(Guid.NewGuid().ToString(), "0.0.1");

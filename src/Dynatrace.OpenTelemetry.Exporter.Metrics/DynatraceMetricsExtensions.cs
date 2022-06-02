@@ -83,6 +83,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 			{
 				buckets.Add(bucket);
 			}
+
 			return buckets;
 		}
 
@@ -107,17 +108,12 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 					// the current bucket contains something.
 					if (i == 0)
 					{
-						// If we are in the first bucket, use the upper bound (which is the lowest specified bound
-						// overall) otherwise this would be -Inf, which is not allowed. This is not quite correct,
-						// but the best approximation we can get at this point. This might however lead to a min
-						// that is bigger than the sum, therefore we return the min of the sum and the lowest
-						// bound.
-						// Choose the minimum of the following three:
+						// In the first bucket, (-Inf, firstBound], use firstBound (this is the lowest specified
+						// bound overall). This is not quite correct but the best approximation we can get at this
+						// point. However, this might lead to a min bigger than the mean, thus choose the minimum
+						// of the following:
 						// - The lowest boundary
-						// - The sum (smallest if there are multiple negative measurements smaller than the lowest
-						// boundary)
-						// - The average in the bucket (smallest if there are multiple positive measurements
-						// smaller than the lowest boundary)
+						// - The average of the histogram (histogram sum / sum of counts)
 						return Math.Min(
 							Math.Min(buckets[i].ExplicitBound, histogramSum),
 							histogramSum / histogramValueCount);
@@ -154,16 +150,14 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 				{
 					if (i == lastElemIdx)
 					{
-						// use the last bound in the bounds array. This can only be the case if there is a count >
-						// 0 in the last bucket (lastBound, Inf), therefore, the bound has to be smaller than the
-						// actual maximum value, which in turn ensures that the sum is larger than the bound we
-						// use as max here.
-						return buckets[i - 1].ExplicitBound;
+						// use the last bound in the buckets array. This can only be the case if there is a count >
+						// 0 in the last bucket (lastBound, Inf). In some cases, the mean of the histogram is
+						// larger than this bound, thus use the maximum of the estimated bound and the mean.
+						return Math.Max(buckets[i - 1].ExplicitBound, histogramSum / histogramValueCount);
 					}
 
-					// in any bucket except the last, make sure the sum is greater than or equal to the max,
-					// otherwise report the sum.
-					return Math.Min(buckets[i].ExplicitBound, histogramSum);
+					// In any other bucket (lowerBound, upperBound], use the upperBound.
+					return buckets[i].ExplicitBound;
 				}
 			}
 
