@@ -223,5 +223,6 @@ are going to be sent to Dynatrace.
 ### Histograms
 
 OpenTelemetry Histograms are exported to Dynatrace as statistical summaries consisting of a minimum and maximum value, 
-the total sum of all values, and the count of the values summarized. If the min and max values are not directly 
-available on the metric data point, estimations based on the boundaries of the first and last buckets containing values are used.
+the total sum of all values, and the count of the values summarized. `min` and `max` values are not directly 
+available on the metric data point as of [1.2.0 of the .NET SDK](https://github.com/open-telemetry/opentelemetry-dotnet/releases/tag/core-1.2.0). 
+This exporter performs estimations based on the boundaries of the first and last buckets that contain values.
