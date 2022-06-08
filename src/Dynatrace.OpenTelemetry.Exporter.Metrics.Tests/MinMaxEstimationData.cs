@@ -21,6 +21,16 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 {
 	public static class MinMaxEstimationData
 	{
+		public sealed class HistogramTestData
+		{
+			public double[] Boundaries { get; init; } = Array.Empty<double>();
+			public int Count { get; init; }
+			public double[] Values { get; init; } = Array.Empty<double>();
+			public double Sum { get; init; }
+			public double Min { get; init; }
+			public double Max { get; init; }
+		}
+
 		public static IEnumerable<object[]> Data =>
 			new List<object[]>
 			{

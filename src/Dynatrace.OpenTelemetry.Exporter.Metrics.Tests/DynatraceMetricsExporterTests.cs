@@ -33,16 +33,6 @@ using Xunit;
 
 namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 {
-	public sealed class HistogramTestData
-	{
-		public double[] Boundaries { get; init; } = Array.Empty<double>();
-		public int Count { get; init; }
-		public double[] Values { get; init; } = Array.Empty<double>();
-		public double Sum { get; init; }
-		public double Min { get; init; }
-		public double Max { get; init; }
-	}
-
 	public sealed class DynatraceMetricsExporterTests : IDisposable
 	{
 		private readonly TagList _attributes = new() { { "attr1", "v1" }, { "attr2", "v2" } };
@@ -674,7 +664,7 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 
 		[Theory]
 		[MemberData(nameof(MinMaxEstimationData.Data), MemberType = typeof(MinMaxEstimationData))]
-		public async Task Export_Histogram_ShouldSetMinAndMaxCorrectly(HistogramTestData testData)
+		public async Task Export_Histogram_ShouldSetMinAndMaxCorrectly(MinMaxEstimationData.HistogramTestData testData)
 		{
 			// Arrange
 			using var meter = new Meter(Guid.NewGuid().ToString(), "0.0.1");
