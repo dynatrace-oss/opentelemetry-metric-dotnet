@@ -15,7 +15,6 @@
     <RepositoryType>Git</RepositoryType>
     <PackageIconUrl>https://assets.dynatrace.com/global/resources/Signet_Logo_RGB_CP_512x512px.png</PackageIconUrl>
     <PackageIcon>icon.png</PackageIcon>
-    <PackageLicenseUrl>https://github.com/dynatrace-oss/opentelemetry-metric-dotnet/blob/main/LICENSE</PackageLicenseUrl>
   </PropertyGroup>
 
   <ItemGroup>
