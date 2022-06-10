@@ -46,11 +46,3 @@ jobs:
         with:
           name: nupkg
           path: '**/bin/**/*.*nupkg'
-
-  all-passed:
-    needs:
-      - build-test
-    runs-on: ubuntu-latest
-    steps:
-      - name: All checks passed
-        run: 'true'
