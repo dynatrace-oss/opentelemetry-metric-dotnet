@@ -7,32 +7,42 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+  build-test:
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-    - name: Setup .NET 5.0
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: '5.0.x'
+      - name: Setup dotnet
+        uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: |
+            6.0.x
 
-    - name: Install dependencies
-      run: dotnet restore
+      - name: Install dependencies
+        run: dotnet restore
 
-    - name: Build
-      run: dotnet build --configuration Release --no-restore
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
 
-    - name: Test
-      run: dotnet test --no-restore --verbosity normal
+      - name: Test
+        run: dotnet test --configuration Release --no-build --verbosity normal
 
-    - name: Package
-      run: dotnet pack src/Dynatrace.OpenTelemetry.Exporter.Metrics --configuration Release --no-build
+      # packaging and uploading the nupkg, it should be enough to build this on one OS, it can be used for all OSes
+      - name: Package
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: dotnet pack --configuration Release --no-build
 
-    - name: Archive nupkg
-      uses: actions/upload-artifact@v2
-      with:
-        name: nupkg
-        path: '**/bin/**/*.*nupkg'
+      - name: Archive nupkg
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: nupkg
+          path: '**/bin/**/*.*nupkg'

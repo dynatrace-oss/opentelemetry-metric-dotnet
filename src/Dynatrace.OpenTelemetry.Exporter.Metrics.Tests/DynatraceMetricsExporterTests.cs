@@ -35,7 +35,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 {
 	public sealed class DynatraceMetricsExporterTests : IDisposable
 	{
-		private readonly TagList _attributes = new() { { "attr1", "v1" }, { "attr2", "v2" } };
+		private readonly TagList _attributes = new() {{"attr1", "v1"}, {"attr2", "v2"}};
 		private readonly MeterProvider _meterProvider;
 		private readonly List<Metric> _exportedMetrics;
 		private readonly Meter _meter;
@@ -47,7 +47,8 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 
 			_meterProvider = Sdk.CreateMeterProviderBuilder()
 				.AddMeter(_meter.Name)
-				.AddInMemoryExporter(_exportedMetrics, options => options.TemporalityPreference = MetricReaderTemporalityPreference.Delta)
+				.AddInMemoryExporter(_exportedMetrics,
+					options => options.TemporalityPreference = MetricReaderTemporalityPreference.Delta)
 				.Build();
 		}
 
@@ -75,7 +76,8 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 			// Assert
 			var point = MetricTest.FromMetricPoints(_exportedMetrics.First().GetMetricPoints()).First();
 
-			var expected = $"counter,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=10 {point.TimeStamp}";
+			var expected =
+				$"counter,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=10 {point.TimeStamp}";
 			var actualMetricString = await actualRequestMessage.Content!.ReadAsStringAsync();
 			Assert.Equal(expected, actualMetricString);
 
@@ -149,7 +151,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 			var mockMessageHandler = SetupHttpMock(r => actualRequestMessage = r);
 
 			var sut = new DynatraceMetricsExporter(
-				new DynatraceExporterOptions { Url = "http://my.url", ApiToken = "test-token" }, null,
+				new DynatraceExporterOptions {Url = "http://my.url", ApiToken = "test-token"}, null,
 				new HttpClient(mockMessageHandler.Object));
 
 			var counter = _meter.CreateCounter<int>("counter");
@@ -162,7 +164,8 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 			// Assert
 			var point = MetricTest.FromMetricPoints(_exportedMetrics.First().GetMetricPoints()).First();
 
-			var expected = $"counter,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=10 {point.TimeStamp}";
+			var expected =
+				$"counter,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=10 {point.TimeStamp}";
 			var actualMetricString = await actualRequestMessage.Content!.ReadAsStringAsync();
 			Assert.Equal(expected, actualMetricString);
 
@@ -183,7 +186,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 			var mockMessageHandler = SetupHttpMock(r => actualRequestMessage = r);
 
 			var sut = new DynatraceMetricsExporter(
-				new DynatraceExporterOptions { Prefix = "my.prefix" }, null,
+				new DynatraceExporterOptions {Prefix = "my.prefix"}, null,
 				new HttpClient(mockMessageHandler.Object));
 
 			var counter = _meter.CreateCounter<int>("counter");
@@ -196,7 +199,8 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 			// Assert
 			var point = MetricTest.FromMetricPoints(_exportedMetrics.First().GetMetricPoints()).First();
 
-			var expected = $"my.prefix.counter,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=10 {point.TimeStamp}";
+			var expected =
+				$"my.prefix.counter,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=10 {point.TimeStamp}";
 			var actualMetricString = await actualRequestMessage.Content!.ReadAsStringAsync();
 			Assert.Equal(expected, actualMetricString);
 
@@ -216,10 +220,10 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 			HttpRequestMessage actualRequestMessage = null!;
 			var mockMessageHandler = SetupHttpMock(r => actualRequestMessage = r);
 
-			var defaultDimensions = new KeyValuePair<string, string>[] { new("d1", "v1"), new("d2", "v2"), };
+			var defaultDimensions = new KeyValuePair<string, string>[] {new("d1", "v1"), new("d2", "v2"),};
 
 			var sut = new DynatraceMetricsExporter(
-				new DynatraceExporterOptions { DefaultDimensions = defaultDimensions }, null,
+				new DynatraceExporterOptions {DefaultDimensions = defaultDimensions}, null,
 				new HttpClient(mockMessageHandler.Object));
 
 			var counter = _meter.CreateCounter<int>("counter");
@@ -232,7 +236,8 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 			// Assert
 			var point = MetricTest.FromMetricPoints(_exportedMetrics.First().GetMetricPoints()).First();
 
-			var expected = $"counter,d1=v1,d2=v2,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=10 {point.TimeStamp}";
+			var expected =
+				$"counter,d1=v1,d2=v2,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=10 {point.TimeStamp}";
 			var actualMetricString = await actualRequestMessage.Content!.ReadAsStringAsync();
 			Assert.Equal(expected, actualMetricString);
 
@@ -253,12 +258,13 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 			var mockLogger = new Mock<ILogger<DynatraceMetricsExporter>>();
 			mockLogger.Setup(x => x.IsEnabled(LogLevel.Warning)).Returns(true);
 
-			// 20 dimensions of ~ 100 characters should result in lines with more than 2000 characters
+			// 9 chars for 'dim0=val0', max line length 50000 chars
+			var numDimensions = 50_000 / 9;
 			var dimensions = new TagList();
-			for (var i = 0; i < 20; i++)
+			for (var i = 0; i < numDimensions; i++)
 			{
-				// creates a dimension that takes up a little more than 100 characters
-				dimensions.Add(new(new string('a', 50) + i, new string('b', 50) + i));
+				// creates a dimension that takes up at least 9 characters
+				dimensions.Add($"dim{i}", $"val{i}");
 			}
 
 			var sut = new DynatraceMetricsExporter(null, mockLogger.Object, new HttpClient(mockMessageHandler.Object));
@@ -280,7 +286,8 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 			mockLogger.Verify(x => x.Log(
 					LogLevel.Warning,
 					5, // eventid define in LoggerExtensions
-					It.Is<It.IsAnyType>((value, type) => value.ToString()!.Contains("Skipping metric with the original name")),
+					It.Is<It.IsAnyType>((value, type) =>
+						value.ToString()!.Contains("Skipping metric with the original name")),
 					It.IsAny<Exception>(),
 					It.IsAny<Func<It.IsAnyType, Exception, string>>()),
 				Times.Exactly(1));
@@ -308,7 +315,8 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 				// Assert
 				var point = MetricTest.FromMetricPoints(_exportedMetrics.First().GetMetricPoints()).First();
 
-				var expected = $"counter,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta={i} {point.TimeStamp}";
+				var expected =
+					$"counter,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta={i} {point.TimeStamp}";
 				var actualMetricString = await actualRequestMessage.Content!.ReadAsStringAsync();
 				Assert.Equal(expected, actualMetricString);
 
@@ -346,7 +354,8 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 			var pointA = MetricTest.FromMetricPoints(_exportedMetrics.First().GetMetricPoints()).First();
 			var pointB = MetricTest.FromMetricPoints(_exportedMetrics.Last().GetMetricPoints()).First();
 
-			var expected = @$"counterA,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=10 {pointA.TimeStamp}
+			var expected =
+				@$"counterA,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=10 {pointA.TimeStamp}
 counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {pointB.TimeStamp}";
 
 			var actualMetricString = await actualRequestMessage.Content!.ReadAsStringAsync();
@@ -380,7 +389,8 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 			// Assert
 			var point = MetricTest.FromMetricPoints(_exportedMetrics.First().GetMetricPoints()).First();
 
-			var expected = $"counter,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=10 {point.TimeStamp}";
+			var expected =
+				$"counter,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=10 {point.TimeStamp}";
 			var actualMetricString = await actualRequestMessage.Content!.ReadAsStringAsync();
 			Assert.Equal(expected, actualMetricString);
 
@@ -412,7 +422,8 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 			// Assert
 			var point = MetricTest.FromMetricPoints(_exportedMetrics.First().GetMetricPoints()).First();
 
-			var expected = $"double_counter,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=10.3 {point.TimeStamp}";
+			var expected =
+				$"double_counter,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=10.3 {point.TimeStamp}";
 			var actualMetricString = await actualRequestMessage.Content!.ReadAsStringAsync();
 			Assert.Equal(expected, actualMetricString);
 
@@ -439,7 +450,7 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 			// we assert both exports to be 10
 			var i = 1;
 			_meter.CreateObservableCounter("obs_counter",
-				() => new List<Measurement<long>> { new(i++ * 10, _attributes) });
+				() => new List<Measurement<long>> {new(i++ * 10, _attributes)});
 
 			// Perform two exports to ensure deltas are exported correctly
 			_meterProvider.ForceFlush();
@@ -455,7 +466,8 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 			{
 				var point = MetricTest.FromMetricPoints(_exportedMetrics.First().GetMetricPoints()).First();
 
-				var expected = $"obs_counter,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta={expectedValue} {point.TimeStamp}";
+				var expected =
+					$"obs_counter,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta={expectedValue} {point.TimeStamp}";
 				var actualMetricString = await actualRequestMessage.Content!.ReadAsStringAsync();
 				Assert.Equal(expected, actualMetricString);
 			}
@@ -483,7 +495,7 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 			// we assert both exports to be 10.3
 			var i = 1;
 			_meter.CreateObservableCounter("double_obs_counter",
-				() => new List<Measurement<double>> { new(i++ * 10.3, _attributes) });
+				() => new List<Measurement<double>> {new(i++ * 10.3, _attributes)});
 
 			// Perform two exports to ensure deltas are exported correctly
 			_meterProvider.ForceFlush();
@@ -499,7 +511,8 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 			{
 				var point = MetricTest.FromMetricPoints(_exportedMetrics.First().GetMetricPoints()).First();
 
-				var expected = $"double_obs_counter,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta={expectedValue} {point.TimeStamp}";
+				var expected =
+					$"double_obs_counter,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta={expectedValue} {point.TimeStamp}";
 				var actualMetricString = await actualRequestMessage.Content!.ReadAsStringAsync();
 				Assert.Equal(expected, actualMetricString);
 			}
@@ -523,7 +536,7 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
 
 			_meter.CreateObservableGauge("gauge",
-				() => new List<Measurement<long>> { new(10, _attributes) });
+				() => new List<Measurement<long>> {new(10, _attributes)});
 
 			// Act
 			_meterProvider.ForceFlush();
@@ -555,7 +568,7 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
 
 			_meter.CreateObservableGauge("double_gauge",
-				() => new List<Measurement<double>> { new(10.3, _attributes), });
+				() => new List<Measurement<double>> {new(10.3, _attributes),});
 
 			// Act
 			_meterProvider.ForceFlush();
@@ -564,7 +577,8 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 			// Assert
 			var point = MetricTest.FromMetricPoints(_exportedMetrics.First().GetMetricPoints()).First();
 
-			var expected = $"double_gauge,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry gauge,10.3 {point.TimeStamp}";
+			var expected =
+				$"double_gauge,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry gauge,10.3 {point.TimeStamp}";
 			var actualMetricString = await actualRequestMessage.Content!.ReadAsStringAsync();
 			Assert.Equal(expected, actualMetricString);
 
@@ -601,7 +615,8 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 			// Assert
 			var point = MetricTest.FromMetricPoints(_exportedMetrics.First().GetMetricPoints()).First();
 
-			var expected = $"histogram,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry gauge,min=0,max=25,sum=39,count=4 {point.TimeStamp}";
+			var expected =
+				$"histogram,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry gauge,min=0,max=25,sum=39,count=4 {point.TimeStamp}";
 			var actualMetricString = await actualRequestMessage.Content!.ReadAsStringAsync();
 			Assert.Equal(expected, actualMetricString);
 
@@ -627,7 +642,7 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 					options => options.TemporalityPreference = MetricReaderTemporalityPreference.Delta)
 				.AddView(
 					instrumentName: "histogram",
-					new ExplicitBucketHistogramConfiguration { Boundaries = new double[] { 0.1, 1.2, 3.4, 5.6 } })
+					new ExplicitBucketHistogramConfiguration {Boundaries = new double[] {0.1, 1.2, 3.4, 5.6}})
 				.Build();
 
 			HttpRequestMessage actualRequestMessage = null!;
@@ -649,7 +664,8 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 			// Assert
 			var point = MetricTest.FromMetricPoints(exportedMetrics.First().GetMetricPoints()).First();
 
-			var expected = $"histogram,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry gauge,min=0.1,max=5.6,sum=7.6,count=4 {point.TimeStamp}";
+			var expected =
+				$"histogram,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry gauge,min=0.1,max=5.6,sum=7.6,count=4 {point.TimeStamp}";
 			var actualMetricString = await actualRequestMessage.Content!.ReadAsStringAsync();
 			Assert.Equal(expected, actualMetricString);
 
@@ -676,7 +692,7 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 					options => options.TemporalityPreference = MetricReaderTemporalityPreference.Delta)
 				.AddView(
 					instrumentName: "histogram",
-					new ExplicitBucketHistogramConfiguration { Boundaries = testData.Boundaries })
+					new ExplicitBucketHistogramConfiguration {Boundaries = testData.Boundaries})
 				.Build();
 
 			HttpRequestMessage actualRequestMessage = null!;
@@ -698,7 +714,8 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 			// Assert
 			var point = MetricTest.FromMetricPoints(exportedMetrics.First().GetMetricPoints()).First();
 
-			var expected = $"histogram,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry gauge,min={testData.Min},max={testData.Max},sum={testData.Sum},count={testData.Count} {point.TimeStamp}";
+			var expected =
+				$"histogram,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry gauge,min={testData.Min},max={testData.Max},sum={testData.Sum},count={testData.Count} {point.TimeStamp}";
 			var actualMetricString = await actualRequestMessage.Content!.ReadAsStringAsync();
 			Assert.Equal(expected, actualMetricString);
 
@@ -721,7 +738,10 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 			mockMessageHandler.Protected()
 				.Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(),
 					ItExpr.IsAny<CancellationToken>())
-				.ReturnsAsync(new HttpResponseMessage { StatusCode = statusCode ?? HttpStatusCode.OK, Content = content ?? new StringContent("test") })
+				.ReturnsAsync(new HttpResponseMessage
+				{
+					StatusCode = statusCode ?? HttpStatusCode.OK, Content = content ?? new StringContent("test")
+				})
 				.Callback((HttpRequestMessage r, CancellationToken _) =>
 				{
 					setter?.Invoke(r);
