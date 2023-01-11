@@ -6,7 +6,7 @@ directly to [Dynatrace](https://www.dynatrace.com).
 More information on exporting OpenTelemetry metrics to Dynatrace can be found in the
 [Dynatrace documentation](https://www.dynatrace.com/support/help/extend-dynatrace/opentelemetry/opentelemetry-metrics).
 
-This exporter is built against the OpenTelemetry .NET SDK [v1.3.2](https://github.com/open-telemetry/opentelemetry-dotnet/releases/tag/core-1.3.2). It should be compatible with applications targeting OpenTelemetry .NET SDK version 1.2.0 and higher.
+This exporter is built against the OpenTelemetry .NET SDK [v1.3.2](https://github.com/open-telemetry/opentelemetry-dotnet/releases/tag/core-1.3.2).
 
 ## Getting started
 
