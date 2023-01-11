@@ -6,13 +6,11 @@ directly to [Dynatrace](https://www.dynatrace.com).
 More information on exporting OpenTelemetry metrics to Dynatrace can be found in the
 [Dynatrace documentation](https://www.dynatrace.com/support/help/extend-dynatrace/opentelemetry/opentelemetry-metrics).
 
-This exporter is built against the OpenTelemetry .NET
-SDK [v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet/releases/tag/core-1.2.0) which is the first stable
-release for the metrics SDK and should be compatible with this and later versions.
+This exporter is built against the OpenTelemetry .NET SDK [v1.3.2](https://github.com/open-telemetry/opentelemetry-dotnet/releases/tag/core-1.3.2). It should be compatible with applications targeting OpenTelemetry .NET SDK version 1.2.0 and higher.
 
 ## Getting started
 
-The general setup of OpenTelemetry .NET is explained in the official [Getting Started Guide](https://github.com/open-telemetry/opentelemetry-dotnet/blob/core-1.2.0/docs/metrics/getting-started/README.md).
+The general setup of OpenTelemetry .NET is explained in the official [Getting Started Guide](https://github.com/open-telemetry/opentelemetry-dotnet/blob/core-1.3.2/docs/metrics/getting-started/README.md).
 
 To add the exporter to your project, install the [Dynatrace.OpenTelemetry.Exporter.Metrics](https://www.nuget.org/packages/Dynatrace.OpenTelemetry.Exporter.Metrics) package to your project.
 This can be done through the NuGet package manager in Visual Studio or by running the following command in your project folder:
@@ -28,6 +26,12 @@ This exporter package targets [.NET Standard 2.0](https://docs.microsoft.com/en-
 To set up a Dynatrace metrics exporter, add the following code to your project:
 
 ```csharp
+using System.Diagnostics;
+using System.Diagnostics.Metrics;
+using OpenTelemetry;
+using OpenTelemetry.Metrics;
+using Dynatrace.OpenTelemetry.Exporter.Metrics;
+
 // A Meter instance is obtained via the System.Diagnostics.DiagnosticSource package
 var meter = new Meter("my_meter", "0.0.1");
 
@@ -59,6 +63,13 @@ and it is recommended to restrict the token access to that scope.
 More information about the token setup can be found [here](#dynatrace-api-token).
 
 ```csharp
+using System.Diagnostics;
+using System.Diagnostics.Metrics;
+using Microsoft.Extensions.Logging;
+using OpenTelemetry;
+using OpenTelemetry.Metrics;
+using Dynatrace.OpenTelemetry.Exporter.Metrics;
+
 // Not required, but potentially helpful.
 // The exporter logs information about preparing and exporting metrics.
 var loggerFactory = LoggerFactory.Create(builder =>
@@ -96,6 +107,13 @@ configured in the `DynatraceExporterOptions`.
 Read the [Configuration section](#configuration) to learn more about each of them.
 
 ```csharp
+using System.Diagnostics;
+using System.Diagnostics.Metrics;
+using Microsoft.Extensions.Logging;
+using OpenTelemetry;
+using OpenTelemetry.Metrics;
+using Dynatrace.OpenTelemetry.Exporter.Metrics;
+
 using var provider = Sdk.CreateMeterProviderBuilder()
     .AddMeter(meter.Name)
     .AddDynatraceExporter(cfg =>
