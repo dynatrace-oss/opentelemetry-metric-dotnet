@@ -6,7 +6,13 @@ directly to [Dynatrace](https://www.dynatrace.com).
 More information on exporting OpenTelemetry metrics to Dynatrace can be found in the
 [Dynatrace documentation](https://www.dynatrace.com/support/help/extend-dynatrace/opentelemetry/opentelemetry-metrics).
 
-This exporter is built against the OpenTelemetry .NET SDK [v1.3.2](https://github.com/open-telemetry/opentelemetry-dotnet/releases/tag/core-1.3.2).
+This exporter is built against the OpenTelemetry .NET SDK
+[v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet/releases/tag/core-1.2.0).
+It should be compatible with applications targeting OpenTelemetry .NET SDK version 1.2.0 and higher.
+
+> It is highly recommended to update the OpenTelemetry .NET SDK in your applications to version `1.3.1` or later
+> to avoid being impacted by this issue:
+> [Possible app crash for OpenTelemetry .NET versions 1.3.0 and prior](https://github.com/open-telemetry/opentelemetry-dotnet/issues/3629)
 
 ## Getting started
 
@@ -19,7 +25,7 @@ This can be done through the NuGet package manager in Visual Studio or by runnin
 dotnet add package Dynatrace.OpenTelemetry.Exporter.Metrics
 ```
 
-This exporter package targets [.NET Standard 2.0](https://docs.microsoft.com/en-us/dotnet/standard/net-standard) and can therefore be included on .NET Core 2.0 and above, as well as .NET Framework 4.6.1 and above.
+This exporter package targets [.NET Standard 2.0](https://docs.microsoft.com/en-us/dotnet/standard/net-standard) and can therefore be included on .NET Core 2.0 and above, as well as .NET Framework 4.6.2 and above.
 
 ### Setup
 
