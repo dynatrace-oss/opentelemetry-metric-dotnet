@@ -755,7 +755,6 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 			_meter.CreateObservableCounter("obs_counter",
 				() => new List<Measurement<long>> { new(1 * 10) });
 
-			var i = 1;
 			_meter.CreateObservableCounter("double_obs_counter",
 				() => new List<Measurement<double>> { new(1 * 10.3, _attributes) });
 
