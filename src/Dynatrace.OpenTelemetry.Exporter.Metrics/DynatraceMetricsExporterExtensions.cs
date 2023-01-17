@@ -62,8 +62,10 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics
 			}
 
 			var metricExporter = new DynatraceMetricsExporter(options, logger);
-			var metricReader = new PeriodicExportingMetricReader(metricExporter, options.MetricExportIntervalMilliseconds);
-			metricReader.TemporalityPreference = MetricReaderTemporalityPreference.Delta;
+			var metricReader = new PeriodicExportingMetricReader(metricExporter, options.MetricExportIntervalMilliseconds)
+			{
+				TemporalityPreference = MetricReaderTemporalityPreference.Delta
+			};
 			return builder.AddReader(metricReader);
 		}
 	}

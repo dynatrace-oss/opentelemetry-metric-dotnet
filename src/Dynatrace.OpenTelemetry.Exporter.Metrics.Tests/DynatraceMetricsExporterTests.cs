@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
+using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -726,6 +727,67 @@ counterB,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=20 {point
 				ItExpr.IsAny<CancellationToken>());
 
 			AssertExportRequest(actualRequestMessage);
+		}
+
+		[Theory]
+		[InlineData("en-US")]
+		[InlineData("en-GB")]
+		[InlineData("pt-BR")]
+		[InlineData("de-AT")]
+		[InlineData("fi-FI")]
+		public async Task TestAllInstrumentsWithCulture(string locale)
+		{
+			var originalCulture = Thread.CurrentThread.CurrentCulture;
+			Thread.CurrentThread.CurrentCulture = new CultureInfo(locale);
+
+			// Arrange
+			HttpRequestMessage actualRequestMessage = null!;
+			var mockMessageHandler = SetupHttpMock(r => actualRequestMessage = r);
+
+			var sut = new DynatraceMetricsExporter(null, null, new HttpClient(mockMessageHandler.Object));
+
+			var longCounter = _meter.CreateCounter<long>("counter");
+			longCounter.Add(10);
+
+			var doubleCounter = _meter.CreateCounter<double>("double_counter");
+			doubleCounter.Add(10.3);
+
+			_meter.CreateObservableCounter("obs_counter",
+				() => new List<Measurement<long>> { new(1 * 10) });
+
+			_meter.CreateObservableCounter("double_obs_counter",
+				() => new List<Measurement<double>> { new(1 * 10.3, _attributes) });
+
+			var longHistogram = _meter.CreateHistogram<long>("histogram");
+			longHistogram.Record(1);
+			longHistogram.Record(6);
+			longHistogram.Record(11);
+			longHistogram.Record(21);
+
+			var doubleHistogram = _meter.CreateHistogram<double>("double_histogram");
+			doubleHistogram.Record(1.1);
+			doubleHistogram.Record(6.2);
+			doubleHistogram.Record(11.3);
+			doubleHistogram.Record(21.23);
+
+			// Act
+			_meterProvider.ForceFlush();
+			sut.Export(new Batch<Metric>(_exportedMetrics.ToArray(), _exportedMetrics.Count));
+
+			// Assert
+			var point = MetricTest.FromMetricPoints(_exportedMetrics.First().GetMetricPoints()).First();
+
+			var expected = @$"counter,dt.metrics.source=opentelemetry count,delta=10 {point.TimeStamp}
+double_counter,dt.metrics.source=opentelemetry count,delta=10.3 {point.TimeStamp}
+obs_counter,dt.metrics.source=opentelemetry count,delta=10 {point.TimeStamp}
+double_obs_counter,attr1=v1,attr2=v2,dt.metrics.source=opentelemetry count,delta=10.3 {point.TimeStamp}
+histogram,dt.metrics.source=opentelemetry gauge,min=0,max=25,sum=39,count=4 {point.TimeStamp}
+double_histogram,dt.metrics.source=opentelemetry gauge,min=0,max=25,sum=39.83,count=4 {point.TimeStamp}";
+
+			var actualMetricString = await actualRequestMessage.Content!.ReadAsStringAsync();
+			Assert.Equal(expected, actualMetricString);
+
+			Thread.CurrentThread.CurrentCulture = originalCulture;
 		}
 
 		private static Mock<HttpMessageHandler> SetupHttpMock(
