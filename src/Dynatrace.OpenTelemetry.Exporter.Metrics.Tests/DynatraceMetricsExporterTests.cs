@@ -50,13 +50,13 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 				.AddMeter(_meter.Name)
 				.AddInMemoryExporter(_exportedMetrics,
 					options => options.TemporalityPreference = MetricReaderTemporalityPreference.Delta)
-				.Build();
+				.Build()!;
 		}
 
 		public void Dispose()
 		{
 			_meter.Dispose();
-			_meterProvider.Dispose();
+			_meterProvider?.Dispose();
 		}
 
 		[Fact]
