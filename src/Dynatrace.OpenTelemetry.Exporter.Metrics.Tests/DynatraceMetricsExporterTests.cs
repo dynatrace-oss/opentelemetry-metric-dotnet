@@ -56,7 +56,7 @@ namespace Dynatrace.OpenTelemetry.Exporter.Metrics.Tests
 		public void Dispose()
 		{
 			_meter.Dispose();
-			_meterProvider?.Dispose();
+			_meterProvider.Dispose();
 		}
 
 		[Fact]
