@@ -16,8 +16,9 @@ More information on configuring your .NET applications to use the OTLP exporter 
 >
 > The exporter is still available but after the end of 2023, no support, updates, or compatibility with newer OTel versions will be provided.
 >
-> Please refer to the [migration guide](https://www.dynatrace.com/support/help/shortlink/migrating-dynatrace-metrics-exporter-otlp-exporter#migrate-applications) for instructions on how to migrate to the OTLP HTTP exporter, as well as reasoning and benefits for this transition. For an example on how to configure the OTLP exporter in a .NET application, check out the [.NET integration walk-through](https://www.dynatrace.com/support/help/shortlink/otel-wt-dotnet#tabgroup--dynatrace-docs--otlp-export)
-> page in the Dynatrace documentation.
+> Please refer to the [migration guide](https://www.dynatrace.com/support/help/shortlink/migrating-dynatrace-metrics-exporter-otlp-exporter#migrate-applications) for instructions on how to migrate to the OTLP HTTP exporter, as well as reasoning and benefits for this transition.
+> 
+> For an example on how to configure the OTLP exporter in a .NET application, check out the [.NET integration walk-through](https://www.dynatrace.com/support/help/shortlink/otel-wt-dotnet#tabgroup--dynatrace-docs--otlp-export) page in the Dynatrace documentation.
 
 This exporter allows exporting metrics created using the [OpenTelemetry SDK for .NET](https://github.com/open-telemetry/opentelemetry-dotnet)
 directly to [Dynatrace](https://www.dynatrace.com).
