@@ -1,3 +1,5 @@
+# Dynatrace
+
 [Dynatrace](https://www.dynatrace.com/integrations/opentelemetry) supports native
 OpenTelemetry protocol (OTLP) ingest for traces, metrics and logs.
 All signals can be sent directly to Dynatrace via **OTLP protobuf over HTTP**
@@ -5,7 +7,8 @@ using the built-in OTLP/HTTP Exporter available in the OpenTelemetry .NET SDK.
 More information on configuring your .NET applications to use the OTLP exporter can be found in the
 [Dynatrace documentation](https://www.dynatrace.com/support/help/shortlink/otel-wt-dotnet#tabgroup--dynatrace-docs--otlp-export).
 
-# Dynatrace OpenTelemetry Metrics Exporter for .NET
+## Dynatrace OpenTelemetry Metrics Exporter for .NET
+![Static Badge](https://img.shields.io/badge/status-deprecated-orange)
 
 > **Warning**
 > Dynatrace supports native OpenTelemetry protocol (OTLP) ingest for traces, metrics and logs.
@@ -30,7 +33,7 @@ It should be compatible with applications targeting OpenTelemetry .NET SDK versi
 > to avoid being impacted by this issue:
 > [Possible app crash for OpenTelemetry .NET versions 1.3.0 and prior](https://github.com/open-telemetry/opentelemetry-dotnet/issues/3629)
 
-## Getting started
+### Getting started
 
 The general setup of OpenTelemetry .NET is explained in the official [Getting Started Guide](https://github.com/open-telemetry/opentelemetry-dotnet/blob/core-1.4.0/docs/metrics/getting-started/README.md).
 
@@ -43,7 +46,7 @@ dotnet add package Dynatrace.OpenTelemetry.Exporter.Metrics
 
 This exporter package targets [.NET Standard 2.0](https://docs.microsoft.com/en-us/dotnet/standard/net-standard) and can therefore be included on .NET Core 2.0 and above, as well as .NET Framework 4.6.2 and above.
 
-### Setup
+#### Setup
 
 To set up a Dynatrace metrics exporter, add the following code to your project:
 
@@ -152,7 +155,7 @@ using var provider = Sdk.CreateMeterProviderBuilder()
     .Build();
 ```
 
-## Example application
+### Example application
 
 We provide an example command line application which exports metrics to Dynatrace.
 To run it, change into the folder and use `dotnet run`:
@@ -177,7 +180,7 @@ cd src/Examples.Console
 dotnet run -- -u "https://{your-environment-id}.live.dynatrace.com/api/v2/metrics/ingest" -t "YOUR_API_TOKEN"
 ```
 
-## Configuration
+### Configuration
 
 The `DynatraceExporterOptions` class contains all the available configuration.
 The `DynatraceExporterOptions` can be provided either via the `AddDynatraceExporter()` extension method
@@ -185,7 +188,7 @@ on the `MeterProviderBuilder`, or by manually passing it to the `DynatraceMetric
 
 The `DynatraceExporterOptions` class contains the following properties:
 
-### Dynatrace API Endpoint (`Url`)
+#### Dynatrace API Endpoint (`Url`)
 
 A OneAgent installed on the host can provide a local endpoint for ingesting metrics without the need for an API token.
 The [OneAgent metric API documentation](https://www.dynatrace.com/support/help/how-to-use-dynatrace/metrics/metric-ingestion/ingestion-methods/local-api/) provides information on how to enable the local OneAgent endpoint, if necessary.
@@ -198,7 +201,7 @@ The [metrics ingest endpoint URL](https://www.dynatrace.com/support/help/dynatra
 - `https://{your-environment-id}.live.dynatrace.com/api/v2/metrics/ingest` on SaaS deployments.
 - `https://{your-domain}/e/{your-environment-id}/api/v2/metrics/ingest` on managed deployments.
 
-### Dynatrace API Token (`ApiToken`)
+#### Dynatrace API Token (`ApiToken`)
 
 If metrics are not sent to the local OneAgent endpoint but directly to a Dynatrace server, an API token has to be provided for authentication.
 The Dynatrace API token to be used by the exporter can be specified using the `ApiToken` property.
@@ -208,13 +211,13 @@ It should not be hardcoded, especially if the code is stored in a VCS.
 Creating an API token for your Dynatrace environment is described in the [Dynatrace API documentation](https://www.dynatrace.com/support/help/dynatrace-api/basics/dynatrace-api-authentication/).
 The permission required for sending metrics is `Ingest metrics` (`metrics.ingest`) and it is recommended to limit scope to only this permission.
 
-### Metric Key Prefix (`Prefix`)
+#### Metric Key Prefix (`Prefix`)
 
 The `Prefix` property allows specifying an optional prefix, which is prepended to each metric key, separated by a dot (e.g. a prefix of `<prefix>` and a metric name of `<name>` will lead to a combined metric name of `<prefix>.<name>`).
 
 In the example, a prefix of `otel.dotnet` is used, which leads to metrics named `otel.dotnet.metric_name`, and allows for clear distinction between metrics from different sources in the Dynatrace metrics UI.
 
-### Default Dimensions (`DefaultDimensions`)
+#### Default Dimensions (`DefaultDimensions`)
 
 The `DefaultDimensions` property can be used to optionally specify a `List<KeyValuePair<string, string>>`, which will be added as dimensions to all data points.
 Dimension keys will be normalized, de-duplicated, and only one dimension value per key will be sent to the server.
@@ -223,7 +226,7 @@ Dimensions set on instruments will overwrite default dimensions if they share th
 
 The reserved dimension `dt.metrics.source=opentelemetry` will automatically be added to every exported metric when using the exporter.
 
-### Enrich metrics with Dynatrace Metadata (`EnrichWithDynatraceMetadata`)
+#### Enrich metrics with Dynatrace Metadata (`EnrichWithDynatraceMetadata`)
 
 If the `EnrichWithDynatraceMetadata` property is set to true, the exporter will retrieve host and process metadata from the OneAgent, if available, and set it as dimensions to all exported metrics.
 The `EnrichWithDynatraceMetadata` property on the options object can be used to disable Dynatrace metadata export.
@@ -233,16 +236,16 @@ If the OneAgent is running locally, but this option is set to false, no Dynatrac
 More information on the underlying OneAgent feature that is used by the exporter can be found in the
 [Dynatrace documentation](https://www.dynatrace.com/support/help/how-to-use-dynatrace/metrics/metric-ingestion/ingestion-methods/enrich-metrics/).
 
-### Export interval (`MetricExportIntervalMilliseconds`)
+#### Export interval (`MetricExportIntervalMilliseconds`)
 
 The interval to collect metrics. This value is passed and used by the 
 [Periodic Metric Reader](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/sdk.md#periodic-exporting-metricreader).
 
 This option is set to **1 minute** (60000ms) by default.
 
-## Known issues and limitations
+### Known issues and limitations
 
-### Typed attributes support
+#### Typed attributes support
 
 The OpenTelemetry specification has a concept of
 [Attributes](
@@ -257,7 +260,7 @@ This means that if attributes of any other type are used,
 they will be **ignored** and **only** the string-valued attributes
 are going to be sent to Dynatrace.
 
-### Histograms
+#### Histograms
 
 OpenTelemetry Histograms are exported to Dynatrace as statistical summaries consisting of a minimum and maximum value, 
 the total sum of all values, and the count of the values summarized. `min` and `max` values are not directly 
